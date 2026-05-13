@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-pika-page: #f4f7f6;
+  --color-pika-primary: #00ced1;
+  --color-pika-primary-dark: #00a8ab;
+  --color-pika-ink: #2d3436;
+  --color-pika-muted: #636e72;
+  --color-pika-border: #e6eceb;
+  --color-pika-card: #ffffff;
+  --color-pika-lime: #c8e600;
+  --color-pika-blue: #2563eb;
+  --color-pika-success: #22c55e;
+  --color-pika-danger: #ef4444;
+  --color-pika-info: #3b82f6;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-pika-page);
+  color: var(--color-pika-ink);
+  font-family: var(--font-sans);
+}
+
+/* Scrollbars — sidebar / tables */
+.scroll-pika::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-pika::-webkit-scrollbar-thumb {
+  background: #cfd8d6;
+  border-radius: 999px;
+}
+.scroll-pika::-webkit-scrollbar-track {
+  background: transparent;
+}
