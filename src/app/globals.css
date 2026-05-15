@@ -2,9 +2,16 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Fonts: inline so utilities resolve `var(--font-inter)` correctly (Tailwind v4). */
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
 
+/*
+ * Colors must live in `@theme` (not `inline`) so utilities like `bg-pika-page`
+ * reference `var(--color-*)` and respond to runtime overrides in `.dark`.
+ */
+@theme {
   --color-pika-page: #f4f7f6;
   --color-pika-primary: #00ced1;
   --color-pika-primary-dark: #00a8ab;
@@ -23,7 +30,7 @@
   color-scheme: light;
 }
 
-.dark {
+html.dark {
   color-scheme: dark;
 
   --color-pika-page: #0f1419;
@@ -68,6 +75,6 @@ body {
   background: transparent;
 }
 
-.dark .scroll-pika::-webkit-scrollbar-thumb {
+html.dark .scroll-pika::-webkit-scrollbar-thumb {
   background: #3d4a52;
 }
