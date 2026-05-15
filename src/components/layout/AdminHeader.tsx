@@ -3,23 +3,34 @@
 import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faAnglesLeft,
+  faAnglesRight,
   faBars,
   faBell,
   faCalendarDays,
   faChevronDown,
   faLocationDot,
+  faMoon,
   faRightFromBracket,
+  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { titleForPath } from "@/lib/nav";
 import { ANGOLA_PROVINCES } from "@/lib/angola-provinces";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
+import { useTheme } from "@/components/providers/ThemeProvider";
 import { initialsFromDisplayName, type SessionUser } from "@/lib/session-user";
+import { cn } from "@/lib/cn";
 
 type AdminHeaderProps = {
   user: SessionUser;
   onMenuClick: () => void;
+  sidebarCollapsed?: boolean;
+  onSidebarToggle?: () => void;
 };
+
+const iconBtnClass =
+  "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-pika-border text-pika-ink transition hover:bg-pika-page";
 
 function isoDateLocal(d = new Date()) {
   const y = d.getFullYear();
@@ -44,9 +55,15 @@ function labelForIso(iso: string): string {
   });
 }
 
-export function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
+export function AdminHeader({
+  user,
+  onMenuClick,
+  sidebarCollapsed = false,
+  onSidebarToggle,
+}: AdminHeaderProps) {
   const pathname = usePathname();
   const { title, subtitle } = titleForPath(pathname);
+  const { theme, toggleTheme, mounted } = useTheme();
   const [province, setProvince] = useState("Luanda");
   const [selectedIso, setSelectedIso] = useState(() => isoDateLocal());
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +72,7 @@ export function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
 
   const dateLabel = labelForIso(selectedIso);
   const initials = initialsFromDisplayName(user.displayName);
+  const isDark = theme === "dark";
 
   useEffect(() => {
     if (!userMenuOpen) return;
@@ -80,17 +98,31 @@ export function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
   }
 
   return (
-    <header className="flex h-[72px] shrink-0 items-center justify-between gap-4 border-b border-pika-border bg-white px-4 md:px-6">
+    <header className="flex h-[72px] shrink-0 items-center justify-between gap-4 border-b border-pika-border bg-pika-card px-4 md:px-6">
       <div className="min-w-0">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-pika-border text-pika-ink md:hidden"
+            className={cn(iconBtnClass, "md:hidden")}
             aria-label="Abrir menu"
             onClick={onMenuClick}
           >
             <FontAwesomeIcon icon={faBars} className="h-5 w-5" />
           </button>
+          {onSidebarToggle ? (
+            <button
+              type="button"
+              className={cn(iconBtnClass, "hidden md:inline-flex")}
+              aria-label={sidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+              aria-pressed={sidebarCollapsed}
+              onClick={onSidebarToggle}
+            >
+              <FontAwesomeIcon
+                icon={sidebarCollapsed ? faAnglesRight : faAnglesLeft}
+                className="h-5 w-5"
+              />
+            </button>
+          ) : null}
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold text-pika-ink md:text-xl">
               {title}
@@ -109,7 +141,7 @@ export function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
             value={province}
             onChange={(e) => setProvince(e.target.value)}
             aria-label="Província"
-            className="h-10 min-w-[8.5rem] max-w-[11rem] cursor-pointer appearance-none rounded-xl border border-pika-border bg-white py-2 pl-10 pr-9 text-sm font-medium text-pika-ink shadow-sm outline-none transition hover:bg-pika-page focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/20 sm:max-w-[14rem] md:min-w-[10rem] md:max-w-none"
+            className="h-10 min-w-[8.5rem] max-w-[11rem] cursor-pointer appearance-none rounded-xl border border-pika-border bg-pika-card py-2 pl-10 pr-9 text-sm font-medium text-pika-ink shadow-sm outline-none transition hover:bg-pika-page focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/20 sm:max-w-[14rem] md:min-w-[10rem] md:max-w-none"
           >
             {ANGOLA_PROVINCES.map((p) => (
               <option key={p} value={p}>
@@ -136,7 +168,7 @@ export function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
             type="button"
             onClick={openDatePicker}
             aria-label="Escolher data"
-            className="flex h-10 min-w-[7.5rem] items-center gap-2 rounded-xl border border-pika-border bg-white px-3 py-2 pr-9 pl-10 text-sm font-medium text-pika-ink shadow-sm transition hover:bg-pika-page"
+            className="flex h-10 min-w-[7.5rem] items-center gap-2 rounded-xl border border-pika-border bg-pika-card px-3 py-2 pr-9 pl-10 text-sm font-medium text-pika-ink shadow-sm transition hover:bg-pika-page"
           >
             <FontAwesomeIcon
               icon={faCalendarDays}
@@ -151,7 +183,20 @@ export function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-pika-border text-pika-ink transition hover:bg-pika-page"
+          className={iconBtnClass}
+          aria-label={isDark ? "Ativar tema claro" : "Ativar tema escuro"}
+          aria-pressed={isDark}
+          onClick={toggleTheme}
+        >
+          <FontAwesomeIcon
+            icon={mounted && isDark ? faSun : faMoon}
+            className="h-5 w-5"
+          />
+        </button>
+
+        <button
+          type="button"
+          className={iconBtnClass}
           aria-label="Notificações"
         >
           <FontAwesomeIcon icon={faBell} className="h-5 w-5" />
@@ -170,7 +215,7 @@ export function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
           </button>
           {userMenuOpen ? (
             <div
-              className="absolute right-0 top-12 z-50 w-60 rounded-xl border border-pika-border bg-white py-2 shadow-lg"
+              className="absolute right-0 top-12 z-50 w-60 rounded-xl border border-pika-border bg-pika-card py-2 shadow-lg"
               role="menu"
             >
               <div className="border-b border-pika-border px-3 py-2.5">

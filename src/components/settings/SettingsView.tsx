@@ -14,6 +14,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useId, useState } from "react";
 import { cn } from "@/lib/cn";
+import { PriceSimulatorCard } from "@/components/settings/PriceSimulatorCard";
 
 type TabId = "fees" | "users" | "notifications" | "rules" | "prices";
 
@@ -95,7 +96,7 @@ function SettingsSwitch({
 
 function inputClass(extra?: string) {
   return cn(
-    "mt-1.5 w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition placeholder:text-pika-muted/70 focus:border-pika-primary focus:bg-white focus:ring-2 focus:ring-pika-primary/20",
+    "mt-1.5 w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition placeholder:text-pika-muted/70 focus:border-pika-primary focus:bg-pika-card focus:ring-2 focus:ring-pika-primary/20",
     extra,
   );
 }
@@ -110,7 +111,7 @@ function WhiteCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-pika-border bg-white p-5 shadow-sm md:p-6",
+        "rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6",
         className,
       )}
     >
@@ -226,6 +227,9 @@ export function SettingsView() {
 }
 
 function FeesTab() {
+  const [tarifaBase, setTarifaBase] = useState("");
+  const [tarifaPorKm, setTarifaPorKm] = useState("");
+
   return (
     <div className="space-y-5">
       <div className="grid gap-5 lg:grid-cols-2">
@@ -273,13 +277,25 @@ function FeesTab() {
               <label className="text-sm font-semibold text-pika-ink">
                 Tarifa Base (Kz)
               </label>
-              <input type="text" placeholder="0" className={inputClass()} />
+              <input
+                type="text"
+                placeholder="0"
+                value={tarifaBase}
+                onChange={(e) => setTarifaBase(e.target.value)}
+                className={inputClass()}
+              />
             </div>
             <div>
               <label className="text-sm font-semibold text-pika-ink">
                 Tarifa por KM (Kz)
               </label>
-              <input type="text" placeholder="0" className={inputClass()} />
+              <input
+                type="text"
+                placeholder="0"
+                value={tarifaPorKm}
+                onChange={(e) => setTarifaPorKm(e.target.value)}
+                className={inputClass()}
+              />
             </div>
             <div>
               <label className="text-sm font-semibold text-pika-ink">
@@ -296,6 +312,8 @@ function FeesTab() {
           </div>
         </WhiteCard>
       </div>
+
+      <PriceSimulatorCard tarifaBase={tarifaBase} tarifaPorKm={tarifaPorKm} />
 
       <WhiteCard>
         <CardTitle>Multiplicadores Dinâmicos</CardTitle>
@@ -375,7 +393,7 @@ function UsersTab() {
                 key={u.id}
                 className={cn(
                   "border-b border-pika-border transition-colors last:border-b-0",
-                  idx === 2 ? "bg-slate-100/90" : "bg-white hover:bg-slate-50/80",
+                  idx === 2 ? "bg-pika-page/90" : "bg-pika-card hover:bg-pika-page/80",
                 )}
               >
                 <td className="px-4 py-4 font-semibold text-pika-ink">{u.name}</td>
@@ -769,7 +787,7 @@ function PricesTab({
                   <input
                     type="text"
                     defaultValue="Kz 1.500"
-                    className={inputClass("mt-1 bg-white")}
+                    className={inputClass("mt-1 bg-pika-card")}
                   />
                 </div>
                 <div>
@@ -779,7 +797,7 @@ function PricesTab({
                   <input
                     type="text"
                     defaultValue="Kz 2.000"
-                    className={inputClass("mt-1 bg-white")}
+                    className={inputClass("mt-1 bg-pika-card")}
                   />
                 </div>
                 <div>
@@ -789,7 +807,7 @@ function PricesTab({
                   <input
                     type="text"
                     defaultValue="Kz 1.500"
-                    className={inputClass("mt-1 bg-white")}
+                    className={inputClass("mt-1 bg-pika-card")}
                   />
                 </div>
                 <div>
@@ -799,7 +817,7 @@ function PricesTab({
                   <input
                     type="text"
                     defaultValue="Kz 2.000"
-                    className={inputClass("mt-1 bg-white")}
+                    className={inputClass("mt-1 bg-pika-card")}
                   />
                 </div>
               </div>
@@ -852,7 +870,7 @@ function PricesTab({
                   key={row.name}
                   className={cn(
                     "border-t border-pika-border",
-                    row.highlight ? "bg-slate-100/90" : "bg-transparent",
+                    row.highlight ? "bg-pika-page/90" : "bg-transparent",
                   )}
                 >
                   <td className="py-3 pr-4 font-medium text-pika-ink">{row.name}</td>

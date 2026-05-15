@@ -98,7 +98,7 @@ export function PassengersView() {
   return (
     <div className="space-y-5 md:space-y-6">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Total Passageiros</p>
@@ -112,7 +112,7 @@ export function PassengersView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Novos (30 dias)</p>
@@ -132,7 +132,7 @@ export function PassengersView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Avaliação Média</p>
@@ -146,7 +146,7 @@ export function PassengersView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Problemas Abertos</p>
@@ -161,7 +161,7 @@ export function PassengersView() {
         </div>
       </section>
 
-      <div className="rounded-2xl border border-pika-border bg-slate-100/90 p-4 shadow-sm md:p-5">
+      <div className="rounded-2xl border border-pika-border bg-pika-page/90 p-4 shadow-sm md:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
           <div className="relative min-w-0 flex-1">
             <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-pika-muted">
@@ -172,7 +172,7 @@ export function PassengersView() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por passageiro, motorista ou ID..."
-              className="w-full rounded-xl border border-pika-border bg-white py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
+              className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -181,7 +181,7 @@ export function PassengersView() {
               onChange={(e) =>
                 setStatusFilter(e.target.value as (typeof STATUS_OPTIONS)[number])
               }
-              className="rounded-xl border border-pika-border bg-white px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
+              className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
             >
               {STATUS_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -193,7 +193,7 @@ export function PassengersView() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-pika-border bg-white p-4 shadow-sm md:p-6">
+      <div className="rounded-2xl border border-pika-border bg-pika-card p-4 shadow-sm md:p-6">
         <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
           <table className="min-w-[1080px] w-full border-collapse text-left text-sm">
             <thead>
@@ -300,7 +300,7 @@ function PassengerTableRow({
     <tr
       className={cn(
         "border-b border-pika-border transition-colors last:border-b-0",
-        zebra ? "bg-slate-50/90" : "bg-white",
+        zebra ? "bg-pika-page/90" : "bg-pika-card",
         "hover:bg-slate-100/80",
       )}
     >

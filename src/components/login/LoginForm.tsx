@@ -21,7 +21,7 @@ export function LoginForm() {
 
   return (
     <div className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-8 lg:py-16">
-      <div className="w-full max-w-md rounded-2xl border border-white/25 bg-white/95 p-8 shadow-xl shadow-black/15 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-white/25 bg-pika-card/95 p-8 shadow-xl shadow-black/15 backdrop-blur-sm">
         <div className="mb-8 lg:hidden">
           <Image
             src="/logo_pika.png"
@@ -62,7 +62,7 @@ export function LoginForm() {
                 required
                 disabled={isPending}
                 placeholder="nome@empresa.ao"
-                className="w-full rounded-xl border border-pika-border bg-white py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/30 transition placeholder:text-pika-muted/70 focus:border-pika-primary focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/30 transition placeholder:text-pika-muted/70 focus:border-pika-primary focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
               />
             </span>
           </label>
@@ -81,7 +81,7 @@ export function LoginForm() {
                 required
                 disabled={isPending}
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-pika-border bg-white py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/30 transition placeholder:text-pika-muted/70 focus:border-pika-primary focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/30 transition placeholder:text-pika-muted/70 focus:border-pika-primary focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
               />
             </span>
           </label>

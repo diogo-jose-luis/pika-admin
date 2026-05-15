@@ -64,7 +64,7 @@ export function DriversView() {
   return (
     <div className="space-y-5 md:space-y-6">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Total Motoristas</p>
@@ -78,7 +78,7 @@ export function DriversView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Ativos</p>
@@ -95,7 +95,7 @@ export function DriversView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Inativos</p>
@@ -109,7 +109,7 @@ export function DriversView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Avaliação Média</p>
@@ -124,7 +124,7 @@ export function DriversView() {
         </div>
       </section>
 
-      <div className="rounded-2xl border border-pika-border bg-slate-100/90 p-4 shadow-sm md:p-5">
+      <div className="rounded-2xl border border-pika-border bg-pika-page/90 p-4 shadow-sm md:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
           <div className="relative min-w-0 flex-1">
             <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-pika-muted">
@@ -135,7 +135,7 @@ export function DriversView() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por passageiro, motorista ou ID..."
-              className="w-full rounded-xl border border-pika-border bg-white py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
+              className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
             />
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3">
@@ -144,7 +144,7 @@ export function DriversView() {
               onChange={(e) =>
                 setStatusFilter(e.target.value as "Todos" | DriverStatus)
               }
-              className="rounded-xl border border-pika-border bg-white px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
+              className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
             >
               <option value="Todos">Todos</option>
               <option value="Ativo">Ativo</option>
@@ -155,7 +155,7 @@ export function DriversView() {
               onChange={(e) =>
                 setDocFilter(e.target.value as (typeof DOC_OPTIONS)[number])
               }
-              className="rounded-xl border border-pika-border bg-white px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
+              className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
             >
               {DOC_OPTIONS.map((z) => (
                 <option key={z} value={z}>
@@ -165,7 +165,7 @@ export function DriversView() {
             </select>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-white px-4 py-2.5 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white"
+              className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2.5 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white"
             >
               <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />
               Exportar
@@ -175,7 +175,7 @@ export function DriversView() {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="rounded-2xl border border-pika-border bg-white p-8 text-center text-sm text-pika-muted shadow-sm">
+        <p className="rounded-2xl border border-pika-border bg-pika-card p-8 text-center text-sm text-pika-muted shadow-sm">
           Nenhum motorista encontrado com estes critérios.
         </p>
       ) : (
@@ -191,7 +191,7 @@ export function DriversView() {
 
 function DriverCard({ driver }: { driver: DriverCard }) {
   return (
-    <article className="flex flex-col rounded-2xl border border-pika-border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <article className="flex flex-col rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 gap-3">
           <div

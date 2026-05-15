@@ -219,7 +219,7 @@ export function VehicleModelsView() {
           return (
             <article
               key={m.id}
-              className="flex flex-col overflow-hidden rounded-2xl border border-pika-border bg-white shadow-sm"
+              className="flex flex-col overflow-hidden rounded-2xl border border-pika-border bg-pika-card shadow-sm"
             >
               <div className="relative h-44 bg-slate-100">
                 <span className="absolute left-3 top-3 z-10 text-xs font-medium text-pika-muted">
@@ -279,7 +279,7 @@ export function VehicleModelsView() {
                   <button
                     type="button"
                     onClick={() => openEdit(m)}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-pika-border bg-pika-page text-pika-muted transition hover:bg-white hover:text-pika-ink"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-pika-border bg-pika-page text-pika-muted transition hover:bg-pika-card hover:text-pika-ink"
                     aria-label="Editar modelo"
                   >
                     <FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
@@ -304,7 +304,7 @@ export function VehicleModelsView() {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-2xl bg-pika-card p-6 shadow-xl"
           >
             <div className="mb-5 flex items-start justify-between gap-3">
               <h2 id={titleId} className="text-lg font-bold text-pika-ink">
@@ -368,7 +368,7 @@ export function VehicleModelsView() {
                 <input
                   value={form.brand}
                   onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))}
-                  className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-white"
+                  className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-pika-card"
                   placeholder="Ex.: Toyota"
                 />
               </label>
@@ -377,7 +377,7 @@ export function VehicleModelsView() {
                 <input
                   value={form.model}
                   onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
-                  className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-white"
+                  className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-pika-card"
                   placeholder="Ex.: Corolla"
                 />
               </label>
@@ -387,7 +387,7 @@ export function VehicleModelsView() {
                   inputMode="numeric"
                   value={form.year}
                   onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))}
-                  className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-white"
+                  className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-pika-card"
                   placeholder="2024"
                 />
               </label>
@@ -396,7 +396,7 @@ export function VehicleModelsView() {
                 <select
                   value={form.bodyType}
                   onChange={(e) => setForm((f) => ({ ...f, bodyType: e.target.value }))}
-                  className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-white"
+                  className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-pika-card"
                 >
                   <option value="">Selecionar</option>
                   {BODY_TYPES.map((t) => (
@@ -420,7 +420,7 @@ export function VehicleModelsView() {
                     category: e.target.value as RideCategory | "",
                   }))
                 }
-                className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-white"
+                className="w-full rounded-xl border border-pika-border bg-pika-page px-3 py-2.5 text-sm text-pika-ink outline-none transition focus:border-pika-primary focus:bg-pika-card"
               >
                 <option value="">Selecionar</option>
                 {RIDE_CATEGORIES.map((c) => (
@@ -435,7 +435,7 @@ export function VehicleModelsView() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="inline-flex flex-1 items-center justify-center rounded-xl border border-pika-border bg-pika-page px-4 py-2.5 text-sm font-semibold text-pika-ink transition hover:bg-white sm:flex-none"
+                className="inline-flex flex-1 items-center justify-center rounded-xl border border-pika-border bg-pika-page px-4 py-2.5 text-sm font-semibold text-pika-ink transition hover:bg-pika-card sm:flex-none"
               >
                 Cancelar
               </button>

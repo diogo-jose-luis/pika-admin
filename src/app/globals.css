@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
@@ -21,6 +23,23 @@
   color-scheme: light;
 }
 
+.dark {
+  color-scheme: dark;
+
+  --color-pika-page: #0f1419;
+  --color-pika-primary: #22d3d6;
+  --color-pika-primary-dark: #14b8bb;
+  --color-pika-ink: #e8ecef;
+  --color-pika-muted: #94a3b0;
+  --color-pika-border: #2a343c;
+  --color-pika-card: #1a2229;
+  --color-pika-lime: #b8d400;
+  --color-pika-blue: #60a5fa;
+  --color-pika-success: #4ade80;
+  --color-pika-danger: #f87171;
+  --color-pika-info: #60a5fa;
+}
+
 html,
 body {
   height: 100%;
@@ -31,6 +50,9 @@ body {
   background: var(--color-pika-page);
   color: var(--color-pika-ink);
   font-family: var(--font-sans);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 /* Scrollbars — sidebar / tables */
@@ -44,4 +66,8 @@ body {
 }
 .scroll-pika::-webkit-scrollbar-track {
   background: transparent;
+}
+
+.dark .scroll-pika::-webkit-scrollbar-thumb {
+  background: #3d4a52;
 }

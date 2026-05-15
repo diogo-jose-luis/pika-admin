@@ -72,20 +72,20 @@ export function LiveMapView() {
 
   return (
     <div className="flex flex-col gap-4 xl:flex-row xl:items-stretch">
-      <div className="relative min-h-[min(72vh,560px)] min-w-0 flex-1 overflow-hidden rounded-2xl border border-pika-border bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-pika-border bg-white px-4 py-3">
+      <div className="relative min-h-[min(72vh,560px)] min-w-0 flex-1 overflow-hidden rounded-2xl border border-pika-border bg-pika-card shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-pika-border bg-pika-card px-4 py-3">
           <p className="text-sm font-semibold text-pika-ink md:text-base">Luanda - LD</p>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-pika-border bg-white px-3 py-2 text-xs font-semibold text-pika-ink shadow-sm transition hover:bg-pika-page md:text-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-pika-border bg-pika-card px-3 py-2 text-xs font-semibold text-pika-ink shadow-sm transition hover:bg-pika-page md:text-sm"
             >
               <FontAwesomeIcon icon={faRotateRight} className="text-pika-primary" />
               Atualizar
             </button>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-pika-border bg-white px-3 py-2 text-xs font-semibold text-pika-ink shadow-sm transition hover:bg-pika-page md:text-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-pika-border bg-pika-card px-3 py-2 text-xs font-semibold text-pika-ink shadow-sm transition hover:bg-pika-page md:text-sm"
             >
               <FontAwesomeIcon icon={faFilter} className="text-pika-muted" />
               Filtros
@@ -155,7 +155,7 @@ export function LiveMapView() {
             ))}
           </div>
 
-          <div className="pointer-events-auto absolute bottom-4 left-4 rounded-xl border border-pika-border bg-white/95 px-3 py-2.5 text-xs shadow-md backdrop-blur-sm">
+          <div className="pointer-events-auto absolute bottom-4 left-4 rounded-xl border border-pika-border bg-pika-card/95 px-3 py-2.5 text-xs shadow-md backdrop-blur-sm">
             <p className="mb-2 font-semibold text-pika-ink">Legenda</p>
             <div className="flex flex-col gap-2 text-pika-muted">
               <span className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export function LiveMapView() {
             </div>
           </div>
 
-          <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col overflow-hidden rounded-lg border border-pika-border bg-white shadow-md">
+          <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col overflow-hidden rounded-lg border border-pika-border bg-pika-card shadow-md">
             <button
               type="button"
               onClick={zoomIn}
@@ -195,7 +195,7 @@ export function LiveMapView() {
       </div>
 
       <aside className="flex w-full shrink-0 flex-col gap-4 xl:w-[320px]">
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <h2 className="text-base font-semibold text-pika-ink">Resumo</h2>
           <ul className="mt-4 space-y-4">
             <li className="flex items-center justify-between gap-3">
@@ -237,7 +237,7 @@ export function LiveMapView() {
           </ul>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-pika-border bg-white shadow-sm">
+        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-pika-border bg-pika-card shadow-sm">
           <div className="border-b border-pika-border px-5 py-4">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold text-pika-ink">Corridas Ativas</h2>

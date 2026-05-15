@@ -106,7 +106,7 @@ export function DriverValidationView() {
   return (
     <div className="space-y-5 md:space-y-6">
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <article className="flex items-start justify-between gap-4 rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <article className="flex items-start justify-between gap-4 rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="min-w-0">
             <p className="text-sm font-medium text-pika-muted">SLA Médio</p>
             <p className="mt-1 text-2xl font-bold tracking-tight text-pika-ink md:text-[1.65rem]">
@@ -124,7 +124,7 @@ export function DriverValidationView() {
           </div>
         </article>
 
-        <article className="flex items-start justify-between gap-4 rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <article className="flex items-start justify-between gap-4 rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="min-w-0">
             <p className="text-sm font-medium text-pika-muted">Aprovações Hoje</p>
             <p className="mt-1 text-2xl font-bold tracking-tight text-pika-ink md:text-[1.65rem]">
@@ -142,7 +142,7 @@ export function DriverValidationView() {
           </div>
         </article>
 
-        <article className="flex items-start justify-between gap-4 rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <article className="flex items-start justify-between gap-4 rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="min-w-0">
             <p className="text-sm font-medium text-pika-muted">Atrasados (&gt;48h)</p>
             <p className="mt-1 text-2xl font-bold tracking-tight text-pika-ink md:text-[1.65rem]">
@@ -159,7 +159,7 @@ export function DriverValidationView() {
         </article>
       </section>
 
-      <div className="rounded-2xl border border-pika-border bg-white p-4 shadow-sm md:p-6">
+      <div className="rounded-2xl border border-pika-border bg-pika-card p-4 shadow-sm md:p-6">
         <div className="mb-4 flex flex-col gap-3 lg:mb-6 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
           <div className="relative min-w-0 flex-1">
             <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-pika-muted">
@@ -170,7 +170,7 @@ export function DriverValidationView() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por passageiro, motorista ou ID..."
-              className="w-full rounded-xl border border-pika-border bg-white py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
+              className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
             />
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3">
@@ -182,7 +182,7 @@ export function DriverValidationView() {
                     e.target.value as (typeof QUEUE_FILTER_OPTIONS)[number],
                   )
                 }
-                className="w-full appearance-none rounded-xl border-2 border-pika-primary bg-white py-2.5 pl-3 pr-10 text-sm font-semibold text-pika-primary outline-none ring-pika-primary/20 transition hover:bg-pika-primary/5 focus:ring-2"
+                className="w-full appearance-none rounded-xl border-2 border-pika-primary bg-pika-card py-2.5 pl-3 pr-10 text-sm font-semibold text-pika-primary outline-none ring-pika-primary/20 transition hover:bg-pika-primary/5 focus:ring-2"
                 aria-label="Fila de validação"
               >
                 <option value="Todos">Todos</option>
@@ -196,7 +196,7 @@ export function DriverValidationView() {
             </div>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-white px-4 py-2.5 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white"
+              className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2.5 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white"
             >
               <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />
               Exportar
@@ -308,7 +308,7 @@ function ValidationTableRow({
     <tr
       className={cn(
         "border-b border-pika-border transition-colors last:border-b-0",
-        highlight ? "bg-slate-100/90" : "bg-white hover:bg-slate-50/80",
+        highlight ? "bg-pika-page/90" : "bg-pika-card hover:bg-pika-page/80",
       )}
     >
       <td className="px-4 py-3">

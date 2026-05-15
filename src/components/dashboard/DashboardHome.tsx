@@ -203,7 +203,7 @@ export function DashboardHome() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Total de Corridas</p>
@@ -218,7 +218,7 @@ export function DashboardHome() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Motoristas Ativos</p>
@@ -233,7 +233,7 @@ export function DashboardHome() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Passageiros Ativos</p>
@@ -250,7 +250,7 @@ export function DashboardHome() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Corridas Concluídas</p>
@@ -264,7 +264,7 @@ export function DashboardHome() {
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Corridas Canceladas</p>
@@ -278,7 +278,7 @@ export function DashboardHome() {
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Corridas em Andamento</p>
@@ -292,7 +292,7 @@ export function DashboardHome() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm md:p-6">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="mb-4 flex items-center justify-between gap-2">
             <h2 className="text-base font-semibold text-pika-ink">Receita Semanal</h2>
             <span className="text-xs text-pika-muted">Últimos 7 dias</span>
@@ -333,7 +333,7 @@ export function DashboardHome() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm md:p-6">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="mb-4 flex items-center justify-between gap-2">
             <h2 className="text-base font-semibold text-pika-ink">Corridas Por Horário</h2>
             <span className="text-xs text-pika-muted">Distribuição hoje</span>
@@ -357,7 +357,7 @@ export function DashboardHome() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border border-pika-border bg-white shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card shadow-sm">
           <div className="border-b border-pika-border px-5 py-4">
             <h2 className="text-base font-semibold text-pika-ink">Corridas Recentes</h2>
           </div>
@@ -417,7 +417,7 @@ export function DashboardHome() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card shadow-sm">
           <div className="border-b border-pika-border px-5 py-4">
             <h2 className="text-base font-semibold text-pika-ink">Top Motoristas</h2>
           </div>

@@ -15,7 +15,7 @@ export function SosView() {
       {SOS_ALERTS.map((alert) => (
         <article
           key={alert.id}
-          className="flex overflow-hidden rounded-2xl border border-red-200 bg-white shadow-sm"
+          className="flex overflow-hidden rounded-2xl border border-red-200 bg-pika-card shadow-sm"
         >
           <div className="w-1.5 shrink-0 bg-red-600" aria-hidden />
           <div className="min-w-0 flex-1 space-y-4 p-5">

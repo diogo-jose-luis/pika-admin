@@ -96,7 +96,7 @@ export function FinancialView() {
   return (
     <div className="space-y-5 md:space-y-6">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Receita Diária</p>
@@ -111,7 +111,7 @@ export function FinancialView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Receita Semanal</p>
@@ -126,7 +126,7 @@ export function FinancialView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Comissão Plataforma</p>
@@ -140,7 +140,7 @@ export function FinancialView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-pika-muted">Pagamentos Pendentes</p>
@@ -156,7 +156,7 @@ export function FinancialView() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm md:p-6">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-base font-semibold text-pika-ink">Receita Mensal</h2>
@@ -214,7 +214,7 @@ export function FinancialView() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-pika-border bg-white p-5 shadow-sm md:p-6">
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="mb-4">
             <h2 className="text-base font-semibold text-pika-ink">Receita Por Categoria</h2>
             <p className="text-xs text-pika-muted">Distribuição atual</p>
@@ -266,7 +266,7 @@ export function FinancialView() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-pika-border bg-white shadow-sm">
+      <section className="rounded-2xl border border-pika-border bg-pika-card shadow-sm">
         <div className="flex flex-col gap-2 border-b border-pika-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base font-semibold text-pika-ink">Transações Recentes</h2>
@@ -283,7 +283,7 @@ export function FinancialView() {
           {TRANSACTIONS.map((t) => (
             <li
               key={t.id}
-              className="flex items-center gap-4 px-5 py-4 transition hover:bg-white/80"
+              className="flex items-center gap-4 px-5 py-4 transition hover:bg-pika-card/80"
             >
               <div
                 className={cn(
