@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PassengerDetailsModal } from "@/components/passengers/PassengerDetailsModal";
+import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
+import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
   faCar,
+  faChevronDown,
   faChevronLeft,
   faChevronRight,
   faDollarSign,
@@ -17,11 +21,12 @@ import {
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  PASSENGERS_ALL,
-  PASSENGERS_SUMMARY,
+  passengerMatchesSearch,
   type PassengerRow,
   type PassengerStatus,
-} from "@/lib/passengers-mock";
+  type PassengersSummary,
+} from "@/lib/passengers";
+import { USER_ESTADO_BULK_OPTIONS } from "@/lib/users-estado";
 import { cn } from "@/lib/cn";
 
 const PAGE_SIZE = 30;
@@ -56,27 +61,84 @@ function StatusPill({ status }: { status: PassengerStatus }) {
   );
 }
 
+const EMPTY_SUMMARY: PassengersSummary = {
+  total: 0,
+  novos30d: 0,
+  avgRating: "—",
+  problemasAbertos: 0,
+};
+
 export function PassengersView() {
+  const [passengers, setPassengers] = useState<PassengerRow[]>([]);
+  const [summary, setSummary] = useState<PassengersSummary>(EMPTY_SUMMARY);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<(typeof STATUS_OPTIONS)[number]>("Todos");
   const [page, setPage] = useState(1);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
+  const [detailPassenger, setDetailPassenger] = useState<PassengerRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PassengerRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkEstado, setBulkEstado] = useState("1");
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  const loadPassengers = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setLoadError(null);
+
+    try {
+      const res = await fetch("/api/passageiros", { cache: "no-store" });
+      const data = (await res.json()) as {
+        passengers?: PassengerRow[];
+        summary?: PassengersSummary;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Erro ao carregar passageiros.");
+      }
+
+      setPassengers(data.passengers ?? []);
+      setSummary(data.summary ?? EMPTY_SUMMARY);
+      setSelectedIds(new Set());
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : "Erro ao carregar passageiros.",
+      );
+      setPassengers([]);
+      setSummary(EMPTY_SUMMARY);
+    } finally {
+      if (isRefresh) setRefreshing(false);
+      else setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPassengers();
+  }, [loadPassengers]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return PASSENGERS_ALL.filter((p) => {
+    return passengers.filter((p) => {
+      if (deletedIds.has(p.passengerId)) return false;
       if (statusFilter === "Ativo" && p.status !== "Ativo") return false;
       if (statusFilter === "Inativo" && p.status !== "Inativo") return false;
-      if (!q) return true;
-      const digits = q.replace(/\D/g, "");
-      return (
-        p.name.toLowerCase().includes(q) ||
-        p.passengerId.toLowerCase().includes(q) ||
-        p.email.toLowerCase().includes(q) ||
-        (digits.length > 0 && p.phone.replace(/\D/g, "").includes(digits))
-      );
+      return passengerMatchesSearch(p, search);
     });
-  }, [search, statusFilter]);
+  }, [passengers, search, statusFilter, deletedIds]);
+
+  const confirmDeletePassenger = useCallback(() => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.passengerId;
+    setDeletedIds((prev) => new Set(prev).add(id));
+    setDetailPassenger((current) =>
+      current?.passengerId === id ? null : current,
+    );
+    setDeleteTarget(null);
+  }, [deleteTarget]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
@@ -95,6 +157,58 @@ export function PassengersView() {
   const pages = pageNumbers(page, pageCount);
   const totalLabel = filtered.length.toLocaleString("pt-AO");
 
+  const pageIds = pageRows.map((r) => r.userDocId);
+  const allPageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+
+  const toggleSelectAllPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        for (const id of pageIds) next.delete(id);
+      } else {
+        for (const id of pageIds) next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleRow = (userDocId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userDocId)) next.delete(userDocId);
+      else next.add(userDocId);
+      return next;
+    });
+  };
+
+  const applyBulkEstado = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkSaving(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/passageiros/estado", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: [...selectedIds],
+          estado: Number(bulkEstado),
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Não foi possível atualizar o estado.");
+      }
+      await loadPassengers(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : "Não foi possível atualizar o estado.",
+      );
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-5 md:space-y-6">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -103,7 +217,7 @@ export function PassengersView() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Total Passageiros</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {PASSENGERS_SUMMARY.total.toLocaleString("pt-AO")}
+                {loading ? "…" : summary.total.toLocaleString("pt-AO")}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600">
@@ -117,13 +231,7 @@ export function PassengersView() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Novos (30 dias)</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {PASSENGERS_SUMMARY.novos30d.toLocaleString("pt-AO")}
-              </p>
-              <p className="mt-2 text-xs font-medium">
-                <span className="font-semibold text-pika-success">
-                  {PASSENGERS_SUMMARY.novosTrend}
-                </span>
-                <span className="text-pika-muted"> vs ontem</span>
+                {loading ? "…" : summary.novos30d.toLocaleString("pt-AO")}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
@@ -137,7 +245,7 @@ export function PassengersView() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Avaliação Média</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {PASSENGERS_SUMMARY.avgRating}
+                {loading ? "…" : summary.avgRating}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
@@ -151,7 +259,7 @@ export function PassengersView() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Problemas Abertos</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {PASSENGERS_SUMMARY.problemasAbertos}
+                {loading ? "…" : summary.problemasAbertos}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
@@ -171,7 +279,7 @@ export function PassengersView() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por passageiro, motorista ou ID..."
+              placeholder="Buscar por nome, e-mail, telefone, ID, corridas, gastos, avaliação..."
               className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
             />
           </div>
@@ -189,15 +297,73 @@ export function PassengersView() {
                 </option>
               ))}
             </select>
+            <RefreshDataButton
+              loading={refreshing}
+              onClick={() => void loadPassengers(true)}
+            />
           </div>
         </div>
       </div>
 
       <div className="rounded-2xl border border-pika-border bg-pika-card p-4 shadow-sm md:p-6">
+        {selectedIds.size > 0 ? (
+          <div className="mb-4 flex flex-col gap-3 rounded-xl border border-pika-primary/30 bg-pika-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-pika-ink">
+              {selectedIds.size} passageiro(s) selecionado(s)
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-[10rem]">
+                <select
+                  value={bulkEstado}
+                  onChange={(e) => setBulkEstado(e.target.value)}
+                  disabled={bulkSaving}
+                  className="w-full appearance-none rounded-xl border border-pika-border bg-pika-card py-2 pl-3 pr-9 text-sm font-medium text-pika-ink outline-none focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/20 disabled:opacity-50"
+                  aria-label="Novo estado"
+                >
+                  {USER_ESTADO_BULK_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={String(opt.value)}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center text-pika-muted">
+                  <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void applyBulkEstado()}
+                disabled={bulkSaving}
+                className="inline-flex items-center justify-center rounded-xl bg-pika-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {bulkSaving ? "A aplicar…" : "Aplicar estado"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                disabled={bulkSaving}
+                className="inline-flex items-center justify-center rounded-xl border border-pika-border bg-pika-card px-4 py-2 text-sm font-semibold text-pika-muted transition hover:text-pika-ink disabled:opacity-50"
+              >
+                Limpar
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-          <table className="min-w-[1080px] w-full border-collapse text-left text-sm">
+          <table className="min-w-[1120px] w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                <th className="w-10 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allPageSelected}
+                    onChange={toggleSelectAllPage}
+                    disabled={loading || pageRows.length === 0}
+                    aria-label="Selecionar todos nesta página"
+                    className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
+                  />
+                </th>
                 <th className="whitespace-nowrap px-4 py-3">Passageiro</th>
                 <th className="min-w-[200px] px-4 py-3">Contato</th>
                 <th className="whitespace-nowrap px-4 py-3">Corridas</th>
@@ -209,18 +375,37 @@ export function PassengersView() {
               </tr>
             </thead>
             <tbody>
-              {pageRows.map((row, idx) => (
-                <PassengerTableRow
-                  key={row.passengerId}
-                  row={row}
-                  zebra={(startIdx + idx) % 2 === 1}
-                />
-              ))}
+              {loading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <tr key={`sk-${i}`} className="border-b border-pika-border">
+                      <td colSpan={9} className="px-4 py-4">
+                        <div className="h-10 animate-pulse rounded-lg bg-pika-page" />
+                      </td>
+                    </tr>
+                  ))
+                : null}
+              {!loading
+                ? pageRows.map((row, idx) => (
+                    <PassengerTableRow
+                      key={row.passengerId}
+                      row={row}
+                      zebra={(startIdx + idx) % 2 === 1}
+                      selected={selectedIds.has(row.userDocId)}
+                      onToggleSelect={() => toggleRow(row.userDocId)}
+                      onViewDetails={() => setDetailPassenger(row)}
+                      onDelete={() => setDeleteTarget(row)}
+                    />
+                  ))
+                : null}
             </tbody>
           </table>
         </div>
 
-        {pageRows.length === 0 ? (
+        {loadError ? (
+          <p className="mt-6 text-center text-sm text-red-600">{loadError}</p>
+        ) : null}
+
+        {!loading && !loadError && pageRows.length === 0 ? (
           <p className="mt-6 text-center text-sm text-pika-muted">
             Nenhum passageiro encontrado com estes critérios.
           </p>
@@ -285,6 +470,19 @@ export function PassengersView() {
           </div>
         </div>
       </div>
+
+      {detailPassenger ? (
+        <PassengerDetailsModal
+          passenger={detailPassenger}
+          onClose={() => setDetailPassenger(null)}
+        />
+      ) : null}
+
+      <DeleteConfirmModal
+        open={deleteTarget !== null}
+        onConfirm={confirmDeletePassenger}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
@@ -292,18 +490,49 @@ export function PassengersView() {
 function PassengerTableRow({
   row,
   zebra,
+  selected,
+  onToggleSelect,
+  onViewDetails,
+  onDelete,
 }: {
   row: PassengerRow;
   zebra: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
+  onViewDetails: () => void;
+  onDelete: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [menuOpen]);
+
   return (
     <tr
       className={cn(
         "border-b border-pika-border transition-colors last:border-b-0",
-        zebra ? "bg-pika-page/90" : "bg-pika-card",
+        selected ? "bg-pika-primary/5" : zebra ? "bg-pika-page/90" : "bg-pika-card",
         "hover:bg-slate-100/80",
       )}
     >
+      <td className="px-3 py-3">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={`Selecionar ${row.name}`}
+          className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
+        />
+      </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
           <div
@@ -364,18 +593,45 @@ function PassengerTableRow({
         <div className="inline-flex items-center justify-center gap-1">
           <button
             type="button"
+            onClick={onViewDetails}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
             aria-label={`Ver ${row.name}`}
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
-            aria-label="Mais opções"
-          >
-            <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
-          </button>
+          <div ref={menuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              className={cn(
+                "inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink",
+                menuOpen && "bg-pika-page text-pika-ink",
+              )}
+              aria-label="Mais opções"
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+            >
+              <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
+            </button>
+            {menuOpen ? (
+              <div
+                role="menu"
+                className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-pika-border bg-pika-card p-2 shadow-lg"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDelete();
+                  }}
+                  className="w-full rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                >
+                  Eliminar Passageiro
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </td>
     </tr>

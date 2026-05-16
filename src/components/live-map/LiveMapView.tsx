@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCar,
+  faCheck,
   faExpand,
   faFilter,
   faGaugeHigh,
@@ -16,6 +17,24 @@ import {
 import { cn } from "@/lib/cn";
 
 type MapPoint = { x: number; y: number };
+
+const MAP_FILTER_OPTIONS = [
+  { id: "corridasAtivas", label: "Corridas Ativas" },
+  { id: "motoristasOnline", label: "Motoristas Online" },
+  { id: "emDeslocamento", label: "Em deslocamento" },
+  { id: "aguardandoPassageiro", label: "Aguardando Passageiro" },
+] as const;
+
+type MapFilterId = (typeof MAP_FILTER_OPTIONS)[number]["id"];
+
+type MapFilters = Record<MapFilterId, boolean>;
+
+const DEFAULT_FILTERS: MapFilters = {
+  corridasAtivas: true,
+  motoristasOnline: true,
+  emDeslocamento: true,
+  aguardandoPassageiro: true,
+};
 
 const ROUTES: { from: MapPoint; to: MapPoint }[] = [
   { from: { x: 18, y: 42 }, to: { x: 38, y: 58 } },
@@ -32,10 +51,15 @@ const RIDE_MARKERS: MapPoint[] = [
   { x: 32, y: 72 },
 ];
 
-const AVAILABLE_MARKERS: MapPoint[] = [
+/** Motoristas online (disponíveis) */
+const ONLINE_MARKERS: MapPoint[] = [
   { x: 28, y: 22 },
   { x: 82, y: 32 },
   { x: 44, y: 38 },
+];
+
+/** Motoristas à espera de passageiro */
+const WAITING_MARKERS: MapPoint[] = [
   { x: 88, y: 68 },
   { x: 14, y: 68 },
 ];
@@ -66,9 +90,29 @@ const ACTIVE_RIDES_LIST = [
 
 export function LiveMapView() {
   const [zoom, setZoom] = useState(1);
+  const [filters, setFilters] = useState<MapFilters>(DEFAULT_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
 
   const zoomIn = useCallback(() => setZoom((z) => Math.min(1.35, z + 0.1)), []);
   const zoomOut = useCallback(() => setZoom((z) => Math.max(0.85, z - 0.1)), []);
+
+  const activeFilterCount = MAP_FILTER_OPTIONS.filter((o) => filters[o.id]).length;
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (filtersRef.current && !filtersRef.current.contains(e.target as Node)) {
+        setFiltersOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [filtersOpen]);
+
+  const toggleFilter = (id: MapFilterId) => {
+    setFilters((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
     <div className="flex flex-col gap-4 xl:flex-row xl:items-stretch">
@@ -83,13 +127,62 @@ export function LiveMapView() {
               <FontAwesomeIcon icon={faRotateRight} className="text-pika-primary" />
               Atualizar
             </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-pika-border bg-pika-card px-3 py-2 text-xs font-semibold text-pika-ink shadow-sm transition hover:bg-pika-page md:text-sm"
-            >
-              <FontAwesomeIcon icon={faFilter} className="text-pika-muted" />
-              Filtros
-            </button>
+            <div ref={filtersRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((open) => !open)}
+                aria-expanded={filtersOpen}
+                aria-haspopup="listbox"
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl border bg-pika-card px-3 py-2 text-xs font-semibold shadow-sm transition md:text-sm",
+                  filtersOpen
+                    ? "border-pika-primary text-pika-primary ring-2 ring-pika-primary/20"
+                    : "border-pika-border text-pika-ink hover:bg-pika-page",
+                )}
+              >
+                <FontAwesomeIcon icon={faFilter} className="text-pika-primary" />
+                Filtros
+                <span className="rounded-full bg-pika-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-pika-primary">
+                  {activeFilterCount}
+                </span>
+              </button>
+
+              {filtersOpen ? (
+                <div
+                  role="listbox"
+                  aria-label="Filtros do mapa"
+                  className="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-pika-border bg-pika-card p-2 shadow-lg"
+                >
+                  {MAP_FILTER_OPTIONS.map((opt) => {
+                    const checked = filters[opt.id];
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        role="option"
+                        aria-selected={checked}
+                        onClick={() => toggleFilter(opt.id)}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-pika-ink transition hover:bg-pika-page"
+                      >
+                        <span
+                          className={cn(
+                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition",
+                            checked
+                              ? "border-pika-primary bg-pika-primary text-white"
+                              : "border-pika-border bg-pika-card",
+                          )}
+                        >
+                          {checked ? (
+                            <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
+                          ) : null}
+                        </span>
+                        <span className="font-medium">{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
             <button
               type="button"
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-pika-border text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
@@ -121,55 +214,68 @@ export function LiveMapView() {
               preserveAspectRatio="none"
               aria-hidden
             >
-              {ROUTES.map((r, i) => (
-                <line
-                  key={i}
-                  x1={r.from.x}
-                  y1={r.from.y}
-                  x2={r.to.x}
-                  y2={r.to.y}
-                  stroke="#38bdf8"
-                  strokeWidth={0.55}
-                  strokeDasharray="1.2 1.2"
-                  strokeLinecap="round"
-                  opacity={0.85}
-                />
-              ))}
+              {(filters.corridasAtivas || filters.emDeslocamento) &&
+                ROUTES.map((r, i) => (
+                  <line
+                    key={i}
+                    x1={r.from.x}
+                    y1={r.from.y}
+                    x2={r.to.x}
+                    y2={r.to.y}
+                    stroke="#38bdf8"
+                    strokeWidth={0.55}
+                    strokeDasharray="1.2 1.2"
+                    strokeLinecap="round"
+                    opacity={0.85}
+                  />
+                ))}
             </svg>
 
-            {RIDE_MARKERS.map((m, i) => (
-              <MapMarker
-                key={`ride-${i}`}
-                leftPct={m.x}
-                topPct={m.y}
-                variant="ride"
-              />
-            ))}
-            {AVAILABLE_MARKERS.map((m, i) => (
-              <MapMarker
-                key={`av-${i}`}
-                leftPct={m.x}
-                topPct={m.y}
-                variant="available"
-              />
-            ))}
+            {filters.corridasAtivas &&
+              RIDE_MARKERS.map((m, i) => (
+                <MapMarker
+                  key={`ride-${i}`}
+                  leftPct={m.x}
+                  topPct={m.y}
+                  variant="ride"
+                />
+              ))}
+            {filters.emDeslocamento &&
+              ROUTES.map((r, i) => (
+                <MapMarker
+                  key={`route-mid-${i}`}
+                  leftPct={(r.from.x + r.to.x) / 2}
+                  topPct={(r.from.y + r.to.y) / 2}
+                  variant="enRoute"
+                />
+              ))}
+            {filters.motoristasOnline &&
+              ONLINE_MARKERS.map((m, i) => (
+                <MapMarker
+                  key={`online-${i}`}
+                  leftPct={m.x}
+                  topPct={m.y}
+                  variant="online"
+                />
+              ))}
+            {filters.aguardandoPassageiro &&
+              WAITING_MARKERS.map((m, i) => (
+                <MapMarker
+                  key={`wait-${i}`}
+                  leftPct={m.x}
+                  topPct={m.y}
+                  variant="waiting"
+                />
+              ))}
           </div>
 
           <div className="pointer-events-auto absolute bottom-4 left-4 rounded-xl border border-pika-border bg-pika-card/95 px-3 py-2.5 text-xs shadow-md backdrop-blur-sm">
             <p className="mb-2 font-semibold text-pika-ink">Legenda</p>
             <div className="flex flex-col gap-2 text-pika-muted">
-              <span className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-pika-primary text-white shadow-sm">
-                  <FontAwesomeIcon icon={faCar} className="h-3 w-3" />
-                </span>
-                Corrida ativa
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">
-                  <FontAwesomeIcon icon={faCar} className="h-3 w-3" />
-                </span>
-                Disponível
-              </span>
+              <LegendItem color="bg-pika-primary" label="Corridas Ativas" />
+              <LegendItem color="bg-emerald-500" label="Motoristas Online" />
+              <LegendItem color="bg-sky-500" label="Em deslocamento" />
+              <LegendItem color="bg-orange-500" label="Aguardando Passageiro" />
             </div>
           </div>
 
@@ -271,6 +377,29 @@ export function LiveMapView() {
   );
 }
 
+const MARKER_STYLES = {
+  ride: "bg-pika-primary",
+  online: "bg-emerald-500",
+  enRoute: "bg-sky-500",
+  waiting: "bg-orange-500",
+} as const;
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span
+        className={cn(
+          "flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm",
+          color,
+        )}
+      >
+        <FontAwesomeIcon icon={faCar} className="h-3 w-3" />
+      </span>
+      {label}
+    </span>
+  );
+}
+
 function MapMarker({
   leftPct,
   topPct,
@@ -278,7 +407,7 @@ function MapMarker({
 }: {
   leftPct: number;
   topPct: number;
-  variant: "ride" | "available";
+  variant: keyof typeof MARKER_STYLES;
 }) {
   return (
     <div
@@ -288,7 +417,7 @@ function MapMarker({
       <span
         className={cn(
           "flex h-full w-full items-center justify-center rounded-full",
-          variant === "ride" ? "bg-pika-primary" : "bg-emerald-500",
+          MARKER_STYLES[variant],
         )}
       >
         <FontAwesomeIcon icon={faCar} className="h-3.5 w-3.5 md:h-4 md:w-4" />

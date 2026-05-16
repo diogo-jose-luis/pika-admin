@@ -18,6 +18,7 @@ import { titleForPath } from "@/lib/nav";
 import { ANGOLA_PROVINCES } from "@/lib/angola-provinces";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
+import { useAdminDate } from "@/components/providers/AdminDateProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { initialsFromDisplayName, type SessionUser } from "@/lib/session-user";
 import { cn } from "@/lib/cn";
@@ -32,29 +33,6 @@ type AdminHeaderProps = {
 const iconBtnClass =
   "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-pika-border text-pika-ink transition hover:bg-pika-page";
 
-function isoDateLocal(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function labelForIso(iso: string): string {
-  const today = isoDateLocal();
-  if (iso === today) return "Hoje";
-  const parts = iso.split("-").map(Number);
-  const y = parts[0];
-  const mo = parts[1];
-  const da = parts[2];
-  if (!y || !mo || !da) return "Hoje";
-  const d = new Date(y, mo - 1, da);
-  return d.toLocaleDateString("pt-AO", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export function AdminHeader({
   user,
   onMenuClick,
@@ -65,12 +43,11 @@ export function AdminHeader({
   const { title, subtitle } = titleForPath(pathname);
   const { theme, toggleTheme, mounted } = useTheme();
   const [province, setProvince] = useState("Luanda");
-  const [selectedIso, setSelectedIso] = useState(() => isoDateLocal());
+  const { selectedIso, setSelectedIso, dateLabel } = useAdminDate();
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const dateLabel = labelForIso(selectedIso);
   const initials = initialsFromDisplayName(user.displayName);
   const isDark = theme === "dark";
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AdminFooter } from "@/components/layout/AdminFooter";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
+import { AdminDateProvider } from "@/components/providers/AdminDateProvider";
 import type { SessionUser } from "@/lib/session-user";
 import { cn } from "@/lib/cn";
 import { SIDEBAR_COLLAPSED_KEY } from "@/lib/storage-keys";
@@ -78,16 +79,18 @@ export function AdminShell({ children, user }: AdminShellProps) {
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <AdminHeader
-          user={user}
-          sidebarCollapsed={collapsed}
-          onMenuClick={() => setMenuOpen(true)}
-          onSidebarToggle={toggleSidebarCollapsed}
-        />
-        <main className="scroll-pika min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-          {children}
-        </main>
-        <AdminFooter />
+        <AdminDateProvider>
+          <AdminHeader
+            user={user}
+            sidebarCollapsed={collapsed}
+            onMenuClick={() => setMenuOpen(true)}
+            onSidebarToggle={toggleSidebarCollapsed}
+          />
+          <main className="scroll-pika min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+            {children}
+          </main>
+          <AdminFooter />
+        </AdminDateProvider>
       </div>
     </div>
   );

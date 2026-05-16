@@ -54,6 +54,10 @@ const headerOverrides: Record<string, { title: string; subtitle: string }> = {
     title: "Financeiro",
     subtitle: "Acompanhe receitas e pagamentos",
   },
+  "/financeiro/transacoes": {
+    title: "Transações Recentes",
+    subtitle: "Últimas movimentações",
+  },
   "/motoristas": {
     title: "Gestão de Motoristas",
     subtitle: "Gerencie todos os motoristas",
@@ -65,7 +69,7 @@ const headerOverrides: Record<string, { title: string; subtitle: string }> = {
   },
   "/validacao-motoristas": {
     title: "Validação de Motoristas",
-    subtitle: "Gerencie as solicitações de novos motoristas",
+    subtitle: "Acompanhe todas as corridas",
   },
   "/sos": {
     title: "SOS",
@@ -78,6 +82,13 @@ const headerOverrides: Record<string, { title: string; subtitle: string }> = {
 };
 
 export function titleForPath(pathname: string): { title: string; subtitle: string } {
+  if (pathname.startsWith("/validacao-motoristas/") && pathname !== "/validacao-motoristas") {
+    return {
+      title: "Validação de Motoristas",
+      subtitle: "Acompanhe todas as corridas",
+    };
+  }
+
   const override = headerOverrides[pathname];
   if (override) {
     return override;

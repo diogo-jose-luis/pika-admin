@@ -34,7 +34,7 @@ export function LoginForm() {
         </div>
         <div className="mb-6 hidden lg:block">
           <p className="text-sm font-semibold text-pika-primary">Entrar</p>
-          <h1 className="mt-1 text-2xl font-bold text-pika-ink">Painel administrativo</h1>
+          <h1 className="mt-1 text-2xl font-bold text-pika-ink">Painel Administrativo</h1>
           <p className="mt-2 text-sm text-pika-muted">
             Introduza as suas credenciais para continuar.
           </p>

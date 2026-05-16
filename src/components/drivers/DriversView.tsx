@@ -1,9 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DriverDetailsModal } from "@/components/drivers/DriverDetailsModal";
+import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
+import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCar,
+  faChevronDown,
   faCircleCheck,
   faDownload,
   faEllipsisVertical,
@@ -16,11 +20,12 @@ import {
   faUserMinus,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  DRIVERS_MOCK,
-  DRIVERS_SUMMARY,
+  driverMatchesSearch,
   type DriverCard,
   type DriverStatus,
-} from "@/lib/drivers-mock";
+  type DriversSummary,
+} from "@/lib/drivers";
+import { USER_ESTADO_BULK_OPTIONS } from "@/lib/users-estado";
 import { cn } from "@/lib/cn";
 
 const DOC_OPTIONS = ["Todos", "Completa", "Pendente"] as const;
@@ -40,26 +45,135 @@ function DriverStatusBadge({ status }: { status: DriverStatus }) {
   );
 }
 
+const EMPTY_SUMMARY: DriversSummary = {
+  total: 0,
+  active: 0,
+  inactive: 0,
+  avgRating: "—",
+};
+
 export function DriversView() {
+  const [drivers, setDrivers] = useState<DriverCard[]>([]);
+  const [summary, setSummary] = useState<DriversSummary>(EMPTY_SUMMARY);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"Todos" | DriverStatus>("Todos");
   const [docFilter, setDocFilter] = useState<(typeof DOC_OPTIONS)[number]>("Todos");
+  const [detailDriver, setDetailDriver] = useState<DriverCard | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DriverCard | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkEstado, setBulkEstado] = useState("1");
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  const loadDrivers = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setLoadError(null);
+
+    try {
+      const res = await fetch("/api/motoristas", { cache: "no-store" });
+      const data = (await res.json()) as {
+        drivers?: DriverCard[];
+        summary?: DriversSummary;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Erro ao carregar motoristas.");
+      }
+
+      setDrivers(data.drivers ?? []);
+      setSummary(data.summary ?? EMPTY_SUMMARY);
+      setSelectedIds(new Set());
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : "Erro ao carregar motoristas.",
+      );
+      setDrivers([]);
+      setSummary(EMPTY_SUMMARY);
+    } finally {
+      if (isRefresh) setRefreshing(false);
+      else setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadDrivers();
+  }, [loadDrivers]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return DRIVERS_MOCK.filter((d) => {
+    return drivers.filter((d) => {
       if (statusFilter !== "Todos" && d.status !== statusFilter) return false;
       if (docFilter === "Completa" && !d.verified) return false;
       if (docFilter === "Pendente" && d.verified) return false;
-      if (!q) return true;
-      return (
-        d.name.toLowerCase().includes(q) ||
-        d.id.toLowerCase().includes(q) ||
-        d.email.toLowerCase().includes(q) ||
-        d.phone.replace(/\s/g, "").includes(q.replace(/\s/g, ""))
-      );
+      return driverMatchesSearch(d, search);
     });
-  }, [search, statusFilter, docFilter]);
+  }, [drivers, search, statusFilter, docFilter]);
+
+  const visibleIds = useMemo(
+    () => filtered.map((d) => d.userDocId),
+    [filtered],
+  );
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+
+  const toggleSelectAllVisible = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        for (const id of visibleIds) next.delete(id);
+      } else {
+        for (const id of visibleIds) next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelect = (userDocId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userDocId)) next.delete(userDocId);
+      else next.add(userDocId);
+      return next;
+    });
+  };
+
+  const applyBulkEstado = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkSaving(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/motoristas/estado", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: [...selectedIds],
+          estado: Number(bulkEstado),
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Não foi possível atualizar o estado.");
+      }
+      await loadDrivers(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : "Não foi possível atualizar o estado.",
+      );
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const confirmDeleteDriver = useCallback(() => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDrivers((prev) => prev.filter((d) => d.id !== id));
+    setDetailDriver((current) => (current?.id === id ? null : current));
+    setDeleteTarget(null);
+  }, [deleteTarget]);
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -69,7 +183,7 @@ export function DriversView() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Total Motoristas</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {DRIVERS_SUMMARY.total}
+                {loading ? "…" : summary.total}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600">
@@ -83,10 +197,7 @@ export function DriversView() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Ativos</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {DRIVERS_SUMMARY.active}
-              </p>
-              <p className="mt-2 text-xs font-semibold text-pika-success">
-                {DRIVERS_SUMMARY.activeTrend} vs ontem
+                {loading ? "…" : summary.active}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
@@ -100,7 +211,7 @@ export function DriversView() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Inativos</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {DRIVERS_SUMMARY.inactive}
+                {loading ? "…" : summary.inactive}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
@@ -114,7 +225,7 @@ export function DriversView() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Avaliação Média</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {DRIVERS_SUMMARY.avgRating}
+                {loading ? "…" : summary.avgRating}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
@@ -134,7 +245,7 @@ export function DriversView() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por passageiro, motorista ou ID..."
+              placeholder="Buscar por nome, e-mail, telefone, viatura, matrícula, ID..."
               className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
             />
           </div>
@@ -163,6 +274,10 @@ export function DriversView() {
                 </option>
               ))}
             </select>
+            <RefreshDataButton
+              loading={refreshing}
+              onClick={() => void loadDrivers(true)}
+            />
             <button
               type="button"
               className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2.5 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white"
@@ -174,25 +289,172 @@ export function DriversView() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {loadError ? (
+        <p className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700 shadow-sm">
+          {loadError}
+        </p>
+      ) : null}
+
+      {!loading && filtered.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-pika-border bg-pika-page/90 px-4 py-3">
+          <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-pika-ink">
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              onChange={toggleSelectAllVisible}
+              className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
+            />
+            Selecionar visíveis ({filtered.length})
+          </label>
+        </div>
+      ) : null}
+
+      {selectedIds.size > 0 ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-pika-primary/30 bg-pika-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-pika-ink">
+            {selectedIds.size} motorista(s) selecionado(s)
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[10rem]">
+              <select
+                value={bulkEstado}
+                onChange={(e) => setBulkEstado(e.target.value)}
+                disabled={bulkSaving}
+                className="w-full appearance-none rounded-xl border border-pika-border bg-pika-card py-2 pl-3 pr-9 text-sm font-medium text-pika-ink outline-none focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/20 disabled:opacity-50"
+                aria-label="Novo estado"
+              >
+                {USER_ESTADO_BULK_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={String(opt.value)}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center text-pika-muted">
+                <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void applyBulkEstado()}
+              disabled={bulkSaving}
+              className="inline-flex items-center justify-center rounded-xl bg-pika-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {bulkSaving ? "A aplicar…" : "Aplicar estado"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              disabled={bulkSaving}
+              className="inline-flex items-center justify-center rounded-xl border border-pika-border bg-pika-card px-4 py-2 text-sm font-semibold text-pika-muted transition hover:text-pika-ink disabled:opacity-50"
+            >
+              Limpar
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-64 animate-pulse rounded-2xl border border-pika-border bg-pika-card"
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {!loading && !loadError && filtered.length === 0 ? (
         <p className="rounded-2xl border border-pika-border bg-pika-card p-8 text-center text-sm text-pika-muted shadow-sm">
           Nenhum motorista encontrado com estes critérios.
         </p>
-      ) : (
+      ) : null}
+
+      {!loading && !loadError && filtered.length > 0 ? (
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((driver) => (
-            <DriverCard key={driver.id} driver={driver} />
+            <DriverCard
+              key={driver.userDocId}
+              driver={driver}
+              selected={selectedIds.has(driver.userDocId)}
+              onToggleSelect={() => toggleSelect(driver.userDocId)}
+              onViewDetails={() => setDetailDriver(driver)}
+              onDelete={() => setDeleteTarget(driver)}
+            />
           ))}
         </section>
-      )}
+      ) : null}
+
+      {detailDriver ? (
+        <DriverDetailsModal
+          driver={detailDriver}
+          onClose={() => setDetailDriver(null)}
+        />
+      ) : null}
+
+      <DeleteConfirmModal
+        open={deleteTarget !== null}
+        onConfirm={confirmDeleteDriver}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
 
-function DriverCard({ driver }: { driver: DriverCard }) {
+function DriverCard({
+  driver,
+  selected,
+  onToggleSelect,
+  onViewDetails,
+  onDelete,
+}: {
+  driver: DriverCard;
+  selected: boolean;
+  onToggleSelect: () => void;
+  onViewDetails: () => void;
+  onDelete: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [menuOpen]);
+
+  const openDetails = () => {
+    setMenuOpen(false);
+    onViewDetails();
+  };
+
+  const deleteDriver = () => {
+    setMenuOpen(false);
+    onDelete();
+  };
+
   return (
-    <article className="flex flex-col rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
+    <article
+      className={cn(
+        "relative flex flex-col rounded-2xl border bg-pika-card p-5 shadow-sm transition-shadow hover:shadow-md",
+        selected ? "border-pika-primary ring-2 ring-pika-primary/20" : "border-pika-border",
+      )}
+    >
+      <label className="absolute left-3 top-3 z-10 flex cursor-pointer items-center">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={`Selecionar ${driver.name}`}
+          className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
+        />
+      </label>
+      <div className="flex items-start justify-between gap-3 pl-7">
         <div className="flex min-w-0 flex-1 gap-3">
           <div
             className={cn(
@@ -218,19 +480,49 @@ function DriverCard({ driver }: { driver: DriverCard }) {
             <p className="mt-0.5 text-xs font-medium text-pika-muted">{driver.id}</p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div ref={menuRef} className="relative flex shrink-0 items-center gap-2">
           <DriverStatusBadge status={driver.status} />
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
+            onClick={() => setMenuOpen((open) => !open)}
+            className={cn(
+              "inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink",
+              menuOpen && "bg-pika-page text-pika-ink",
+            )}
             aria-label="Mais opções"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
           >
             <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
           </button>
+
+          {menuOpen ? (
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-pika-border bg-pika-card p-2 shadow-lg"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={openDetails}
+                className="w-full rounded-lg bg-pika-primary px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-pika-primary-dark"
+              >
+                Ver detalhes
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={deleteDriver}
+                className="mt-1 w-full rounded-lg px-3 py-2 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
+              >
+                Eliminar Motorista
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <ul className="mt-4 space-y-2.5 text-sm text-pika-ink">
+      <ul className="mt-4 space-y-2.5 pl-7 text-sm text-pika-ink">
         <li className="flex items-start gap-2.5 text-pika-muted">
           <FontAwesomeIcon
             icon={faEnvelope}

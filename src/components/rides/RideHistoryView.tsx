@@ -1,23 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faChevronRight,
   faCircle,
-  faClock,
   faDownload,
   faEye,
   faLocationDot,
   faMagnifyingGlass,
-  faDollarSign,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  RIDE_HISTORY_ALL,
-  type RideRow,
-  type RideStatus,
-} from "@/lib/ride-history-mock";
+import { rideMatchesSearch, type RideRow, type RideStatus } from "@/lib/ride-history";
 import { cn } from "@/lib/cn";
 
 const PAGE_SIZE = 12;
@@ -61,27 +56,54 @@ function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
 }
 
 export function RideHistoryView() {
+  const [rides, setRides] = useState<RideRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<(typeof STATUS_FILTER_OPTIONS)[number]>("Todos");
   const [page, setPage] = useState(1);
 
+  const loadRides = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setLoadError(null);
+
+    try {
+      const res = await fetch("/api/corridas/historico", {
+        cache: "no-store",
+      });
+      const data = (await res.json()) as { rows?: RideRow[]; error?: string };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Erro ao carregar corridas.");
+      }
+
+      setRides(data.rows ?? []);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : "Erro ao carregar corridas.",
+      );
+      setRides([]);
+    } finally {
+      if (isRefresh) setRefreshing(false);
+      else setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRides();
+  }, [loadRides]);
+
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return RIDE_HISTORY_ALL.filter((r) => {
+    return rides.filter((r) => {
       const matchStatus =
         statusFilter === "Todos" || r.status === statusFilter;
       if (!matchStatus) return false;
-      if (!q) return true;
-      const idStr = String(r.id);
-      return (
-        r.passenger.toLowerCase().includes(q) ||
-        r.driver.toLowerCase().includes(q) ||
-        idStr.includes(q) ||
-        `#${idStr}`.toLowerCase().includes(q)
-      );
+      return rideMatchesSearch(r, search);
     });
-  }, [search, statusFilter]);
+  }, [rides, search, statusFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
@@ -110,7 +132,7 @@ export function RideHistoryView() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por passageiro, motorista ou ID..."
+            placeholder="Buscar por ID, passageiro, motorista, trajeto, valor, status, data..."
             className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
           />
         </div>
@@ -128,6 +150,10 @@ export function RideHistoryView() {
               </option>
             ))}
           </select>
+          <RefreshDataButton
+            loading={refreshing}
+            onClick={() => void loadRides(true)}
+          />
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2.5 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white"
@@ -155,14 +181,28 @@ export function RideHistoryView() {
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((row, idx) => (
-              <RideTableRow key={row.id} row={row} highlight={idx === 1} />
-            ))}
+            {loading
+              ? Array.from({ length: 6 }, (_, i) => (
+                  <tr key={`sk-${i}`} className="border-b border-pika-border">
+                    {Array.from({ length: 10 }, (_, j) => (
+                      <td key={j} className="px-4 py-3">
+                        <div className="h-4 w-full max-w-[8rem] animate-pulse rounded bg-pika-page" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              : pageRows.map((row) => (
+                  <RideTableRow key={`${row.id}-${row.dateLabel}`} row={row} />
+                ))}
           </tbody>
         </table>
       </div>
 
-      {pageRows.length === 0 ? (
+      {loadError ? (
+        <p className="mt-6 text-center text-sm text-red-600">{loadError}</p>
+      ) : null}
+
+      {!loading && !loadError && pageRows.length === 0 ? (
         <p className="mt-6 text-center text-sm text-pika-muted">
           Nenhuma corrida encontrada com estes critérios.
         </p>
@@ -234,14 +274,9 @@ export function RideHistoryView() {
   );
 }
 
-function RideTableRow({ row, highlight }: { row: RideRow; highlight: boolean }) {
+function RideTableRow({ row }: { row: RideRow }) {
   return (
-    <tr
-      className={cn(
-        "border-b border-pika-border transition-colors last:border-b-0",
-        highlight ? "bg-pika-page/90" : "bg-pika-card hover:bg-pika-page/80",
-      )}
-    >
+    <tr className="border-b border-pika-border bg-pika-card transition-colors last:border-b-0 hover:bg-pika-page/80">
       <td className="whitespace-nowrap px-4 py-3 font-medium text-pika-ink">
         #{row.id}
       </td>
@@ -267,23 +302,14 @@ function RideTableRow({ row, highlight }: { row: RideRow; highlight: boolean }) 
           </span>
         </div>
       </td>
-      <td className="whitespace-nowrap px-4 py-3">
-        <span className="inline-flex items-center gap-2 font-semibold text-pika-ink">
-          <FontAwesomeIcon
-            icon={faDollarSign}
-            className="h-4 w-4 text-pika-success"
-          />
-          {row.valueLabel}
-        </span>
+      <td className="whitespace-nowrap px-4 py-3 font-semibold text-pika-ink">
+        {row.valueLabel}
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">
-        {row.distanceLabel}
+        {row.distanceLabel || "\u00a0"}
       </td>
-      <td className="whitespace-nowrap px-4 py-3">
-        <span className="inline-flex items-center gap-2 text-pika-muted">
-          <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5 text-pika-primary" />
-          {row.durationLabel}
-        </span>
+      <td className="whitespace-nowrap px-4 py-3 text-pika-muted">
+        {row.durationLabel || "\u00a0"}
       </td>
       <td className="whitespace-nowrap px-4 py-3">
         <StatusPill status={row.status} />

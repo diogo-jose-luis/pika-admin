@@ -15,6 +15,7 @@ import {
 import { useId, useState } from "react";
 import { cn } from "@/lib/cn";
 import { PriceSimulatorCard } from "@/components/settings/PriceSimulatorCard";
+import { PricesCategoriesTab } from "@/components/settings/PricesCategoriesTab";
 
 type TabId = "fees" | "users" | "notifications" | "rules" | "prices";
 
@@ -55,12 +56,6 @@ const ADMIN_USERS = [
     role: "Financeiro",
     active: false,
   },
-];
-
-const COMPARISON_ROWS = [
-  { name: "Pika Padrão" as const, highlight: false },
-  { name: "SUV" as const, highlight: true },
-  { name: "VIP" as const, highlight: false },
 ];
 
 function SettingsSwitch({
@@ -141,10 +136,6 @@ export function SettingsView() {
   const [secShare, setSecShare] = useState(true);
   const [secAudio, setSecAudio] = useState(false);
 
-  const [catPikaOn, setCatPikaOn] = useState(true);
-  const [catSuvOn, setCatSuvOn] = useState(true);
-  const [catVipOn, setCatVipOn] = useState(true);
-
   const n1 = useId();
   const n2 = useId();
   const n3 = useId();
@@ -212,16 +203,7 @@ export function SettingsView() {
           ids={[s1, s2, s3, s4]}
         />
       ) : null}
-      {tab === "prices" ? (
-        <PricesTab
-          catPikaOn={catPikaOn}
-          setCatPikaOn={setCatPikaOn}
-          catSuvOn={catSuvOn}
-          setCatSuvOn={setCatSuvOn}
-          catVipOn={catVipOn}
-          setCatVipOn={setCatVipOn}
-        />
-      ) : null}
+      {tab === "prices" ? <PricesCategoriesTab /> : null}
     </div>
   );
 }
@@ -713,178 +695,4 @@ function RulesTab({
     </div>
   );
 }
-
-function PricesTab({
-  catPikaOn,
-  setCatPikaOn,
-  catSuvOn,
-  setCatSuvOn,
-  catVipOn,
-  setCatVipOn,
-}: {
-  catPikaOn: boolean;
-  setCatPikaOn: (v: boolean) => void;
-  catSuvOn: boolean;
-  setCatSuvOn: (v: boolean) => void;
-  catVipOn: boolean;
-  setCatVipOn: (v: boolean) => void;
-}) {
-  const cards: {
-    name: "Pika Padrão" | "SUV" | "VIP";
-    on: boolean;
-    setOn: (v: boolean) => void;
-  }[] = [
-    { name: "Pika Padrão", on: catPikaOn, setOn: setCatPikaOn },
-    { name: "SUV", on: catSuvOn, setOn: setCatSuvOn },
-    { name: "VIP", on: catVipOn, setOn: setCatVipOn },
-  ];
-
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-pika-ink md:text-xl">
-            Preços e Categorias
-          </h2>
-          <p className="mt-1 max-w-xl text-sm text-pika-muted">
-            Configure tarifas em tempo real — alterações aplicadas instantaneamente
-          </p>
-        </div>
-        <button
-          type="button"
-          className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark sm:self-auto"
-        >
-          + Nova Categoria
-        </button>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-3">
-        {cards.map((cat) => {
-          const headingId = `price-cat-${cat.name.replace(/\s+/g, "-")}`;
-          return (
-            <WhiteCard key={cat.name} className="flex flex-col">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 id={headingId} className="text-base font-bold text-pika-ink">
-                    {cat.name}
-                  </h3>
-                  <span className="mt-2 inline-flex rounded-full bg-emerald-500 px-2.5 py-0.5 text-xs font-bold text-white">
-                    Ativo
-                  </span>
-                </div>
-                <SettingsSwitch
-                  checked={cat.on}
-                  onChange={cat.setOn}
-                  labelledBy={headingId}
-                />
-              </div>
-
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-pika-muted">
-                    Base
-                  </p>
-                  <input
-                    type="text"
-                    defaultValue="Kz 1.500"
-                    className={inputClass("mt-1 bg-pika-card")}
-                  />
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-pika-muted">
-                    Mínima
-                  </p>
-                  <input
-                    type="text"
-                    defaultValue="Kz 2.000"
-                    className={inputClass("mt-1 bg-pika-card")}
-                  />
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-pika-muted">
-                    Por km
-                  </p>
-                  <input
-                    type="text"
-                    defaultValue="Kz 1.500"
-                    className={inputClass("mt-1 bg-pika-card")}
-                  />
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-pika-muted">
-                    Por min
-                  </p>
-                  <input
-                    type="text"
-                    defaultValue="Kz 2.000"
-                    className={inputClass("mt-1 bg-pika-card")}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-xl border-2 border-orange-200 bg-orange-50/40 px-4 py-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-bold text-orange-700">
-                    Multiplicador x1.0
-                  </span>
-                  <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-800">
-                    Normal
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-pika-primary py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark"
-              >
-                <FontAwesomeIcon icon={faPen} className="h-4 w-4" />
-                Salvar
-              </button>
-            </WhiteCard>
-          );
-        })}
-      </div>
-
-      <WhiteCard>
-        <h3 className="text-base font-bold text-pika-ink md:text-lg">
-          Comparativo de tarifas
-        </h3>
-        <p className="mt-1 text-sm text-pika-muted">
-          Simulação para corrida de 10 km — 20 minutos
-        </p>
-        <div className="mt-5 overflow-x-auto scroll-pika">
-          <table className="min-w-[640px] w-full border-collapse text-sm">
-            <thead>
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-pika-muted">
-                <th className="pb-3 pr-4 font-semibold">Categoria</th>
-                <th className="pb-3 pr-4 font-semibold">Base</th>
-                <th className="pb-3 pr-4 font-semibold">Distância</th>
-                <th className="pb-3 pr-4 font-semibold">Tempo</th>
-                <th className="pb-3 pr-4 font-semibold">Multiplicador</th>
-                <th className="pb-3 font-semibold">Total Est.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARISON_ROWS.map((row) => (
-                <tr
-                  key={row.name}
-                  className={cn(
-                    "border-t border-pika-border",
-                    row.highlight ? "bg-pika-page/90" : "bg-transparent",
-                  )}
-                >
-                  <td className="py-3 pr-4 font-medium text-pika-ink">{row.name}</td>
-                  <td className="py-3 pr-4 text-pika-ink">Kz 1.500</td>
-                  <td className="py-3 pr-4 text-pika-ink">Kz 1.500</td>
-                  <td className="py-3 pr-4 text-pika-ink">Kz 2.000</td>
-                  <td className="py-3 pr-4 text-pika-ink">Kz 6.000</td>
-                  <td className="py-3 font-bold text-pika-ink">Kz 10.000</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </WhiteCard>
-    </div>
-  );
-}
+
