@@ -35,6 +35,7 @@ yarn-error.log*
 
 # Firebase service account (secrets)
 pika-a83e1-firebase-adminsdk-*.json
+firebase-env-oneline.txt
 
 # vercel
 .vercel

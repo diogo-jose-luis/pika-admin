@@ -11,13 +11,13 @@ export default function LoginPage() {
         <div className="relative flex flex-1 flex-col justify-center px-8 py-12 text-white lg:px-14">
           <div className="absolute inset-0 bg-gradient-to-br from-pika-primary/75 to-pika-primary-dark/55 lg:from-pika-primary/50 lg:to-transparent" />
           <div className="relative mx-auto max-w-md lg:mx-0">
-            <div className="inline-flex rounded-2xl bg-pika-card/95 px-5 py-3 shadow-md shadow-black/10">
+            <div className="inline-flex rounded-2xl bg-pika-card/95 px-9 py-6 shadow-md shadow-black/10">
               <Image
                 src="/logo_pika.png"
                 alt="Pika"
-                width={200}
-                height={64}
-                className="h-12 w-auto object-contain"
+                width={360}
+                height={115}
+                className="h-28 w-auto object-contain sm:h-36"
                 priority
               />
             </div>

@@ -5,8 +5,12 @@ import admin from "firebase-admin";
 const SERVICE_ACCOUNT_FILENAME =
   "pika-a83e1-firebase-adminsdk-fbsvc-01bd6a9bad.json";
 
+function normalizeEnvValue(value: string): string {
+  return value.replace(/^\uFEFF/, "").trim();
+}
+
 function parseServiceAccountJson(raw: string): admin.ServiceAccount {
-  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  const parsed = JSON.parse(normalizeEnvValue(raw)) as Record<string, unknown>;
   const hasProject =
     typeof parsed.project_id === "string" || typeof parsed.projectId === "string";
   const hasKey =
@@ -20,14 +24,16 @@ function parseServiceAccountJson(raw: string): admin.ServiceAccount {
 }
 
 function loadServiceAccountFromEnv(): admin.ServiceAccount | null {
-  const json = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
+  const json = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (json) {
     return parseServiceAccountJson(json);
   }
 
-  const base64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64?.trim();
+  const base64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
   if (base64) {
-    const decoded = Buffer.from(base64, "base64").toString("utf8");
+    const decoded = Buffer.from(normalizeEnvValue(base64), "base64").toString(
+      "utf8",
+    );
     return parseServiceAccountJson(decoded);
   }
 
@@ -51,7 +57,7 @@ function loadServiceAccount(): admin.ServiceAccount {
     return loadServiceAccountFromFile();
   } catch {
     throw new Error(
-      "Credenciais Firebase em falta. Em produção (Vercel), defina a variável de ambiente FIREBASE_SERVICE_ACCOUNT com o JSON completo da service account. Localmente, use o ficheiro JSON ou a mesma variável.",
+      "Credenciais Firebase em falta. Na Vercel, use FIREBASE_SERVICE_ACCOUNT_BASE64 (recomendado: node scripts/firebase-env-base64.mjs). Localmente, use o ficheiro JSON na raiz do projeto.",
     );
   }
 }

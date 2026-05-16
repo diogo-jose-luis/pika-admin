@@ -26,9 +26,9 @@ export function LoginForm() {
           <Image
             src="/logo_pika.png"
             alt="Pika"
-            width={160}
-            height={48}
-            className="h-10 w-auto object-contain"
+            width={300}
+            height={90}
+            className="h-24 w-auto object-contain"
             priority
           />
         </div>
