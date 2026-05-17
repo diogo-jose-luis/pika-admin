@@ -12,7 +12,12 @@ import {
   faLocationDot,
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
-import { rideMatchesSearch, type RideRow, type RideStatus } from "@/lib/ride-history";
+import {
+  rideMatchesDateRange,
+  rideMatchesSearch,
+  type RideRow,
+  type RideStatus,
+} from "@/lib/ride-history";
 import { cn } from "@/lib/cn";
 
 const PAGE_SIZE = 12;
@@ -63,6 +68,8 @@ export function RideHistoryView() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<(typeof STATUS_FILTER_OPTIONS)[number]>("Todos");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
 
   const loadRides = useCallback(async (isRefresh = false) => {
@@ -101,15 +108,16 @@ export function RideHistoryView() {
       const matchStatus =
         statusFilter === "Todos" || r.status === statusFilter;
       if (!matchStatus) return false;
+      if (!rideMatchesDateRange(r, dateFrom, dateTo)) return false;
       return rideMatchesSearch(r, search);
     });
-  }, [rides, search, statusFilter]);
+  }, [rides, search, statusFilter, dateFrom, dateTo]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
@@ -137,6 +145,32 @@ export function RideHistoryView() {
           />
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3">
+          <label className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+              De
+            </span>
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
+              aria-label="Data inicial"
+            />
+          </label>
+          <label className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+              Até
+            </span>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
+              aria-label="Data final"
+            />
+          </label>
           <select
             value={statusFilter}
             onChange={(e) =>

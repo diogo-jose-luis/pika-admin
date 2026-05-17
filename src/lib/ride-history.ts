@@ -13,6 +13,8 @@ export type RideRow = {
   durationLabel: string;
   status: RideStatus;
   dateLabel: string;
+  /** Timestamp em ms para filtros por intervalo; null se a data for inválida. */
+  dateMs: number | null;
 };
 
 export type CorridaFakeDoc = {
@@ -41,8 +43,8 @@ function pad2(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-export function formatRideDate(value: unknown): string {
-  if (value == null) return "";
+export function parseRideDateToMs(value: unknown): number | null {
+  if (value == null) return null;
 
   let date: Date | null = null;
 
@@ -63,9 +65,49 @@ export function formatRideDate(value: unknown): string {
     if (!Number.isNaN(parsed.getTime())) date = parsed;
   }
 
-  if (!date) return "";
+  if (!date || Number.isNaN(date.getTime())) return null;
+  return date.getTime();
+}
 
+function startOfDayFromIso(iso: string): number | null {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+}
+
+function endOfDayFromIso(iso: string): number | null {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+}
+
+export function formatRideDate(value: unknown): string {
+  const ms = parseRideDateToMs(value);
+  if (ms == null) return "";
+
+  const date = new Date(ms);
   return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
+export function rideMatchesDateRange(
+  row: RideRow,
+  fromIso: string,
+  toIso: string,
+): boolean {
+  if (!fromIso.trim() && !toIso.trim()) return true;
+  if (row.dateMs == null) return false;
+
+  if (fromIso.trim()) {
+    const fromStart = startOfDayFromIso(fromIso.trim());
+    if (fromStart == null || row.dateMs < fromStart) return false;
+  }
+
+  if (toIso.trim()) {
+    const toEnd = endOfDayFromIso(toIso.trim());
+    if (toEnd == null || row.dateMs > toEnd) return false;
+  }
+
+  return true;
 }
 
 export function rideMatchesSearch(row: RideRow, query: string): boolean {
@@ -110,5 +152,6 @@ export function mapCorridaFakeToRideRow(
     durationLabel: "",
     status: mapEstadoToStatus(data.estado),
     dateLabel: formatRideDate(data.data),
+    dateMs: parseRideDateToMs(data.data),
   };
 }
