@@ -1,36 +1,30 @@
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import {
-  faCar,
-  faChartLine,
-  faChartPie,
-  faClipboardCheck,
-  faClockRotateLeft,
-  faGear,
-  faMapLocationDot,
-  faTriangleExclamation,
-  faUserTie,
-  faUsers,
-  faWallet,
-} from "@fortawesome/free-solid-svg-icons";
-
 export type NavItem = {
   label: string;
   href: string;
-  icon: IconDefinition;
+  /** Nome do SVG em `public/font-awesome` (sem extensão). */
+  icon: string;
+  /** Ícone sobreposto (ex.: check dentro do escudo). */
+  iconOverlay?: string;
 };
 
+/** Ícones alinhados ao protótipo — SVGs em `public/font-awesome/`. */
 export const sidebarNav: NavItem[] = [
-  { label: "Visão Geral", href: "/dashboard", icon: faChartPie },
-  { label: "Histórico de Corridas", href: "/historico-corridas", icon: faClockRotateLeft },
-  { label: "Motoristas", href: "/motoristas", icon: faUserTie },
-  { label: "Passageiros", href: "/passageiros", icon: faUsers },
-  { label: "Financeiro", href: "/financeiro", icon: faWallet },
-  { label: "Mapa ao vivo", href: "/mapa-ao-vivo", icon: faMapLocationDot },
-  { label: "Relatórios", href: "/relatorios", icon: faChartLine },
-  { label: "Modelo de Viaturas", href: "/modelo-viaturas", icon: faCar },
-  { label: "Validação Motoristas", href: "/validacao-motoristas", icon: faClipboardCheck },
-  { label: "SOS", href: "/sos", icon: faTriangleExclamation },
-  { label: "Configurações", href: "/configuracoes", icon: faGear },
+  { label: "Visão Geral", href: "/dashboard", icon: "th-large" },
+  { label: "Histórico de Corridas", href: "/historico-corridas", icon: "history" },
+  { label: "Motoristas", href: "/motoristas", icon: "user-circle" },
+  { label: "Passageiros", href: "/passageiros", icon: "male" },
+  { label: "Financeiro", href: "/financeiro", icon: "money" },
+  { label: "Mapa ao vivo", href: "/mapa-ao-vivo", icon: "map" },
+  { label: "Relatórios", href: "/relatorios", icon: "file-text" },
+  { label: "Modelo de Viaturas", href: "/modelo-viaturas", icon: "automobile" },
+  {
+    label: "Validação Motoristas",
+    href: "/validacao-motoristas",
+    icon: "shield",
+    iconOverlay: "check",
+  },
+  { label: "SOS", href: "/sos", icon: "exclamation-triangle" },
+  { label: "Configurações", href: "/configuracoes", icon: "cog" },
 ];
 
 const headerOverrides: Record<string, { title: string; subtitle: string }> = {

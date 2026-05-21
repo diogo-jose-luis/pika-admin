@@ -93,6 +93,31 @@ export function sortVehicleModels(list: VehicleModelRecord[]): VehicleModelRecor
   });
 }
 
+export function vehicleModelMatchesSearch(
+  record: VehicleModelRecord,
+  query: string,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+
+  const haystack = [
+    record.brand,
+    record.model,
+    String(record.year),
+    record.bodyType,
+    record.categoryName,
+    record.status,
+    record.status === "ativo" ? "ativo" : "inativo",
+    record.disponivel ? "disponível" : "indisponível",
+    record.disponivel ? "disponivel" : "indisponivel",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const terms = q.split(/\s+/).filter(Boolean);
+  return terms.every((term) => haystack.includes(term));
+}
+
 export function modelToInput(record: VehicleModelRecord): ModeloViaturaInput {
   return {
     marca: record.brand,

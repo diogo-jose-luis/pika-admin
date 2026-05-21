@@ -3,10 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { FaIcon } from "@/components/ui/FaIcon";
+import { LogoutButton } from "@/components/layout/LogoutButton";
 import { sidebarNav } from "@/lib/nav";
-import { logoutAction } from "@/app/actions/auth";
 import { initialsFromDisplayName, type SessionUser } from "@/lib/session-user";
 import { cn } from "@/lib/cn";
 
@@ -79,13 +78,13 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
                   : "text-pika-ink hover:bg-pika-page",
               )}
             >
-              <FontAwesomeIcon
-                icon={item.icon}
+              <FaIcon
+                name={item.icon}
+                overlay={item.iconOverlay}
                 className={cn(
                   "h-5 w-5 shrink-0",
                   active ? "text-white" : "text-pika-muted",
                 )}
-                fixedWidth
               />
               {!collapsed ? <span className="truncate">{item.label}</span> : null}
             </Link>
@@ -102,16 +101,7 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
             >
               {initials}
             </div>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
-                aria-label="Terminar sessão"
-                title="Terminar sessão"
-              >
-                <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
-              </button>
-            </form>
+            <LogoutButton className="inline-flex h-9 w-9 items-center justify-center rounded-lg" />
           </div>
         ) : (
           <div className="flex items-center gap-3">
@@ -122,15 +112,7 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
               <p className="truncate text-sm font-semibold text-pika-ink">{user.displayName}</p>
               <p className="truncate text-xs text-pika-muted">{user.email}</p>
             </div>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
-                aria-label="Terminar sessão"
-              >
-                <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
-              </button>
-            </form>
+            <LogoutButton className="inline-flex h-9 w-9 items-center justify-center rounded-lg" />
           </div>
         )}
       </div>

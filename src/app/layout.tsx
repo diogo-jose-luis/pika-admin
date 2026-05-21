@@ -14,6 +14,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Pika · Painel administrativo",
   description: "Gestão de corridas, motoristas e passageiros Pika.",
+  icons: {
+    icon: [{ url: "/pika.png", type: "image/png" }],
+    shortcut: "/pika.png",
+    apple: "/pika.png",
+  },
 };
 
 const themeInitScript = `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KEY)};var t=localStorage.getItem(k);if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark");}catch(e){}})();`;

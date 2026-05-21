@@ -15,6 +15,12 @@ export type RideRow = {
   dateLabel: string;
   /** Timestamp em ms para filtros por intervalo; null se a data for inválida. */
   dateMs: number | null;
+  /** Passageiro → motorista (`estrelas`). */
+  passengerToDriverStars: number | null;
+  passengerToDriverComment: string;
+  /** Motorista → passageiro (`estrela_driver_passageiro`). */
+  driverToPassengerStars: number | null;
+  driverToPassengerComment: string;
 };
 
 export type CorridaFakeDoc = {
@@ -25,6 +31,13 @@ export type CorridaFakeDoc = {
   preco?: number;
   estado?: number;
   data?: { _seconds: number; _nanoseconds: number } | string | null;
+  estrelas?: number;
+  comentario?: string;
+  estrela_driver_passageiro?: number;
+  estrelas_driver_passageiro?: number;
+  comentario_driver_passageiro?: string;
+  distancia?: number | string;
+  duracao?: number | string;
 };
 
 const ESTADO_TO_STATUS: Record<number, RideStatus> = {
@@ -33,6 +46,33 @@ const ESTADO_TO_STATUS: Record<number, RideStatus> = {
   2: "Cancelada",
   3: "Em andamento",
 };
+
+export function parseRideStarRating(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n) || n < 1 || n > 5) return null;
+  return Math.round(n);
+}
+
+function readComment(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+function formatDistanceLabel(value: unknown): string {
+  if (value == null || value === "") return "";
+  const n = typeof value === "number" ? value : Number(String(value).replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const text = n.toLocaleString("pt-AO", { maximumFractionDigits: 1 });
+  return `${text.replace(".", ",")} Km`;
+}
+
+function formatDurationLabel(value: unknown): string {
+  if (value == null || value === "") return "";
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return `${Math.round(n)} min`;
+}
 
 export function mapEstadoToStatus(estado: unknown): RideStatus {
   const n = typeof estado === "number" ? estado : Number(estado);
@@ -127,6 +167,10 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
     row.durationLabel,
     row.status,
     row.dateLabel,
+    row.passengerToDriverComment,
+    row.driverToPassengerComment,
+    row.passengerToDriverStars != null ? String(row.passengerToDriverStars) : "",
+    row.driverToPassengerStars != null ? String(row.driverToPassengerStars) : "",
   ]
     .join(" ")
     .toLowerCase();
@@ -141,6 +185,9 @@ export function mapCorridaFakeToRideRow(
   const preco =
     typeof data.preco === "number" ? data.preco : Number(data.preco) || 0;
 
+  const distanceLabel = formatDistanceLabel(data.distancia);
+  const durationLabel = formatDurationLabel(data.duracao);
+
   return {
     id: ordinalId,
     passenger: data.passageiro_nome?.trim() || "—",
@@ -148,10 +195,16 @@ export function mapCorridaFakeToRideRow(
     origin: data.local_inicio?.trim() || "—",
     destination: data.local_fim?.trim() || "—",
     valueLabel: formatKz(preco),
-    distanceLabel: "",
-    durationLabel: "",
+    distanceLabel,
+    durationLabel,
     status: mapEstadoToStatus(data.estado),
     dateLabel: formatRideDate(data.data),
     dateMs: parseRideDateToMs(data.data),
+    passengerToDriverStars: parseRideStarRating(data.estrelas),
+    passengerToDriverComment: readComment(data.comentario),
+    driverToPassengerStars: parseRideStarRating(
+      data.estrela_driver_passageiro ?? data.estrelas_driver_passageiro,
+    ),
+    driverToPassengerComment: readComment(data.comentario_driver_passageiro),
   };
 }

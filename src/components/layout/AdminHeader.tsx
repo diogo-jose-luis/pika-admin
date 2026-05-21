@@ -11,13 +11,12 @@ import {
   faChevronDown,
   faLocationDot,
   faMoon,
-  faRightFromBracket,
   faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { titleForPath } from "@/lib/nav";
 import { ANGOLA_PROVINCES } from "@/lib/angola-provinces";
 import { usePathname } from "next/navigation";
-import { logoutAction } from "@/app/actions/auth";
+import { LogoutButton } from "@/components/layout/LogoutButton";
 import { useAdminDate } from "@/components/providers/AdminDateProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { initialsFromDisplayName, type SessionUser } from "@/lib/session-user";
@@ -201,19 +200,14 @@ export function AdminHeader({
                 </p>
                 <p className="truncate text-xs text-pika-muted">{user.email}</p>
               </div>
-              <form action={logoutAction} className="px-2 pt-1">
-                <button
-                  type="submit"
+              <div className="px-2 pt-1" role="none">
+                <LogoutButton
+                  showLabel
                   role="menuitem"
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-sm font-medium text-pika-ink transition hover:bg-pika-page"
-                >
-                  <FontAwesomeIcon
-                    icon={faRightFromBracket}
-                    className="h-4 w-4 text-pika-muted"
-                  />
-                  Terminar sessão
-                </button>
-              </form>
+                  className="flex w-full rounded-lg px-2 py-2.5 text-left hover:bg-pika-page"
+                  iconClassName="h-4 w-4 text-pika-muted"
+                />
+              </div>
             </div>
           ) : null}
         </div>

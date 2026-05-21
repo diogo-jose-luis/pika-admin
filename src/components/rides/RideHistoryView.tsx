@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { RideDetailsModal } from "@/components/rides/RideDetailsModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
+import { StarRating } from "@/components/ui/StarRating";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
@@ -71,6 +73,7 @@ export function RideHistoryView() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
+  const [detailRide, setDetailRide] = useState<RideRow | null>(null);
 
   const loadRides = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -199,7 +202,7 @@ export function RideHistoryView() {
       </div>
 
       <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-        <table className="min-w-[1100px] w-full border-collapse text-left text-sm">
+        <table className="min-w-[1180px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
               <th className="whitespace-nowrap px-4 py-3">ID</th>
@@ -209,6 +212,7 @@ export function RideHistoryView() {
               <th className="whitespace-nowrap px-4 py-3">Valor</th>
               <th className="whitespace-nowrap px-4 py-3">Distância</th>
               <th className="whitespace-nowrap px-4 py-3">Duração</th>
+              <th className="whitespace-nowrap px-4 py-3">Classificação</th>
               <th className="whitespace-nowrap px-4 py-3">Status</th>
               <th className="whitespace-nowrap px-4 py-3">Data</th>
               <th className="whitespace-nowrap px-4 py-3 text-center">Ações</th>
@@ -218,7 +222,7 @@ export function RideHistoryView() {
             {loading
               ? Array.from({ length: 6 }, (_, i) => (
                   <tr key={`sk-${i}`} className="border-b border-pika-border">
-                    {Array.from({ length: 10 }, (_, j) => (
+                    {Array.from({ length: 11 }, (_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full max-w-[8rem] animate-pulse rounded bg-pika-page" />
                       </td>
@@ -226,7 +230,11 @@ export function RideHistoryView() {
                   </tr>
                 ))
               : pageRows.map((row) => (
-                  <RideTableRow key={`${row.id}-${row.dateLabel}`} row={row} />
+                  <RideTableRow
+                    key={`${row.id}-${row.dateLabel}`}
+                    row={row}
+                    onViewDetails={() => setDetailRide(row)}
+                  />
                 ))}
           </tbody>
         </table>
@@ -304,11 +312,21 @@ export function RideHistoryView() {
           </button>
         </div>
       </div>
+
+      {detailRide ? (
+        <RideDetailsModal ride={detailRide} onClose={() => setDetailRide(null)} />
+      ) : null}
     </div>
   );
 }
 
-function RideTableRow({ row }: { row: RideRow }) {
+function RideTableRow({
+  row,
+  onViewDetails,
+}: {
+  row: RideRow;
+  onViewDetails: () => void;
+}) {
   return (
     <tr className="border-b border-pika-border bg-pika-card transition-colors last:border-b-0 hover:bg-pika-page/80">
       <td className="whitespace-nowrap px-4 py-3 font-medium text-pika-ink">
@@ -346,14 +364,22 @@ function RideTableRow({ row }: { row: RideRow }) {
         {row.durationLabel || "\u00a0"}
       </td>
       <td className="whitespace-nowrap px-4 py-3">
+        <StarRating
+          value={row.passengerToDriverStars}
+          iconClassName="h-3.5 w-3.5"
+          emptyLabel="—"
+        />
+      </td>
+      <td className="whitespace-nowrap px-4 py-3">
         <StatusPill status={row.status} />
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">{row.dateLabel}</td>
       <td className="whitespace-nowrap px-4 py-3 text-center">
         <button
           type="button"
+          onClick={onViewDetails}
           className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
-          aria-label={`Ver corrida #${row.id}`}
+          aria-label={`Ver detalhes da corrida #${row.id}`}
         >
           <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
         </button>

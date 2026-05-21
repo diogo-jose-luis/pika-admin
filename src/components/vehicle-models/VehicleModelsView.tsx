@@ -8,8 +8,9 @@ import {
   faTrash,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
+import { FaIcon } from "@/components/ui/FaIcon";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { cn } from "@/lib/cn";
 import {
@@ -17,6 +18,7 @@ import {
   DEFAULT_VEHICLE_IMAGE,
   categoryPillClass,
   modelToInput,
+  vehicleModelMatchesSearch,
   type ModeloViaturaInput,
   type VehicleModelRecord,
 } from "@/lib/modelo-viatura";
@@ -24,6 +26,7 @@ import {
 type CategoriaOption = { id: string; nome: string; ordem: number };
 
 type ModalMode = "add" | "edit";
+type ViewMode = "table" | "mosaic";
 
 type FormState = {
   brand: string;
@@ -98,9 +101,42 @@ function formToInput(form: FormState): ModeloViaturaInput | null {
   };
 }
 
+function ModelRowActions({
+  model,
+  onEdit,
+  onDelete,
+}: {
+  model: VehicleModelRecord;
+  onEdit: (m: VehicleModelRecord) => void;
+  onDelete: (m: VehicleModelRecord) => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center justify-end gap-1">
+      <button
+        type="button"
+        onClick={() => onEdit(model)}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-pika-border bg-pika-page text-pika-muted transition hover:bg-pika-card hover:text-pika-ink"
+        aria-label={`Editar ${model.brand} ${model.model}`}
+      >
+        <FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onDelete(model)}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-pika-border bg-pika-page text-red-600 transition hover:bg-red-50"
+        aria-label={`Eliminar ${model.brand} ${model.model}`}
+      >
+        <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 export function VehicleModelsView() {
   const [models, setModels] = useState<VehicleModelRecord[]>([]);
   const [categorias, setCategorias] = useState<CategoriaOption[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -295,19 +331,113 @@ export function VehicleModelsView() {
 
   const formValid = formToInput(form) !== null;
 
+  const filteredModels = useMemo(
+    () => models.filter((m) => vehicleModelMatchesSearch(m, search)),
+    [models, search],
+  );
+
+  const searchActive = search.trim().length > 0;
+
+  const renderAvailabilityCell = (m: VehicleModelRecord) => {
+    const availId = `avail-${m.id}`;
+    return (
+      <div className="flex min-w-0 items-center gap-2">
+        <AvailabilitySwitch
+          checked={m.disponivel}
+          onChange={(v) => void setDisponivel(m, v)}
+          labelledBy={availId}
+        />
+        <span id={availId} className="truncate text-xs font-medium text-pika-muted">
+          {m.disponivel ? "Disponível" : "Indisponível"}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <RefreshDataButton loading={refreshing} onClick={() => void loadData(true)} />
-        <button
-          type="button"
-          onClick={openAdd}
-          disabled={loading || categorias.length === 0}
-          className="inline-flex items-center gap-2 rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          className="inline-flex rounded-xl border border-pika-border bg-pika-card p-1 shadow-sm"
+          role="group"
+          aria-label="Modo de visualização"
         >
-          <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
-          Adicionar Modelo
-        </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition",
+              viewMode === "table"
+                ? "bg-pika-primary text-white shadow-sm"
+                : "text-pika-muted hover:bg-pika-page hover:text-pika-ink",
+            )}
+            aria-pressed={viewMode === "table"}
+          >
+            <FaIcon name="table" className="h-4 w-4" />
+            Tabela
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("mosaic")}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition",
+              viewMode === "mosaic"
+                ? "bg-pika-primary text-white shadow-sm"
+                : "text-pika-muted hover:bg-pika-page hover:text-pika-ink",
+            )}
+            aria-pressed={viewMode === "mosaic"}
+          >
+            <FaIcon name="th-large" className="h-4 w-4" />
+            Mosaicos
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <RefreshDataButton loading={refreshing} onClick={() => void loadData(true)} />
+          <button
+            type="button"
+            onClick={openAdd}
+            disabled={loading || categorias.length === 0}
+            className="inline-flex items-center gap-2 rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+            Adicionar Modelo
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative min-w-0 flex-1">
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-pika-muted">
+            <FaIcon name="search" className="h-4 w-4" />
+          </span>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            disabled={loading}
+            placeholder="Filtrar por marca, modelo, ano, tipo, categoria, estado, disponibilidade..."
+            className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-10 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="Filtro rápido de modelos de viatura"
+          />
+          {searchActive ? (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-pika-muted transition hover:text-pika-ink"
+              aria-label="Limpar filtro"
+            >
+              <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+        {!loading && models.length > 0 ? (
+          <p className="shrink-0 text-sm text-pika-muted">
+            {searchActive
+              ? `${filteredModels.length} de ${models.length} modelo${models.length === 1 ? "" : "s"}`
+              : `${models.length} modelo${models.length === 1 ? "" : "s"}`}
+          </p>
+        ) : null}
       </div>
 
       {loadError ? (
@@ -317,23 +447,127 @@ export function VehicleModelsView() {
       ) : null}
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-72 animate-pulse rounded-2xl border border-pika-border bg-pika-card"
-            />
-          ))}
-        </div>
+        viewMode === "table" ? (
+          <div className="overflow-x-auto scroll-pika rounded-2xl border border-pika-border bg-pika-card shadow-sm">
+            <table className="min-w-[960px] w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                  <th className="px-4 py-3">Marca</th>
+                  <th className="px-4 py-3">Modelo</th>
+                  <th className="px-4 py-3">Ano</th>
+                  <th className="px-4 py-3">Tipo</th>
+                  <th className="px-4 py-3">Categoria</th>
+                  <th className="px-4 py-3">Estado</th>
+                  <th className="min-w-[160px] px-4 py-3">Disponível</th>
+                  <th className="px-4 py-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="border-b border-pika-border">
+                    <td colSpan={8} className="px-4 py-4">
+                      <div className="h-8 animate-pulse rounded-lg bg-pika-page" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-72 animate-pulse rounded-2xl border border-pika-border bg-pika-card"
+              />
+            ))}
+          </div>
+        )
       ) : models.length === 0 ? (
         <p className="rounded-2xl border border-pika-border bg-pika-card p-8 text-center text-sm text-pika-muted">
           Nenhum modelo de viatura registado.
         </p>
+      ) : filteredModels.length === 0 ? (
+        <p className="rounded-2xl border border-pika-border bg-pika-card p-8 text-center text-sm text-pika-muted">
+          Nenhum modelo corresponde ao filtro.{" "}
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            className="font-semibold text-pika-primary transition hover:text-pika-primary-dark"
+          >
+            Limpar filtro
+          </button>
+        </p>
+      ) : viewMode === "table" ? (
+        <div className="overflow-x-auto scroll-pika rounded-2xl border border-pika-border bg-pika-card shadow-sm">
+          <table className="min-w-[960px] w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                <th className="whitespace-nowrap px-4 py-3">Marca</th>
+                <th className="whitespace-nowrap px-4 py-3">Modelo</th>
+                <th className="whitespace-nowrap px-4 py-3">Ano</th>
+                <th className="whitespace-nowrap px-4 py-3">Tipo</th>
+                <th className="whitespace-nowrap px-4 py-3">Categoria</th>
+                <th className="whitespace-nowrap px-4 py-3">Estado</th>
+                <th className="min-w-[160px] px-4 py-3">Disponível</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredModels.map((m, idx) => (
+                <tr
+                  key={m.id}
+                  className={cn(
+                    "border-b border-pika-border transition hover:bg-pika-page/60",
+                    idx % 2 === 1 && "bg-pika-page/40",
+                  )}
+                >
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-pika-ink">
+                    {m.brand}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 font-semibold text-pika-ink">
+                    {m.model}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-pika-muted">{m.year}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-pika-muted">{m.bodyType}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none",
+                        categoryPillClass(m.categoryOrdem),
+                      )}
+                    >
+                      {m.categoryName}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                        m.status === "ativo"
+                          ? "bg-pika-success text-white"
+                          : "bg-slate-200 text-pika-muted",
+                      )}
+                    >
+                      {m.status === "ativo" ? "Ativo" : "Inativo"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">{renderAvailabilityCell(m)}</td>
+                  <td className="px-4 py-3">
+                    <ModelRowActions
+                      model={m}
+                      onEdit={openEdit}
+                      onDelete={setDeleteTarget}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {models.map((m) => {
-            const availId = `avail-${m.id}`;
-            return (
+          {filteredModels.map((m) => (
               <article
                 key={m.id}
                 className="flex flex-col overflow-hidden rounded-2xl border border-pika-border bg-pika-card shadow-sm"
@@ -380,42 +614,16 @@ export function VehicleModelsView() {
                   </div>
 
                   <div className="mt-auto flex items-center justify-between gap-2 border-t border-pika-border pt-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <AvailabilitySwitch
-                        checked={m.disponivel}
-                        onChange={(v) => void setDisponivel(m, v)}
-                        labelledBy={availId}
-                      />
-                      <span
-                        id={availId}
-                        className="truncate text-xs font-medium text-pika-muted"
-                      >
-                        {m.disponivel ? "Disponível" : "Indisponível"}
-                      </span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(m)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-pika-border bg-pika-page text-pika-muted transition hover:bg-pika-card hover:text-pika-ink"
-                        aria-label="Editar modelo"
-                      >
-                        <FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTarget(m)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-pika-border bg-pika-page text-red-600 transition hover:bg-red-50"
-                        aria-label="Eliminar modelo"
-                      >
-                        <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                    {renderAvailabilityCell(m)}
+                    <ModelRowActions
+                      model={m}
+                      onEdit={openEdit}
+                      onDelete={setDeleteTarget}
+                    />
                   </div>
                 </div>
               </article>
-            );
-          })}
+          ))}
         </div>
       )}
 

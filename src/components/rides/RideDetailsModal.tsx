@@ -1,0 +1,187 @@
+"use client";
+
+import { useEffect, type ReactNode } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCircle,
+  faLocationDot,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+import { StarRating } from "@/components/ui/StarRating";
+import type { RideRow } from "@/lib/ride-history";
+import { cn } from "@/lib/cn";
+
+type RideDetailsModalProps = {
+  ride: RideRow;
+  onClose: () => void;
+};
+
+function statusPillClass(status: RideRow["status"]) {
+  const map: Record<RideRow["status"], string> = {
+    "Em andamento": "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
+    Concluída: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+    Pendente: "bg-orange-50 text-orange-700 ring-1 ring-orange-100",
+    Cancelada: "bg-red-50 text-red-700 ring-1 ring-red-100",
+  };
+  return map[status];
+}
+
+function DetailField({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+        {label}
+      </p>
+      <div className="mt-1 text-sm text-pika-ink">{children}</div>
+    </div>
+  );
+}
+
+function RatingBlock({
+  title,
+  subtitle,
+  stars,
+  comment,
+}: {
+  title: string;
+  subtitle: string;
+  stars: number | null;
+  comment: string;
+}) {
+  return (
+    <section className="rounded-xl border border-pika-border bg-pika-page/60 p-4">
+      <h3 className="text-sm font-bold text-pika-ink">{title}</h3>
+      <p className="mt-0.5 text-xs text-pika-muted">{subtitle}</p>
+      <div className="mt-3">
+        <StarRating value={stars} iconClassName="h-5 w-5" emptyLabel="Sem classificação" />
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-pika-ink">
+        {comment ? (
+          comment
+        ) : (
+          <span className="text-pika-muted italic">Sem comentário.</span>
+        )}
+      </p>
+    </section>
+  );
+}
+
+export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ride-details-title"
+        className="max-h-[min(92vh,800px)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-pika-card p-6 shadow-xl sm:p-8"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-6 flex items-start justify-between gap-3">
+          <div>
+            <h2 id="ride-details-title" className="text-xl font-bold text-pika-ink">
+              Detalhes da corrida #{ride.id}
+            </h2>
+            <p className="mt-1 text-sm text-pika-muted">{ride.dateLabel || "—"}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-pika-border text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
+            aria-label="Fechar"
+          >
+            <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+              statusPillClass(ride.status),
+            )}
+          >
+            {ride.status}
+          </span>
+          <span className="text-sm font-semibold text-pika-ink">{ride.valueLabel}</span>
+          {ride.distanceLabel ? (
+            <span className="text-sm text-pika-muted">{ride.distanceLabel}</span>
+          ) : null}
+          {ride.durationLabel ? (
+            <span className="text-sm text-pika-muted">{ride.durationLabel}</span>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <DetailField label="Passageiro">
+            <span className="font-semibold">{ride.passenger}</span>
+          </DetailField>
+          <DetailField label="Motorista">
+            <span className="font-semibold">{ride.driver}</span>
+          </DetailField>
+        </div>
+
+        <DetailField label="Trajeto" className="mt-4">
+          <div className="flex flex-col gap-2">
+            <span className="inline-flex items-start gap-2">
+              <FontAwesomeIcon
+                icon={faCircle}
+                className="mt-1 h-2 w-2 shrink-0 text-pika-primary"
+              />
+              <span>
+                <span className="font-medium text-pika-muted">Origem: </span>
+                {ride.origin}
+              </span>
+            </span>
+            <span className="inline-flex items-start gap-2">
+              <FontAwesomeIcon
+                icon={faLocationDot}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pika-primary"
+              />
+              <span>
+                <span className="font-medium text-pika-muted">Destino: </span>
+                {ride.destination}
+              </span>
+            </span>
+          </div>
+        </DetailField>
+
+        <div className="mt-6 space-y-4">
+          <RatingBlock
+            title="Classificação do passageiro"
+            subtitle="Avaliação e comentário que o passageiro deu ao motorista"
+            stars={ride.passengerToDriverStars}
+            comment={ride.passengerToDriverComment}
+          />
+          <RatingBlock
+            title="Classificação do motorista"
+            subtitle="Avaliação e comentário que o motorista deu ao passageiro"
+            stars={ride.driverToPassengerStars}
+            comment={ride.driverToPassengerComment}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

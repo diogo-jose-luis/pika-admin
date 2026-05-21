@@ -2,23 +2,12 @@
 
 import { useActionState } from "react";
 import Image from "next/image";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEnvelope, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { FaIcon } from "@/components/ui/FaIcon";
 import { loginAction } from "@/app/actions/auth";
-
-function Spinner() {
-  return (
-    <FontAwesomeIcon
-      icon={faSpinner}
-      className="h-4 w-4 animate-spin"
-      aria-hidden
-    />
-  );
-}
 
 const labelClassName = "mb-2 block text-sm font-semibold text-neutral-900";
 const inputClassName =
-  "w-full rounded-xl border border-pika-primary bg-[#f0f0f0] py-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-500 focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/25 disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-xl border border-pika-primary bg-[#f0f0f0] py-3 pl-4 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-500 focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/25 disabled:cursor-not-allowed disabled:opacity-60";
 const mutedTextClassName = "text-sm font-medium text-neutral-800";
 
 export function LoginForm() {
@@ -52,21 +41,26 @@ export function LoginForm() {
               className={`${inputClassName} pr-11`}
             />
             <span className="pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center text-pika-primary">
-              <FontAwesomeIcon icon={faEnvelope} className="h-4 w-4" />
+              <FaIcon name="envelope" className="h-4 w-4" />
             </span>
           </span>
         </label>
 
         <label className="block">
           <span className={labelClassName}>Senha</span>
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            disabled={isPending}
-            className={inputClassName}
-          />
+          <span className="relative flex">
+            <input
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              disabled={isPending}
+              className={`${inputClassName} pr-11`}
+            />
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center text-pika-primary">
+              <FaIcon name="lock" className="h-4 w-4" />
+            </span>
+          </span>
         </label>
 
         {state?.error ? (
@@ -103,7 +97,7 @@ export function LoginForm() {
         >
           {isPending ? (
             <>
-              <Spinner />
+              <FaIcon name="spinner" className="h-4 w-4 animate-spin" />
               A validar…
             </>
           ) : (
