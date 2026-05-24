@@ -3,8 +3,11 @@
 import { useEffect, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faCar,
   faCircle,
+  faIdCard,
   faLocationDot,
+  faPalette,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { StarRating } from "@/components/ui/StarRating";
@@ -162,6 +165,41 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
               <span>
                 <span className="font-medium text-pika-muted">Destino: </span>
                 {ride.destination}
+              </span>
+            </span>
+          </div>
+        </DetailField>
+
+        <DetailField label="Viatura" className="mt-4">
+          <div className="flex flex-col gap-2">
+            <span className="inline-flex items-start gap-2">
+              <FontAwesomeIcon
+                icon={faCar}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pika-primary"
+              />
+              <span>
+                <span className="font-medium text-pika-muted">Marca / modelo: </span>
+                <span className="font-semibold">{ride.vehicleModel}</span>
+              </span>
+            </span>
+            <span className="inline-flex items-start gap-2">
+              <FontAwesomeIcon
+                icon={faIdCard}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pika-primary"
+              />
+              <span>
+                <span className="font-medium text-pika-muted">Matrícula: </span>
+                {ride.vehiclePlate}
+              </span>
+            </span>
+            <span className="inline-flex items-start gap-2">
+              <FontAwesomeIcon
+                icon={faPalette}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pika-primary"
+              />
+              <span>
+                <span className="font-medium text-pika-muted">Cor: </span>
+                {ride.vehicleColor}
               </span>
             </span>
           </div>

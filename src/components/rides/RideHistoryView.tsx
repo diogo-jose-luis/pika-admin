@@ -209,6 +209,7 @@ export function RideHistoryView() {
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
               <th className="whitespace-nowrap px-4 py-3">ID</th>
+              <th className="whitespace-nowrap px-4 py-3 text-center">Detalhes</th>
               <th className="whitespace-nowrap px-4 py-3">Passageiro</th>
               <th className="whitespace-nowrap px-4 py-3">Motorista</th>
               <th className="min-w-[220px] px-4 py-3">Trajeto</th>
@@ -219,7 +220,6 @@ export function RideHistoryView() {
               <th className="whitespace-nowrap px-4 py-3">Classificação</th>
               <th className="whitespace-nowrap px-4 py-3">Status</th>
               <th className="whitespace-nowrap px-4 py-3">Data</th>
-              <th className="whitespace-nowrap px-4 py-3 text-center">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -336,6 +336,17 @@ function RideTableRow({
       <td className="whitespace-nowrap px-4 py-3 font-medium text-pika-ink">
         #{row.id}
       </td>
+      <td className="whitespace-nowrap px-4 py-3 text-center">
+        <button
+          type="button"
+          onClick={onViewDetails}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
+          aria-label={`Ver mais detalhes da corrida #${row.id}`}
+          title="Ver mais detalhes"
+        >
+          <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+        </button>
+      </td>
       <td className="whitespace-nowrap px-4 py-3 font-semibold text-pika-ink">
         {row.passenger}
       </td>
@@ -403,16 +414,6 @@ function RideTableRow({
         <StatusPill status={row.status} />
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">{row.dateLabel}</td>
-      <td className="whitespace-nowrap px-4 py-3 text-center">
-        <button
-          type="button"
-          onClick={onViewDetails}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
-          aria-label={`Ver detalhes da corrida #${row.id}`}
-        >
-          <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
-        </button>
-      </td>
     </tr>
   );
 }
