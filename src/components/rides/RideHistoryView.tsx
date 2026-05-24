@@ -326,7 +326,7 @@ export function RideHistoryView() {
         </div>
       ) : null}
 
-      <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
+      <div className="hidden overflow-x-auto scroll-pika rounded-xl border border-pika-border lg:block">
         <table className="min-w-[1400px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
@@ -379,6 +379,27 @@ export function RideHistoryView() {
                 ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="space-y-3 lg:hidden">
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={`sk-card-${i}`}
+                className="h-52 animate-pulse rounded-2xl border border-pika-border bg-pika-page"
+              />
+            ))
+          : pageRows.map((row) => (
+              <RideHistoryCard
+                key={row.docId}
+                row={row}
+                selected={selectedIds.has(row.docId)}
+                onToggleSelect={() => toggleRowSelection(row.docId)}
+                onViewDetails={() => setDetailRide(row)}
+                onDelete={() => setDeleteConfirm({ mode: "single", row })}
+                deleteDisabled={deleteBusy}
+              />
+            ))}
       </div>
 
       {loadError ? (
@@ -468,6 +489,130 @@ export function RideHistoryView() {
         description={deleteModalDescription}
       />
     </div>
+  );
+}
+
+function RideHistoryCard({
+  row,
+  selected,
+  onToggleSelect,
+  onViewDetails,
+  onDelete,
+  deleteDisabled,
+}: {
+  row: RideRow;
+  selected: boolean;
+  onToggleSelect: () => void;
+  onViewDetails: () => void;
+  onDelete: () => void;
+  deleteDisabled: boolean;
+}) {
+  return (
+    <article
+      className={cn(
+        "rounded-2xl border bg-pika-card p-4 shadow-sm",
+        selected ? "border-pika-primary ring-2 ring-pika-primary/20" : "border-pika-border",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <label className="flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            disabled={deleteDisabled}
+            aria-label={`Selecionar corrida #${row.id}`}
+            className="h-4 w-4 shrink-0 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
+          />
+          <div>
+            <p className="font-bold text-pika-ink">#{row.id}</p>
+            <p className="text-xs text-pika-muted">{row.dateLabel}</p>
+          </div>
+        </label>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onViewDetails}
+            disabled={deleteDisabled}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
+            aria-label={`Ver detalhes da corrida #${row.id}`}
+          >
+            <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={deleteDisabled}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-red-50 hover:text-red-600"
+            aria-label={`Eliminar corrida #${row.id}`}
+          >
+            <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <StatusPill status={row.status} />
+        <span className="text-sm font-semibold text-pika-ink">{row.valueLabel}</span>
+        <span className="text-sm text-pika-muted">Comissão {row.commissionLabel}</span>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+            Passageiro
+          </p>
+          <p className="font-medium text-pika-ink">{row.passenger}</p>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+            Motorista
+          </p>
+          <p className="text-pika-ink">{row.driver}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex min-w-0 flex-col gap-1.5 text-xs">
+        <span className="inline-flex items-start gap-2 text-pika-ink">
+          <FontAwesomeIcon
+            icon={faCircle}
+            className="mt-0.5 h-2 w-2 shrink-0 text-pika-primary"
+          />
+          <span className="leading-snug">{row.origin}</span>
+        </span>
+        <span className="inline-flex items-start gap-2 text-pika-ink">
+          <FontAwesomeIcon
+            icon={faLocationDot}
+            className="mt-0.5 h-3 w-3 shrink-0 text-pika-primary"
+          />
+          <span className="leading-snug">{row.destination}</span>
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-3 text-xs text-pika-muted">
+        {row.distanceLabel ? <span>{row.distanceLabel}</span> : null}
+        {row.durationLabel ? <span>{row.durationLabel}</span> : null}
+      </div>
+
+      <div className="mt-3 border-t border-pika-border pt-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+          Viatura
+        </p>
+        <p className="mt-1 text-sm font-medium text-pika-ink">{row.vehicleModel}</p>
+        <p className="text-xs text-pika-muted">
+          {row.vehiclePlate} · {row.vehicleColor}
+        </p>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between border-t border-pika-border pt-3">
+        <span className="text-xs font-semibold text-pika-muted">Classificação</span>
+        <StarRating
+          value={row.passengerToDriverStars}
+          iconClassName="h-3.5 w-3.5"
+          emptyLabel="—"
+        />
+      </div>
+    </article>
   );
 }
 

@@ -18,6 +18,7 @@ import {
   faStar,
   faUserCheck,
   faUserMinus,
+  faUserTag,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   driverMatchesSearch,
@@ -161,6 +162,37 @@ export function DriversView() {
     } catch (err) {
       setLoadError(
         err instanceof Error ? err.message : "Não foi possível atualizar o estado.",
+      );
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const applyBulkToPassenger = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkSaving(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/users/perfil", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: [...selectedIds],
+          isDriver: 0,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(
+          data.error ?? "Não foi possível converter para passageiro.",
+        );
+      }
+      await loadDrivers(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível converter para passageiro.",
       );
     } finally {
       setBulkSaving(false);
@@ -333,6 +365,15 @@ export function DriversView() {
                 <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => void applyBulkToPassenger()}
+              disabled={bulkSaving}
+              className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FontAwesomeIcon icon={faUserTag} className="h-3.5 w-3.5" />
+              {bulkSaving ? "A converter…" : "Converter para passageiro"}
+            </button>
             <button
               type="button"
               onClick={() => void applyBulkEstado()}

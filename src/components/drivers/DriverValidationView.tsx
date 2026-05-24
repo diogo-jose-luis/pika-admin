@@ -415,7 +415,8 @@ export function DriverValidationView() {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
+          <>
+          <div className="hidden overflow-x-auto scroll-pika rounded-xl border border-pika-border lg:block">
             <table className="min-w-[980px] w-full border-collapse text-left text-sm">
               <thead>
                 <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
@@ -448,6 +449,18 @@ export function DriverValidationView() {
               </tbody>
             </table>
           </div>
+
+          <div className="space-y-3 lg:hidden">
+            {pageRows.map((row) => (
+              <ValidationCard
+                key={row.id}
+                row={row}
+                selected={selectedIds.has(row.id)}
+                onToggle={() => toggleRow(row.id)}
+              />
+            ))}
+          </div>
+          </>
         )}
 
         {!loading && pageRows.length === 0 ? (
@@ -537,6 +550,88 @@ export function DriverValidationView() {
         onSubmit={() => void submitCreate()}
       />
     </div>
+  );
+}
+
+function ValidationCard({
+  row,
+  selected,
+  onToggle,
+}: {
+  row: ValidacaoMotoristaRow;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const requestMs = requestAtToMs(row.requestAt);
+  const isDelayed =
+    requestMs != null &&
+    Date.now() - requestMs > 48 * 3600 * 1000 &&
+    (row.statusCode === 0 || row.statusCode === 3);
+
+  return (
+    <article
+      className={cn(
+        "rounded-2xl border bg-pika-card p-4 shadow-sm",
+        selected ? "border-pika-primary ring-2 ring-pika-primary/20" : "border-pika-border",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggle}
+            aria-label={`Selecionar ${row.requestCode}`}
+            className="mt-1 h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
+          />
+          <div>
+            <p className="font-semibold text-pika-ink">{row.requestCode}</p>
+            <p className="text-xs text-pika-muted">{row.requestAtLabel}</p>
+          </div>
+        </label>
+        <Link
+          href={`/validacao-motoristas/${row.id}`}
+          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-pika-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark"
+        >
+          Revisar
+        </Link>
+      </div>
+
+      <div className="mt-3">
+        <p className="font-semibold text-pika-ink">{row.driverName}</p>
+        <p className="text-xs text-pika-muted">{row.driverHint}</p>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <span
+          className={cn(
+            "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+            categoryPillClass(),
+          )}
+        >
+          {row.category}
+        </span>
+        <span
+          className={cn(
+            "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+            statusPillClass(row.status),
+          )}
+        >
+          {row.status}
+        </span>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+            isDelayed
+              ? "bg-red-50 text-red-700 ring-red-100"
+              : "bg-emerald-50 text-emerald-800 ring-emerald-100",
+          )}
+        >
+          <FontAwesomeIcon icon={faClock} className="h-3 w-3" />
+          {row.slaQueueLabel}
+        </span>
+      </div>
+    </article>
   );
 }
 

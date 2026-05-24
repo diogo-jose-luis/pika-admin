@@ -19,6 +19,7 @@ import {
   faTriangleExclamation,
   faUserPlus,
   faUsers,
+  faUserTag,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   passengerMatchesSearch,
@@ -209,6 +210,37 @@ export function PassengersView() {
     }
   };
 
+  const applyBulkToDriver = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkSaving(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/users/perfil", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: [...selectedIds],
+          isDriver: 1,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(
+          data.error ?? "Não foi possível converter para motorista.",
+        );
+      }
+      await loadPassengers(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível converter para motorista.",
+      );
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-5 md:space-y-6">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -332,6 +364,15 @@ export function PassengersView() {
               </div>
               <button
                 type="button"
+                onClick={() => void applyBulkToDriver()}
+                disabled={bulkSaving}
+                className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FontAwesomeIcon icon={faUserTag} className="h-3.5 w-3.5" />
+                {bulkSaving ? "A converter…" : "Converter para motorista"}
+              </button>
+              <button
+                type="button"
                 onClick={() => void applyBulkEstado()}
                 disabled={bulkSaving}
                 className="inline-flex items-center justify-center rounded-xl bg-pika-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
@@ -350,7 +391,7 @@ export function PassengersView() {
           </div>
         ) : null}
 
-        <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
+        <div className="hidden overflow-x-auto scroll-pika rounded-xl border border-pika-border lg:block">
           <table className="min-w-[1120px] w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
@@ -399,6 +440,22 @@ export function PassengersView() {
                 : null}
             </tbody>
           </table>
+        </div>
+
+        <div className="space-y-3 lg:hidden">
+          {!loading
+            ? pageRows.map((row, idx) => (
+                <PassengerCard
+                  key={row.passengerId}
+                  row={row}
+                  zebra={(startIdx + idx) % 2 === 1}
+                  selected={selectedIds.has(row.userDocId)}
+                  onToggleSelect={() => toggleRow(row.userDocId)}
+                  onViewDetails={() => setDetailPassenger(row)}
+                  onDelete={() => setDeleteTarget(row)}
+                />
+              ))
+            : null}
         </div>
 
         {loadError ? (
@@ -484,6 +541,153 @@ export function PassengersView() {
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
+  );
+}
+
+function PassengerCard({
+  row,
+  zebra,
+  selected,
+  onToggleSelect,
+  onViewDetails,
+  onDelete,
+}: {
+  row: PassengerRow;
+  zebra: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
+  onViewDetails: () => void;
+  onDelete: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [menuOpen]);
+
+  return (
+    <article
+      className={cn(
+        "rounded-2xl border p-4 shadow-sm",
+        selected
+          ? "border-pika-primary ring-2 ring-pika-primary/20 bg-pika-card"
+          : zebra
+            ? "border-pika-border bg-pika-page/90"
+            : "border-pika-border bg-pika-card",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            aria-label={`Selecionar ${row.name}`}
+            className="h-4 w-4 shrink-0 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
+          />
+          <div
+            className={cn(
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+              row.avatarClass,
+            )}
+          >
+            {row.initials}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-bold text-pika-ink">{row.name}</p>
+            <p className="truncate text-xs text-pika-muted">{row.passengerId}</p>
+          </div>
+        </label>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={onViewDetails}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
+            aria-label={`Ver ${row.name}`}
+          >
+            <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+          </button>
+          <div ref={menuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              className={cn(
+                "inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink",
+                menuOpen && "bg-pika-page text-pika-ink",
+              )}
+              aria-label="Mais opções"
+            >
+              <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
+            </button>
+            {menuOpen ? (
+              <div
+                role="menu"
+                className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-pika-border bg-pika-card p-2 shadow-lg"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDelete();
+                  }}
+                  className="w-full rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                >
+                  Eliminar Passageiro
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <StatusPill status={row.status} />
+        {row.problemCount > 0 ? (
+          <span className="rounded-full bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-700 ring-1 ring-orange-100">
+            {row.problemCount} Problemas
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-3 space-y-1 text-sm">
+        <p className="break-all text-pika-ink">{row.email}</p>
+        <p className="text-pika-muted">{row.phone}</p>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 border-t border-pika-border pt-3 text-sm">
+        <div>
+          <p className="text-xs text-pika-muted">Corridas</p>
+          <p className="mt-0.5 inline-flex items-center gap-1.5 font-semibold text-pika-ink">
+            <FontAwesomeIcon icon={faCar} className="h-3.5 w-3.5 text-pika-primary" />
+            {row.rides}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-pika-muted">Total gasto</p>
+          <p className="mt-0.5 font-semibold text-pika-ink">{row.totalSpentLabel}</p>
+        </div>
+        <div>
+          <p className="text-xs text-pika-muted">Avaliação</p>
+          <p className="mt-0.5 inline-flex items-center gap-1 font-medium text-pika-ink">
+            <FontAwesomeIcon icon={faStar} className="h-3.5 w-3.5 text-amber-500" />
+            {row.rating}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-pika-muted">Última corrida</p>
+          <p className="mt-0.5 text-pika-muted">{row.lastRideLabel}</p>
+        </div>
+      </div>
+    </article>
   );
 }
 
