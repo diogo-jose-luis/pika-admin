@@ -36,6 +36,15 @@ export type CorridaFakeDoc = {
   estrela_driver_passageiro?: number;
   estrelas_driver_passageiro?: number;
   comentario_driver_passageiro?: string;
+  /** Texto da Google Directions API (ex.: "12,4 km"). */
+  distanciaKmText?: string;
+  /** Metros da rota (valor numérico da API). */
+  distanciaKM?: number;
+  /** Texto da Google Directions API (ex.: "21 mins"). */
+  duracaoText?: string;
+  /** Segundos da rota (valor numérico da API). */
+  duracaoNumero?: number;
+  /** Campos legados — mantidos para documentos antigos. */
   distancia?: number | string;
   duracao?: number | string;
 };
@@ -55,6 +64,11 @@ export function parseRideStarRating(value: unknown): number | null {
 }
 
 function readComment(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+function readRouteTextLabel(value: unknown): string {
   if (typeof value !== "string") return "";
   return value.trim();
 }
@@ -185,8 +199,12 @@ export function mapCorridaFakeToRideRow(
   const preco =
     typeof data.preco === "number" ? data.preco : Number(data.preco) || 0;
 
-  const distanceLabel = formatDistanceLabel(data.distancia);
-  const durationLabel = formatDurationLabel(data.duracao);
+  const distanceLabel =
+    readRouteTextLabel(data.distanciaKmText) ||
+    formatDistanceLabel(data.distancia);
+  const durationLabel =
+    readRouteTextLabel(data.duracaoText) ||
+    formatDurationLabel(data.duracao);
 
   return {
     id: ordinalId,
