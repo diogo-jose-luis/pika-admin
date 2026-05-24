@@ -167,6 +167,7 @@ export function FinancialView() {
               <p className="mt-2 text-2xl font-bold tracking-tight text-pika-ink md:text-3xl">
                 {stat(formatKzCompact(data.platformCommission))}
               </p>
+              <p className="mt-2 text-xs text-pika-muted">{dateLabel}</p>
             </div>
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-pika-primary text-white shadow-sm">
               <FontAwesomeIcon icon={faPercent} className="h-6 w-6" />

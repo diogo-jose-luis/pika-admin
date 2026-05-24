@@ -327,7 +327,7 @@ export function RideHistoryView() {
       ) : null}
 
       <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-        <table className="min-w-[1320px] w-full border-collapse text-left text-sm">
+        <table className="min-w-[1400px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
               <th className="w-10 px-3 py-3">
@@ -346,6 +346,7 @@ export function RideHistoryView() {
               <th className="whitespace-nowrap px-4 py-3">Motorista</th>
               <th className="min-w-[220px] px-4 py-3">Trajeto</th>
               <th className="whitespace-nowrap px-4 py-3">Valor</th>
+              <th className="whitespace-nowrap px-4 py-3">Comissão</th>
               <th className="whitespace-nowrap px-4 py-3">Distância</th>
               <th className="whitespace-nowrap px-4 py-3">Duração</th>
               <th className="min-w-[180px] px-4 py-3">Viatura</th>
@@ -358,7 +359,7 @@ export function RideHistoryView() {
             {loading
               ? Array.from({ length: 6 }, (_, i) => (
                   <tr key={`sk-${i}`} className="border-b border-pika-border">
-                    {Array.from({ length: 13 }, (_, j) => (
+                    {Array.from({ length: 14 }, (_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full max-w-[8rem] animate-pulse rounded bg-pika-page" />
                       </td>
@@ -553,6 +554,9 @@ function RideTableRow({
       </td>
       <td className="whitespace-nowrap px-4 py-3 font-semibold text-pika-ink">
         {row.valueLabel}
+      </td>
+      <td className="whitespace-nowrap px-4 py-3 font-medium text-pika-ink">
+        {row.commissionLabel}
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">
         {row.distanceLabel || "\u00a0"}

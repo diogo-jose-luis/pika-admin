@@ -128,6 +128,11 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
             {ride.status}
           </span>
           <span className="text-sm font-semibold text-pika-ink">{ride.valueLabel}</span>
+          {ride.commissionLabel !== "—" ? (
+            <span className="text-sm text-pika-muted">
+              Comissão {ride.commissionLabel}
+            </span>
+          ) : null}
           {ride.distanceLabel ? (
             <span className="text-sm text-pika-muted">{ride.distanceLabel}</span>
           ) : null}

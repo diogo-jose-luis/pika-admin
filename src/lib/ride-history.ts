@@ -12,6 +12,7 @@ export type RideRow = {
   origin: string;
   destination: string;
   valueLabel: string;
+  commissionLabel: string;
   distanceLabel: string;
   durationLabel: string;
   vehicleModel: string;
@@ -35,6 +36,7 @@ export type CorridaFakeDoc = {
   local_inicio?: string;
   local_fim?: string;
   preco?: number;
+  comissao?: number;
   estado?: number;
   data?: { _seconds: number; _nanoseconds: number } | string | null;
   estrelas?: number;
@@ -191,6 +193,7 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
     row.origin,
     row.destination,
     row.valueLabel,
+    row.commissionLabel,
     row.distanceLabel,
     row.durationLabel,
     row.vehicleModel,
@@ -216,6 +219,8 @@ export function mapCorridaFakeToRideRow(
 ): RideRow {
   const preco =
     typeof data.preco === "number" ? data.preco : Number(data.preco) || 0;
+  const comissao =
+    typeof data.comissao === "number" ? data.comissao : Number(data.comissao) || 0;
 
   const distanceLabel =
     readRouteTextLabel(data.distanciaKmText) ||
@@ -232,6 +237,7 @@ export function mapCorridaFakeToRideRow(
     origin: data.local_inicio?.trim() || "—",
     destination: data.local_fim?.trim() || "—",
     valueLabel: formatKz(preco),
+    commissionLabel: comissao > 0 ? formatKz(comissao) : "—",
     distanceLabel,
     durationLabel,
     vehicleModel: readVehicleField(data.viaturaMarcaModelo),

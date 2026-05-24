@@ -61,6 +61,10 @@ function precoNumber(preco: unknown): number {
   return typeof preco === "number" ? preco : Number(preco) || 0;
 }
 
+function comissaoNumber(comissao: unknown): number {
+  return typeof comissao === "number" ? comissao : Number(comissao) || 0;
+}
+
 function estadoNumber(estado: unknown): number {
   return typeof estado === "number" ? estado : Number(estado);
 }
@@ -119,6 +123,7 @@ export function buildFinanceData(
 
   let dailyRevenue = 0;
   let weeklyRevenue = 0;
+  let dailyCommission = 0;
 
   const categoryTotals = new Map<string, number>([
     ["Corridas Regulares", 0],
@@ -128,10 +133,12 @@ export function buildFinanceData(
   ]);
 
   const monthlyMap = new Map<string, number>();
+  const monthlyCommissionMap = new Map<string, number>();
   for (let i = 5; i >= 0; i--) {
     const d = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     monthlyMap.set(key, 0);
+    monthlyCommissionMap.set(key, 0);
   }
 
   const transactions: FinanceTransaction[] = [];
@@ -144,11 +151,13 @@ export function buildFinanceData(
     if (!rideDate) continue;
 
     const preco = precoNumber(data.preco);
+    const comissao = comissaoNumber(data.comissao);
     const category = categorizeRide(data);
     categoryTotals.set(category, (categoryTotals.get(category) ?? 0) + preco);
 
     if (isSameCalendarDay(rideDate, referenceDate)) {
       dailyRevenue += preco;
+      dailyCommission += comissao;
     }
 
     if (rideDate >= weekStart && rideDate <= dayEnd) {
@@ -158,6 +167,10 @@ export function buildFinanceData(
     const monthKey = `${rideDate.getFullYear()}-${rideDate.getMonth()}`;
     if (monthlyMap.has(monthKey)) {
       monthlyMap.set(monthKey, (monthlyMap.get(monthKey) ?? 0) + preco);
+      monthlyCommissionMap.set(
+        monthKey,
+        (monthlyCommissionMap.get(monthKey) ?? 0) + comissao,
+      );
     }
 
     transactions.push({
@@ -192,10 +205,11 @@ export function buildFinanceData(
     const d = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     const receita = monthlyMap.get(key) ?? 0;
+    const comissaoMes = monthlyCommissionMap.get(key) ?? 0;
     monthlyRevenue.push({
       month: MONTH_LABELS[d.getMonth()]!,
       receita: Math.round(receita / 1000),
-      comissao: 0,
+      comissao: Math.round(comissaoMes / 1000),
     });
   }
 
@@ -204,7 +218,7 @@ export function buildFinanceData(
   return {
     dailyRevenue,
     weeklyRevenue,
-    platformCommission: 0,
+    platformCommission: dailyCommission,
     pendingPayments: 0,
     monthlyRevenue,
     categoryData,

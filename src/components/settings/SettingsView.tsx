@@ -12,7 +12,7 @@ import {
   faTrash,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
-import { useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { cn } from "@/lib/cn";
 import { PriceSimulatorCard } from "@/components/settings/PriceSimulatorCard";
 import { PricesCategoriesTab } from "@/components/settings/PricesCategoriesTab";
@@ -211,6 +211,104 @@ export function SettingsView() {
 function FeesTab() {
   const [tarifaBase, setTarifaBase] = useState("");
   const [tarifaPorKm, setTarifaPorKm] = useState("");
+  const [comissaoPadrao, setComissaoPadrao] = useState("");
+  const [comissaoDocId, setComissaoDocId] = useState<string | null>(null);
+  const [comissaoLoading, setComissaoLoading] = useState(true);
+  const [comissaoSaving, setComissaoSaving] = useState(false);
+  const [comissaoMessage, setComissaoMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
+
+  const loadComissaoPadrao = useCallback(async () => {
+    setComissaoLoading(true);
+    setComissaoMessage(null);
+
+    try {
+      const res = await fetch("/api/comissao", { cache: "no-store" });
+      const data = (await res.json()) as {
+        record?: { id: string; valor: number } | null;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Não foi possível carregar a comissão.");
+      }
+
+      if (data.record) {
+        setComissaoDocId(data.record.id);
+        setComissaoPadrao(String(data.record.valor));
+      } else {
+        setComissaoDocId(null);
+        setComissaoPadrao("");
+      }
+    } catch (err) {
+      setComissaoMessage({
+        type: "error",
+        text:
+          err instanceof Error ? err.message : "Erro ao carregar a comissão.",
+      });
+    } finally {
+      setComissaoLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadComissaoPadrao();
+  }, [loadComissaoPadrao]);
+
+  const saveComissaoPadrao = async () => {
+    const valor = Number(comissaoPadrao.replace(",", ".").trim());
+    if (!Number.isFinite(valor) || valor < 0) {
+      setComissaoMessage({
+        type: "error",
+        text: "Indique uma comissão padrão válida (número ≥ 0).",
+      });
+      return;
+    }
+
+    setComissaoSaving(true);
+    setComissaoMessage(null);
+
+    try {
+      const res = await fetch("/api/comissao", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          valor,
+          id: comissaoDocId,
+        }),
+      });
+      const data = (await res.json()) as {
+        record?: { id: string; valor: number };
+        error?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Não foi possível guardar a comissão.");
+      }
+
+      if (data.record) {
+        setComissaoDocId(data.record.id);
+        setComissaoPadrao(String(data.record.valor));
+      }
+
+      setComissaoMessage({
+        type: "success",
+        text: comissaoDocId
+          ? "Comissão padrão atualizada."
+          : "Comissão padrão registada.",
+      });
+    } catch (err) {
+      setComissaoMessage({
+        type: "error",
+        text:
+          err instanceof Error ? err.message : "Erro ao guardar a comissão.",
+      });
+    } finally {
+      setComissaoSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -224,12 +322,42 @@ function FeesTab() {
               </label>
               <input
                 type="text"
+                inputMode="decimal"
                 placeholder="Ex.: 15"
+                value={comissaoPadrao}
+                onChange={(e) => setComissaoPadrao(e.target.value)}
+                disabled={comissaoLoading || comissaoSaving}
                 className={inputClass()}
               />
               <p className="mt-1 text-xs text-pika-muted">
-                Porcentagem cobrada em cada corrida
+                Valor mais recente da coleção comissao — porcentagem cobrada em
+                cada corrida
               </p>
+              {comissaoMessage ? (
+                <p
+                  className={cn(
+                    "mt-2 text-xs font-medium",
+                    comissaoMessage.type === "error"
+                      ? "text-red-600"
+                      : "text-emerald-700",
+                  )}
+                >
+                  {comissaoMessage.text}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => void saveComissaoPadrao()}
+                disabled={comissaoLoading || comissaoSaving}
+                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FontAwesomeIcon icon={faFloppyDisk} className="h-4 w-4" />
+                {comissaoSaving
+                  ? "A guardar…"
+                  : comissaoDocId
+                    ? "Atualizar comissão"
+                    : "Registar comissão"}
+              </button>
             </div>
             <div>
               <label className="text-sm font-semibold text-pika-ink">
