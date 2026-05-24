@@ -3,6 +3,9 @@ import { formatKz } from "@/lib/format-kz";
 export type RideStatus = "Em andamento" | "Concluída" | "Pendente" | "Cancelada";
 
 export type RideRow = {
+  /** ID do documento Firestore (`corrida_fake`). */
+  docId: string;
+  /** Número sequencial exibido na tabela (#1, #2, …). */
   id: number;
   passenger: string;
   driver: string;
@@ -207,6 +210,7 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
 }
 
 export function mapCorridaFakeToRideRow(
+  docId: string,
   data: CorridaFakeDoc,
   ordinalId: number,
 ): RideRow {
@@ -221,6 +225,7 @@ export function mapCorridaFakeToRideRow(
     formatDurationLabel(data.duracao);
 
   return {
+    docId,
     id: ordinalId,
     passenger: data.passageiro_nome?.trim() || "—",
     driver: data.motoristaNome?.trim() || "—",

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RideDetailsModal } from "@/components/rides/RideDetailsModal";
+import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { StarRating } from "@/components/ui/StarRating";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,6 +17,7 @@ import {
   faLocationDot,
   faMagnifyingGlass,
   faPalette,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   rideMatchesDateRange,
@@ -28,6 +30,11 @@ import { cn } from "@/lib/cn";
 const PAGE_SIZE = 12;
 
 const STATUS_FILTER_OPTIONS = ["Todos", "Em andamento", "Concluída", "Pendente", "Cancelada"] as const;
+
+type DeleteConfirmState =
+  | { mode: "single"; row: RideRow }
+  | { mode: "bulk" }
+  | null;
 
 function statusPillClass(status: RideStatus) {
   const map: Record<RideStatus, string> = {
@@ -77,6 +84,9 @@ export function RideHistoryView() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [detailRide, setDetailRide] = useState<RideRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const loadRides = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -134,6 +144,91 @@ export function RideHistoryView() {
   const showingFrom = filtered.length === 0 ? 0 : startIdx + 1;
   const showingTo = startIdx + pageRows.length;
   const pages = pageNumbers(page, pageCount);
+
+  const pageDocIds = pageRows.map((r) => r.docId);
+  const allPageSelected =
+    pageDocIds.length > 0 && pageDocIds.every((id) => selectedIds.has(id));
+
+  const toggleSelectAllPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        for (const id of pageDocIds) next.delete(id);
+      } else {
+        for (const id of pageDocIds) next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleRowSelection = (docId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(docId)) next.delete(docId);
+      else next.add(docId);
+      return next;
+    });
+  };
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteConfirm || deleteBusy) return;
+
+    const ids =
+      deleteConfirm.mode === "single"
+        ? [deleteConfirm.row.docId]
+        : [...selectedIds];
+
+    if (ids.length === 0) return;
+
+    setDeleteBusy(true);
+    setLoadError(null);
+
+    try {
+      const res = await fetch("/api/corridas/historico", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Não foi possível eliminar as corridas.");
+      }
+
+      const deletedSet = new Set(ids);
+      if (detailRide && deletedSet.has(detailRide.docId)) {
+        setDetailRide(null);
+      }
+
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) next.delete(id);
+        return next;
+      });
+      setDeleteConfirm(null);
+      await loadRides(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : "Erro ao eliminar as corridas.",
+      );
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [deleteConfirm, deleteBusy, selectedIds, detailRide, loadRides]);
+
+  const deleteModalTitle =
+    deleteConfirm?.mode === "single"
+      ? `Eliminar corrida #${deleteConfirm.row.id}?`
+      : deleteConfirm?.mode === "bulk"
+        ? `Eliminar ${selectedIds.size} corrida(s)?`
+        : "";
+
+  const deleteModalDescription =
+    deleteConfirm?.mode === "single"
+      ? "Tem certeza de que deseja eliminar esta corrida? Esta ação é irreversível e remove o registo do histórico."
+      : deleteConfirm?.mode === "bulk"
+        ? `Tem certeza de que deseja eliminar ${selectedIds.size} corrida(s) selecionada(s)? Esta ação é irreversível.`
+        : "";
 
   return (
     <div className="rounded-2xl border border-pika-border bg-pika-card p-4 shadow-sm md:p-6">
@@ -204,10 +299,47 @@ export function RideHistoryView() {
         </div>
       </div>
 
+      {selectedIds.size > 0 ? (
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-red-200/80 bg-red-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-pika-ink">
+            {selectedIds.size} corrida(s) selecionada(s)
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleteConfirm({ mode: "bulk" })}
+              disabled={deleteBusy}
+              className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
+              {deleteBusy ? "A eliminar…" : "Eliminar selecionadas"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              disabled={deleteBusy}
+              className="inline-flex items-center justify-center rounded-xl border border-pika-border bg-pika-card px-4 py-2 text-sm font-semibold text-pika-muted transition hover:text-pika-ink disabled:opacity-50"
+            >
+              Limpar seleção
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
         <table className="min-w-[1320px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
+              <th className="w-10 px-3 py-3">
+                <input
+                  type="checkbox"
+                  checked={allPageSelected}
+                  onChange={toggleSelectAllPage}
+                  disabled={loading || pageRows.length === 0}
+                  aria-label="Selecionar todas nesta página"
+                  className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary disabled:opacity-40"
+                />
+              </th>
               <th className="whitespace-nowrap px-4 py-3">ID</th>
               <th className="whitespace-nowrap px-4 py-3 text-center">Detalhes</th>
               <th className="whitespace-nowrap px-4 py-3">Passageiro</th>
@@ -226,7 +358,7 @@ export function RideHistoryView() {
             {loading
               ? Array.from({ length: 6 }, (_, i) => (
                   <tr key={`sk-${i}`} className="border-b border-pika-border">
-                    {Array.from({ length: 12 }, (_, j) => (
+                    {Array.from({ length: 13 }, (_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full max-w-[8rem] animate-pulse rounded bg-pika-page" />
                       </td>
@@ -235,9 +367,13 @@ export function RideHistoryView() {
                 ))
               : pageRows.map((row) => (
                   <RideTableRow
-                    key={`${row.id}-${row.dateLabel}`}
+                    key={row.docId}
                     row={row}
+                    selected={selectedIds.has(row.docId)}
+                    onToggleSelect={() => toggleRowSelection(row.docId)}
                     onViewDetails={() => setDetailRide(row)}
+                    onDelete={() => setDeleteConfirm({ mode: "single", row })}
+                    deleteDisabled={deleteBusy}
                   />
                 ))}
           </tbody>
@@ -320,32 +456,78 @@ export function RideHistoryView() {
       {detailRide ? (
         <RideDetailsModal ride={detailRide} onClose={() => setDetailRide(null)} />
       ) : null}
+
+      <DeleteConfirmModal
+        open={deleteConfirm !== null}
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => {
+          if (!deleteBusy) setDeleteConfirm(null);
+        }}
+        title={deleteModalTitle}
+        description={deleteModalDescription}
+      />
     </div>
   );
 }
 
 function RideTableRow({
   row,
+  selected,
+  onToggleSelect,
   onViewDetails,
+  onDelete,
+  deleteDisabled,
 }: {
   row: RideRow;
+  selected: boolean;
+  onToggleSelect: () => void;
   onViewDetails: () => void;
+  onDelete: () => void;
+  deleteDisabled: boolean;
 }) {
   return (
-    <tr className="border-b border-pika-border bg-pika-card transition-colors last:border-b-0 hover:bg-pika-page/80">
+    <tr
+      className={cn(
+        "border-b border-pika-border bg-pika-card transition-colors last:border-b-0 hover:bg-pika-page/80",
+        selected && "bg-pika-primary/5",
+      )}
+    >
+      <td className="px-3 py-3">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          disabled={deleteDisabled}
+          aria-label={`Selecionar corrida #${row.id}`}
+          className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary disabled:opacity-40"
+        />
+      </td>
       <td className="whitespace-nowrap px-4 py-3 font-medium text-pika-ink">
         #{row.id}
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-center">
-        <button
-          type="button"
-          onClick={onViewDetails}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
-          aria-label={`Ver mais detalhes da corrida #${row.id}`}
-          title="Ver mais detalhes"
-        >
-          <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
-        </button>
+        <div className="inline-flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onViewDetails}
+            disabled={deleteDisabled}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary disabled:opacity-40"
+            aria-label={`Ver mais detalhes da corrida #${row.id}`}
+            title="Ver mais detalhes"
+          >
+            <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={deleteDisabled}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+            aria-label={`Eliminar corrida #${row.id}`}
+            title="Eliminar corrida"
+          >
+            <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+          </button>
+        </div>
       </td>
       <td className="whitespace-nowrap px-4 py-3 font-semibold text-pika-ink">
         {row.passenger}
