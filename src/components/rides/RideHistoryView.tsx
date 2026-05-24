@@ -10,9 +10,12 @@ import {
   faChevronRight,
   faCircle,
   faDownload,
+  faCar,
   faEye,
+  faIdCard,
   faLocationDot,
   faMagnifyingGlass,
+  faPalette,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   rideMatchesDateRange,
@@ -143,7 +146,7 @@ export function RideHistoryView() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por ID, passageiro, motorista, trajeto, valor, status, data..."
+            placeholder="Buscar por ID, passageiro, motorista, trajeto, viatura, valor, status, data..."
             className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
           />
         </div>
@@ -202,7 +205,7 @@ export function RideHistoryView() {
       </div>
 
       <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-        <table className="min-w-[1180px] w-full border-collapse text-left text-sm">
+        <table className="min-w-[1320px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
               <th className="whitespace-nowrap px-4 py-3">ID</th>
@@ -212,6 +215,7 @@ export function RideHistoryView() {
               <th className="whitespace-nowrap px-4 py-3">Valor</th>
               <th className="whitespace-nowrap px-4 py-3">Distância</th>
               <th className="whitespace-nowrap px-4 py-3">Duração</th>
+              <th className="min-w-[180px] px-4 py-3">Viatura</th>
               <th className="whitespace-nowrap px-4 py-3">Classificação</th>
               <th className="whitespace-nowrap px-4 py-3">Status</th>
               <th className="whitespace-nowrap px-4 py-3">Data</th>
@@ -222,7 +226,7 @@ export function RideHistoryView() {
             {loading
               ? Array.from({ length: 6 }, (_, i) => (
                   <tr key={`sk-${i}`} className="border-b border-pika-border">
-                    {Array.from({ length: 11 }, (_, j) => (
+                    {Array.from({ length: 12 }, (_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full max-w-[8rem] animate-pulse rounded bg-pika-page" />
                       </td>
@@ -362,6 +366,31 @@ function RideTableRow({
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">
         {row.durationLabel || "\u00a0"}
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex min-w-0 flex-col gap-1.5 text-xs">
+          <span className="inline-flex items-start gap-2 text-pika-ink">
+            <FontAwesomeIcon
+              icon={faCar}
+              className="mt-0.5 h-3 w-3 shrink-0 text-pika-primary"
+            />
+            <span className="leading-snug font-medium">{row.vehicleModel}</span>
+          </span>
+          <span className="inline-flex items-start gap-2 text-pika-ink">
+            <FontAwesomeIcon
+              icon={faIdCard}
+              className="mt-0.5 h-3 w-3 shrink-0 text-pika-primary"
+            />
+            <span className="leading-snug">{row.vehiclePlate}</span>
+          </span>
+          <span className="inline-flex items-start gap-2 text-pika-muted">
+            <FontAwesomeIcon
+              icon={faPalette}
+              className="mt-0.5 h-3 w-3 shrink-0 text-pika-primary"
+            />
+            <span className="leading-snug">{row.vehicleColor}</span>
+          </span>
+        </div>
       </td>
       <td className="whitespace-nowrap px-4 py-3">
         <StarRating

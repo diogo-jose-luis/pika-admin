@@ -11,6 +11,9 @@ export type RideRow = {
   valueLabel: string;
   distanceLabel: string;
   durationLabel: string;
+  vehicleModel: string;
+  vehiclePlate: string;
+  vehicleColor: string;
   status: RideStatus;
   dateLabel: string;
   /** Timestamp em ms para filtros por intervalo; null se a data for inválida. */
@@ -47,6 +50,9 @@ export type CorridaFakeDoc = {
   /** Campos legados — mantidos para documentos antigos. */
   distancia?: number | string;
   duracao?: number | string;
+  viaturaMarcaModelo?: string;
+  viaturaMatricula?: string;
+  viatura_cor?: string;
 };
 
 const ESTADO_TO_STATUS: Record<number, RideStatus> = {
@@ -71,6 +77,11 @@ function readComment(value: unknown): string {
 function readRouteTextLabel(value: unknown): string {
   if (typeof value !== "string") return "";
   return value.trim();
+}
+
+function readVehicleField(value: unknown): string {
+  const text = readRouteTextLabel(value);
+  return text || "—";
 }
 
 function formatDistanceLabel(value: unknown): string {
@@ -179,6 +190,9 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
     row.valueLabel,
     row.distanceLabel,
     row.durationLabel,
+    row.vehicleModel,
+    row.vehiclePlate,
+    row.vehicleColor,
     row.status,
     row.dateLabel,
     row.passengerToDriverComment,
@@ -215,6 +229,9 @@ export function mapCorridaFakeToRideRow(
     valueLabel: formatKz(preco),
     distanceLabel,
     durationLabel,
+    vehicleModel: readVehicleField(data.viaturaMarcaModelo),
+    vehiclePlate: readVehicleField(data.viaturaMatricula),
+    vehicleColor: readVehicleField(data.viatura_cor),
     status: mapEstadoToStatus(data.estado),
     dateLabel: formatRideDate(data.data),
     dateMs: parseRideDateToMs(data.data),
