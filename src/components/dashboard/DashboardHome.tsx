@@ -261,7 +261,7 @@ export function DashboardHome() {
               <p className="mt-2 text-2xl font-bold text-pika-ink">
                 {stat(data.todayStats.inProgress.toLocaleString("pt-AO"))}
               </p>
-              <p className="mt-2 text-xs text-pika-muted">{dateLabel}</p>
+              <p className="mt-2 text-xs text-pika-muted">Em tempo real</p>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-pika-info">
               <FontAwesomeIcon icon={faClock} className="h-5 w-5" />

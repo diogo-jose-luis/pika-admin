@@ -1,6 +1,10 @@
 import { formatKz } from "@/lib/format-kz";
 import { refToDocId } from "@/lib/firestore-ref";
-import { mapEstadoToStatus, type CorridaFakeDoc } from "@/lib/ride-history";
+import {
+  isInProgressEstado,
+  mapEstadoToStatus,
+  type CorridaFakeDoc,
+} from "@/lib/ride-history";
 import { toDate } from "@/lib/users-shared";
 
 export type DashboardSummary = {
@@ -178,6 +182,10 @@ export function buildDashboardData(
     const preco = precoNumber(data.preco);
     const status = mapEstadoToStatus(estado);
 
+    if (isInProgressEstado(estado)) {
+      todayStats.inProgress += 1;
+    }
+
     if (rideDate && isSameCalendarDay(rideDate, referenceDate)) {
       totalRidesToday += 1;
 
@@ -186,8 +194,6 @@ export function buildDashboardData(
         totalRevenueToday += preco;
       } else if (estado === 2) {
         todayStats.cancelled += 1;
-      } else if (estado === 3) {
-        todayStats.inProgress += 1;
       }
 
       const hour = rideDate.getHours();

@@ -159,15 +159,33 @@ export function AdminHeader({
 
         <button
           type="button"
-          className={iconBtnClass}
+          className="inline-flex h-10 items-center gap-0.5 rounded-xl border border-pika-border bg-pika-page p-1"
           aria-label={isDark ? "Ativar tema claro" : "Ativar tema escuro"}
           aria-pressed={isDark}
           onClick={toggleTheme}
         >
-          <FontAwesomeIcon
-            icon={mounted && isDark ? faSun : faMoon}
-            className="h-5 w-5"
-          />
+          <span
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition",
+              mounted && !isDark
+                ? "bg-pika-card text-amber-600 shadow-sm"
+                : "text-pika-muted",
+            )}
+          >
+            <FontAwesomeIcon icon={faSun} className="h-4 w-4" />
+            <span className="hidden sm:inline">Claro</span>
+          </span>
+          <span
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition",
+              mounted && isDark
+                ? "bg-pika-card text-indigo-400 shadow-sm"
+                : "text-pika-muted",
+            )}
+          >
+            <FontAwesomeIcon icon={faMoon} className="h-4 w-4" />
+            <span className="hidden sm:inline">Escuro</span>
+          </span>
         </button>
 
         <button

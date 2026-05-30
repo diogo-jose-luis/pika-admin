@@ -13,6 +13,7 @@ export type CategoriaDoc = {
   preco_km?: number;
   preco_min?: number;
   multiplicador?: number;
+  raioDesconto?: number;
   ativo?: boolean;
   imagem?: string;
   ordem?: number;
@@ -26,6 +27,7 @@ export type Categoria = {
   preco_km: number;
   preco_min: number;
   multiplicador: number;
+  raioDesconto: number;
   ativo: boolean;
   imagem: string;
   ordem: CategoriaOrdem;
@@ -38,6 +40,7 @@ export type CategoriaInput = {
   preco_km: number;
   preco_min: number;
   multiplicador: number;
+  raioDesconto: number;
   ativo: boolean;
   imagem: string;
   ordem: CategoriaOrdem;
@@ -75,6 +78,7 @@ export function mapCategoriaDoc(id: string, data: CategoriaDoc): Categoria {
     preco_km: num(data.preco_km),
     preco_min: num(data.preco_min),
     multiplicador: num(data.multiplicador, 1),
+    raioDesconto: num(data.raioDesconto),
     ativo: Boolean(data.ativo),
     imagem: data.imagem?.trim() || "",
     ordem: normalizeOrdem(data.ordem),
@@ -137,6 +141,7 @@ export function categoriaToInput(cat: Categoria): CategoriaInput {
     preco_km: cat.preco_km,
     preco_min: cat.preco_min,
     multiplicador: cat.multiplicador,
+    raioDesconto: cat.raioDesconto,
     ativo: cat.ativo,
     imagem: cat.imagem,
     ordem: cat.ordem,
@@ -151,6 +156,7 @@ export function docFromInput(input: CategoriaInput): CategoriaDoc {
     preco_km: input.preco_km,
     preco_min: input.preco_min,
     multiplicador: input.multiplicador,
+    raioDesconto: input.raioDesconto,
     ativo: input.ativo,
     imagem: input.imagem.trim(),
     ordem: input.ordem,

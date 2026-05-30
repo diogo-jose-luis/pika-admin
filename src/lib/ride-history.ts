@@ -61,11 +61,16 @@ export type CorridaFakeDoc = {
 };
 
 const ESTADO_TO_STATUS: Record<number, RideStatus> = {
-  0: "Pendente",
+  0: "Em andamento",
   1: "Concluída",
   2: "Cancelada",
   3: "Em andamento",
 };
+
+export function isInProgressEstado(estado: unknown): boolean {
+  const n = typeof estado === "number" ? estado : Number(estado);
+  return n === 0 || n === 3;
+}
 
 export function parseRideStarRating(value: unknown): number | null {
   if (value == null || value === "") return null;

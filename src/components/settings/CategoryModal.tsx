@@ -18,6 +18,7 @@ const EMPTY_FORM: CategoriaInput = {
   preco_km: 0,
   preco_min: 0,
   multiplicador: 1,
+  raioDesconto: 0,
   ativo: true,
   imagem: "",
   ordem: 1,
@@ -220,6 +221,28 @@ export function CategoryModal({
               }
               className={fieldClass()}
             />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+              Raio desconto (km)
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={0.1}
+              value={form.raioDesconto}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  raioDesconto: Number(e.target.value) || 0,
+                }))
+              }
+              className={fieldClass()}
+            />
+            <p className="mt-1.5 text-xs text-pika-muted">
+              Km permitidos sem alteração de preço ao finalizar a corrida.
+            </p>
           </div>
 
           <div>

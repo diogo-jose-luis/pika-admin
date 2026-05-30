@@ -419,6 +419,27 @@ export function PricesCategoriesTab() {
 
               <div className="mt-3">
                 <label className="text-xs font-medium uppercase tracking-wide text-pika-muted">
+                  Raio desconto (km)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={draft.raioDesconto}
+                  onChange={(e) =>
+                    patchDraft(cat.id, {
+                      raioDesconto: Number(e.target.value) || 0,
+                    })
+                  }
+                  className={inputClass("mt-1 bg-pika-card")}
+                />
+                <p className="mt-1 text-xs text-pika-muted">
+                  Km sem alteração de preço ao finalizar.
+                </p>
+              </div>
+
+              <div className="mt-3">
+                <label className="text-xs font-medium uppercase tracking-wide text-pika-muted">
                   Ordem
                 </label>
                 <select
