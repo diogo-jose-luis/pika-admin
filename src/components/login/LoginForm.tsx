@@ -5,10 +5,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
 import { FaIcon } from "@/components/ui/FaIcon";
 import { ForgotPasswordModal } from "@/components/login/ForgotPasswordModal";
 import { useAuth } from "@/context/AuthContext";
+import { extractApiErrorDebug, extractApiErrorMessage } from "@/lib/api-error";
 import { defaultRouteForNivel } from "@/lib/permissions";
 
 const labelClassName = "mb-2 block text-sm font-semibold text-neutral-900";
@@ -25,6 +25,7 @@ export function LoginForm() {
   const [remember, setRemember] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDebug, setErrorDebug] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);
 
   const isPending = pending || authLoading;
@@ -32,6 +33,7 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErrorDebug(null);
     setPending(true);
 
     try {
@@ -47,30 +49,13 @@ export function LoginForm() {
         typeof nivel === "number" ? defaultRouteForNivel(nivel) : "/dashboard",
       );
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const msg =
-          err.response?.data?.message ??
-          (err.response?.status === 401
-            ? "Credenciais inválidas. Verifique o email e a palavra-passe."
-            : null);
-        if (msg && typeof msg === "string") {
-          setError(msg);
-        } else if (err.response?.status === 422) {
-          const errors = err.response.data?.errors as
-            | Record<string, string[]>
-            | undefined;
-          const first = errors ? Object.values(errors).flat()[0] : null;
-          setError(first ?? "Dados inválidos.");
-        } else if (err.response?.status === 502) {
-          setError(
-            "Servidor indisponível. Confirme que a API Laravel está a correr em http://127.0.0.1:8000",
-          );
-        } else {
-          setError("Não foi possível iniciar sessão. Tente novamente.");
-        }
-      } else {
-        setError("Não foi possível iniciar sessão. Tente novamente.");
-      }
+      setError(
+        extractApiErrorMessage(
+          err,
+          "Não foi possível iniciar sessão. Tente novamente.",
+        ),
+      );
+      setErrorDebug(extractApiErrorDebug(err));
     } finally {
       setPending(false);
     }
@@ -146,12 +131,17 @@ export function LoginForm() {
           </label>
 
           {error ? (
-            <p
+            <div
               className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
               role="alert"
             >
-              {error}
-            </p>
+              <p>{error}</p>
+              {errorDebug ? (
+                <p className="mt-1.5 text-xs font-medium text-red-700/90">
+                  {errorDebug}
+                </p>
+              ) : null}
+            </div>
           ) : null}
 
           <div className="flex flex-wrap items-center justify-between gap-3">
