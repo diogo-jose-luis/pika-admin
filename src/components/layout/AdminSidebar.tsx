@@ -5,8 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FaIcon } from "@/components/ui/FaIcon";
 import { LogoutButton } from "@/components/layout/LogoutButton";
+import { useAuth } from "@/context/AuthContext";
+import { nivelLabel } from "@/lib/auth-types";
 import { sidebarNav } from "@/lib/nav";
-import { initialsFromDisplayName, type SessionUser } from "@/lib/session-user";
+import { filterSidebarNav } from "@/lib/permissions";
+import {
+  authUserToSessionUser,
+  initialsFromDisplayName,
+  type SessionUser,
+} from "@/lib/session-user";
 import { cn } from "@/lib/cn";
 
 type AdminSidebarProps = {
@@ -17,7 +24,13 @@ type AdminSidebarProps = {
 
 export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSidebarProps) {
   const pathname = usePathname();
-  const initials = initialsFromDisplayName(user.displayName);
+  const { user: authUser } = useAuth();
+  const profile: SessionUser = authUser
+    ? authUserToSessionUser(authUser)
+    : user;
+  const nivel = profile.nivel ?? 4;
+  const navItems = filterSidebarNav(nivel, sidebarNav);
+  const initials = initialsFromDisplayName(profile.displayName);
 
   return (
     <aside
@@ -61,7 +74,7 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
           collapsed ? "px-2" : "px-3",
         )}
       >
-        {sidebarNav.map((item) => {
+        {navItems.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
@@ -97,7 +110,7 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
           <div className="flex flex-col items-center gap-2">
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pika-primary text-xs font-semibold text-white"
-              title={user.displayName}
+              title={profile.displayName}
             >
               {initials}
             </div>
@@ -109,8 +122,12 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-pika-ink">{user.displayName}</p>
-              <p className="truncate text-xs text-pika-muted">{user.email}</p>
+              <p className="truncate text-sm font-semibold text-pika-ink">
+                {profile.displayName}
+              </p>
+              <p className="truncate text-xs text-pika-muted">
+                {profile.roleLabel ?? nivelLabel(nivel)}
+              </p>
             </div>
             <LogoutButton className="inline-flex h-9 w-9 items-center justify-center rounded-lg" />
           </div>

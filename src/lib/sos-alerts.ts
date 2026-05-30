@@ -19,6 +19,8 @@ export type SosCorridaDoc = {
   local_fim?: string;
   motoristaNome?: string;
   passageiro_nome?: string;
+  motorista_id?: unknown;
+  passageiro_id?: unknown;
 };
 
 export type SosAlertRow = {
@@ -72,20 +74,37 @@ function readPhone(data: SosUserDoc | undefined): string {
   );
 }
 
+function callerNameFromCorrida(
+  callerUserId: string | null,
+  corrida: SosCorridaDoc | undefined,
+): string {
+  if (!callerUserId || !corrida) return "";
+
+  const motoristaId = refToDocId(corrida.motorista_id);
+  const passageiroId = refToDocId(corrida.passageiro_id);
+
+  if (callerUserId === motoristaId) {
+    return corrida.motoristaNome?.trim() || "";
+  }
+  if (callerUserId === passageiroId) {
+    return corrida.passageiro_nome?.trim() || "";
+  }
+  return "";
+}
+
 export function mapSosToAlertRow(
   docId: string,
   data: SosDoc,
   user: SosUserDoc | undefined,
   corrida: SosCorridaDoc | undefined,
+  callerUserId?: string | null,
 ): SosAlertRow {
-  const userName = user?.display_name?.trim() || "—";
-  const motorista = corrida?.motoristaNome?.trim();
-  const passageiro = corrida?.passageiro_nome?.trim();
+  const userId = callerUserId ?? refToDocId(data.userRef);
+  const callerName =
+    user?.display_name?.trim() || callerNameFromCorrida(userId, corrida);
 
-  const titleLine =
-    motorista && passageiro
-      ? `${motorista} · ${passageiro}`
-      : motorista || passageiro || userName;
+  /** Nome de quem acionou o SOS (userRef), não ambos os participantes da corrida. */
+  const titleLine = callerName || "—";
 
   const corridaDocId = refToDocId(data.corridaID);
   const rideRef = corridaDocId ? `Corrida ${corridaDocId.slice(0, 8)}…` : "—";

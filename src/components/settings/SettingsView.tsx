@@ -7,17 +7,21 @@ import {
   faDollarSign,
   faFloppyDisk,
   faListCheck,
-  faPen,
   faShieldHalved,
-  faTrash,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
+import { AdminUsersTab } from "@/components/settings/AdminUsersTab";
 import { PriceSimulatorCard } from "@/components/settings/PriceSimulatorCard";
 import { PricesCategoriesTab } from "@/components/settings/PricesCategoriesTab";
+import { useAuth } from "@/context/AuthContext";
+import {
+  filterSettingsTabs,
+  type SettingsTabId,
+} from "@/lib/permissions";
 
-type TabId = "fees" | "users" | "notifications" | "rules" | "prices";
+type TabId = SettingsTabId;
 
 const TABS: { id: TabId; label: string; icon: IconDefinition }[] = [
   { id: "fees", label: "Taxas e Comissões", icon: faDollarSign },
@@ -25,37 +29,6 @@ const TABS: { id: TabId; label: string; icon: IconDefinition }[] = [
   { id: "notifications", label: "Notificações", icon: faBell },
   { id: "rules", label: "Regras do Sistema", icon: faShieldHalved },
   { id: "prices", label: "Preços e Categorias", icon: faListCheck },
-];
-
-const ADMIN_USERS = [
-  {
-    id: "1",
-    name: "Maria Silva",
-    email: "maria.silva@email.com",
-    role: "Super Admin",
-    active: true,
-  },
-  {
-    id: "2",
-    name: "João Santos",
-    email: "maria.silva@email.com",
-    role: "Admin",
-    active: true,
-  },
-  {
-    id: "3",
-    name: "Courtney Henry",
-    email: "maria.silva@email.com",
-    role: "Operador",
-    active: true,
-  },
-  {
-    id: "4",
-    name: "Kathryn Murphy",
-    email: "maria.silva@email.com",
-    role: "Financeiro",
-    active: false,
-  },
 ];
 
 function SettingsSwitch({
@@ -122,7 +95,19 @@ function CardTitle({ children }: { children: React.ReactNode }) {
 }
 
 export function SettingsView() {
+  const { user } = useAuth();
+  const nivel = user?.nivel ?? 4;
+  const visibleTabs = useMemo(
+    () => filterSettingsTabs(nivel, TABS),
+    [nivel],
+  );
   const [tab, setTab] = useState<TabId>("fees");
+
+  useEffect(() => {
+    if (!visibleTabs.some((t) => t.id === tab)) {
+      setTab(visibleTabs[0]?.id ?? "fees");
+    }
+  }, [visibleTabs, tab]);
 
   const [notifNewRide, setNotifNewRide] = useState(false);
   const [notifCancelled, setNotifCancelled] = useState(true);
@@ -152,7 +137,7 @@ export function SettingsView() {
     <div className="space-y-5">
       <WhiteCard className="p-2 md:p-2">
         <div className="flex flex-wrap gap-2">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -172,7 +157,7 @@ export function SettingsView() {
       </WhiteCard>
 
       {tab === "fees" ? <FeesTab /> : null}
-      {tab === "users" ? <UsersTab /> : null}
+      {tab === "users" ? <AdminUsersTab /> : null}
       {tab === "notifications" ? (
         <NotificationsTab
           notifNewRide={notifNewRide}
@@ -463,88 +448,6 @@ function FeesTab() {
         </div>
       </WhiteCard>
     </div>
-  );
-}
-
-function UsersTab() {
-  return (
-    <WhiteCard>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-pika-ink">
-            Usuários Administrativos
-          </h2>
-          <p className="mt-1 text-sm text-pika-muted">
-            Gerencie o acesso ao painel
-          </p>
-        </div>
-        <button
-          type="button"
-          className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark sm:self-auto"
-        >
-          + Novo Usuário
-        </button>
-      </div>
-
-      <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-        <table className="min-w-[720px] w-full border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
-              <th className="px-4 py-3">Usuário</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Função</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ADMIN_USERS.map((u, idx) => (
-              <tr
-                key={u.id}
-                className={cn(
-                  "border-b border-pika-border transition-colors last:border-b-0",
-                  idx === 2 ? "bg-pika-page/90" : "bg-pika-card hover:bg-pika-page/80",
-                )}
-              >
-                <td className="px-4 py-4 font-semibold text-pika-ink">{u.name}</td>
-                <td className="px-4 py-4 text-pika-muted">{u.email}</td>
-                <td className="px-4 py-4 text-pika-ink">{u.role}</td>
-                <td className="px-4 py-4">
-                  <span
-                    className={cn(
-                      "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
-                      u.active
-                        ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100"
-                        : "bg-red-50 text-red-700 ring-1 ring-red-100",
-                    )}
-                  >
-                    {u.active ? "Ativo" : "Inativo"}
-                  </span>
-                </td>
-                <td className="px-4 py-4 text-right">
-                  <div className="inline-flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-ink transition hover:bg-pika-page"
-                      aria-label="Editar"
-                    >
-                      <FontAwesomeIcon icon={faPen} className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-600 transition hover:bg-red-50"
-                      aria-label="Eliminar"
-                    >
-                      <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </WhiteCard>
   );
 }
 

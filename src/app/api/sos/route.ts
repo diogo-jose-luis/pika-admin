@@ -82,6 +82,7 @@ export async function GET() {
         data,
         userId ? usersMap.get(userId) : undefined,
         corridaId ? corridasMap.get(corridaId) : undefined,
+        userId,
       );
     });
 

@@ -13,6 +13,8 @@ async function sessionUserForLayout(): Promise<SessionUser> {
   return {
     displayName: "Administrador",
     email: "—",
+    nivel: 4,
+    roleLabel: "Super Admin",
   };
 }
 

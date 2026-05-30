@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ComponentPropsWithoutRef } from "react";
-import { logoutAction } from "@/app/actions/auth";
+import { useAuth } from "@/context/AuthContext";
 import { LogoutConfirmModal } from "@/components/ui/LogoutConfirmModal";
 import { FaIcon } from "@/components/ui/FaIcon";
 import { cn } from "@/lib/cn";
@@ -20,12 +20,13 @@ export function LogoutButton({
   labelClassName,
   ...buttonProps
 }: LogoutButtonProps) {
+  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const handleConfirm = () => {
     startTransition(() => {
-      void logoutAction();
+      logout();
     });
   };
 

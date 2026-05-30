@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import Script from "next/script";
+import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "@/lib/fontawesome";
 import "./globals.css";
@@ -34,7 +35,9 @@ export default function RootLayout({
         <Script id="pika-theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

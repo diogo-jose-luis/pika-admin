@@ -1,9 +1,16 @@
+import type { AuthUser } from "@/lib/auth-types";
+import { nivelLabel } from "@/lib/auth-types";
+
 export const SESSION_COOKIE = "pika_session";
 export const USER_COOKIE = "pika_user";
+export const TOKEN_COOKIE = "pika_token";
 
 export type SessionUser = {
   email: string;
   displayName: string;
+  nivel: number;
+  id?: number;
+  roleLabel?: string;
 };
 
 /** Nome amigável a partir da parte local do email (ex.: diogo.luis → Diogo Luis). */
@@ -31,11 +38,27 @@ export function initialsFromDisplayName(name: string): string {
   return "??";
 }
 
+export function authUserToSessionUser(user: AuthUser): SessionUser {
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.name.trim() || displayNameFromEmail(user.email),
+    nivel: user.nivel,
+    roleLabel: nivelLabel(user.nivel),
+  };
+}
+
+export function serializeSessionUserFromAuth(user: AuthUser): string {
+  return JSON.stringify(authUserToSessionUser(user));
+}
+
 export function serializeSessionUser(email: string): string {
   const e = email.trim();
   const payload: SessionUser = {
     email: e,
     displayName: displayNameFromEmail(e),
+    nivel: 4,
+    roleLabel: nivelLabel(4),
   };
   return JSON.stringify(payload);
 }
@@ -52,9 +75,17 @@ export function parseSessionUserCookie(raw: string | undefined): SessionUser | n
       typeof (data as SessionUser).email === "string" &&
       typeof (data as SessionUser).displayName === "string"
     ) {
+      const parsed = data as SessionUser;
       return {
-        email: (data as SessionUser).email,
-        displayName: (data as SessionUser).displayName,
+        email: parsed.email,
+        displayName: parsed.displayName,
+        nivel:
+          typeof parsed.nivel === "number" ? parsed.nivel : 4,
+        id: typeof parsed.id === "number" ? parsed.id : undefined,
+        roleLabel:
+          typeof parsed.roleLabel === "string"
+            ? parsed.roleLabel
+            : nivelLabel(typeof parsed.nivel === "number" ? parsed.nivel : 4),
       };
     }
   } catch {

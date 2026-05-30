@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AdminFooter } from "@/components/layout/AdminFooter";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
+import { AuthGate } from "@/components/auth/AuthGate";
 import { AdminDateProvider } from "@/components/providers/AdminDateProvider";
 import type { SessionUser } from "@/lib/session-user";
 import { cn } from "@/lib/cn";
@@ -87,7 +88,7 @@ export function AdminShell({ children, user }: AdminShellProps) {
             onSidebarToggle={toggleSidebarCollapsed}
           />
           <main className="scroll-pika min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-            {children}
+            <AuthGate>{children}</AuthGate>
           </main>
           <AdminFooter />
         </AdminDateProvider>
