@@ -6,6 +6,8 @@ import {
   faCar,
   faEnvelope,
   faFileLines,
+  faGaugeHigh,
+  faLocationDot,
   faPhone,
   faStar,
   faXmark,
@@ -113,6 +115,32 @@ export function DriverDetailsModal({ driver, onClose }: DriverDetailsModalProps)
             <InfoRow icon={faEnvelope} label="Email" value={driver.email} />
             <InfoRow icon={faPhone} label="Telefone" value={driver.phone} />
             <InfoRow icon={faBuildingColumns} label="IBAN" value={driver.iban} />
+            <InfoRow
+              icon={faGaugeHigh}
+              label="Disponibilidade"
+              value={driver.onlineLabel}
+            />
+            <li className="flex items-start gap-2.5">
+              <FontAwesomeIcon
+                icon={faLocationDot}
+                className="mt-0.5 h-4 w-4 shrink-0 text-pika-ink"
+              />
+              <span>
+                <span className="font-medium">Última localização: </span>
+                {driver.lastLocationMapsUrl ? (
+                  <a
+                    href={driver.lastLocationMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-pika-primary underline-offset-2 hover:underline"
+                  >
+                    {driver.lastLocationLabel}
+                  </a>
+                ) : (
+                  driver.lastLocationLabel
+                )}
+              </span>
+            </li>
           </InfoCard>
           <InfoCard title="Veículo">
             <InfoRow icon={faCar} label="" value={driver.vehicleModel} />

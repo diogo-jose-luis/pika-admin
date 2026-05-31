@@ -13,6 +13,7 @@ import {
   faEllipsisVertical,
   faEnvelope,
   faGaugeHigh,
+  faLocationDot,
   faMagnifyingGlass,
   faPhone,
   faStar,
@@ -27,6 +28,7 @@ import {
   type DriversSummary,
 } from "@/lib/drivers";
 import { USER_ESTADO_BULK_OPTIONS } from "@/lib/users-estado";
+import { USER_ONLINE_BULK_OPTIONS } from "@/lib/users-online";
 import { cn } from "@/lib/cn";
 
 const DOC_OPTIONS = ["Todos", "Completa", "Pendente"] as const;
@@ -42,6 +44,21 @@ function DriverStatusBadge({ status }: { status: DriverStatus }) {
       )}
     >
       {status}
+    </span>
+  );
+}
+
+function DriverOnlineBadge({ online }: { online: boolean }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2.5 py-1 text-xs font-semibold",
+        online
+          ? "bg-sky-50 text-sky-700 ring-1 ring-sky-100"
+          : "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
+      )}
+    >
+      {online ? "Online" : "Offline"}
     </span>
   );
 }
@@ -66,6 +83,7 @@ export function DriversView() {
   const [deleteTarget, setDeleteTarget] = useState<DriverCard | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEstado, setBulkEstado] = useState("1");
+  const [bulkOnline, setBulkOnline] = useState("true");
   const [bulkSaving, setBulkSaving] = useState(false);
 
   const loadDrivers = useCallback(async (isRefresh = false) => {
@@ -162,6 +180,37 @@ export function DriversView() {
     } catch (err) {
       setLoadError(
         err instanceof Error ? err.message : "Não foi possível atualizar o estado.",
+      );
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const applyBulkOnline = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkSaving(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/motoristas/online", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: [...selectedIds],
+          online: bulkOnline === "true",
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(
+          data.error ?? "Não foi possível atualizar a disponibilidade online.",
+        );
+      }
+      await loadDrivers(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível atualizar a disponibilidade online.",
       );
     } finally {
       setBulkSaving(false);
@@ -353,7 +402,7 @@ export function DriversView() {
                 onChange={(e) => setBulkEstado(e.target.value)}
                 disabled={bulkSaving}
                 className="w-full appearance-none rounded-xl border border-pika-border bg-pika-card py-2 pl-3 pr-9 text-sm font-medium text-pika-ink outline-none focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/20 disabled:opacity-50"
-                aria-label="Novo estado"
+                aria-label="Novo estado da conta"
               >
                 {USER_ESTADO_BULK_OPTIONS.map((opt) => (
                   <option key={opt.value} value={String(opt.value)}>
@@ -367,20 +416,46 @@ export function DriversView() {
             </div>
             <button
               type="button"
+              onClick={() => void applyBulkEstado()}
+              disabled={bulkSaving}
+              className="inline-flex items-center justify-center rounded-xl border border-pika-border bg-pika-card px-4 py-2 text-sm font-semibold text-pika-ink shadow-sm transition hover:bg-pika-page disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {bulkSaving ? "A aplicar…" : "Aplicar estado"}
+            </button>
+            <div className="relative min-w-[10rem]">
+              <select
+                value={bulkOnline}
+                onChange={(e) => setBulkOnline(e.target.value)}
+                disabled={bulkSaving}
+                className="w-full appearance-none rounded-xl border border-pika-border bg-pika-card py-2 pl-3 pr-9 text-sm font-medium text-pika-ink outline-none focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/20 disabled:opacity-50"
+                aria-label="Disponibilidade online"
+              >
+                {USER_ONLINE_BULK_OPTIONS.map((opt) => (
+                  <option key={String(opt.value)} value={String(opt.value)}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center text-pika-muted">
+                <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void applyBulkOnline()}
+              disabled={bulkSaving}
+              className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {bulkSaving ? "A aplicar…" : "Aplicar online/offline"}
+            </button>
+            <button
+              type="button"
               onClick={() => void applyBulkToPassenger()}
               disabled={bulkSaving}
               className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FontAwesomeIcon icon={faUserTag} className="h-3.5 w-3.5" />
               {bulkSaving ? "A converter…" : "Converter para passageiro"}
-            </button>
-            <button
-              type="button"
-              onClick={() => void applyBulkEstado()}
-              disabled={bulkSaving}
-              className="inline-flex items-center justify-center rounded-xl bg-pika-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {bulkSaving ? "A aplicar…" : "Aplicar estado"}
             </button>
             <button
               type="button"
@@ -521,8 +596,9 @@ function DriverCard({
             <p className="mt-0.5 text-xs font-medium text-pika-muted">{driver.id}</p>
           </div>
         </div>
-        <div ref={menuRef} className="relative flex shrink-0 items-center gap-2">
+        <div ref={menuRef} className="relative flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           <DriverStatusBadge status={driver.status} />
+          <DriverOnlineBadge online={driver.online} />
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
@@ -584,6 +660,29 @@ function DriverCard({
             className="mt-0.5 h-4 w-4 shrink-0 text-pika-primary"
           />
           <span className="leading-snug">{driver.vehicle}</span>
+        </li>
+        <li className="flex items-start gap-2.5 text-pika-muted">
+          <FontAwesomeIcon
+            icon={faLocationDot}
+            className="mt-0.5 h-4 w-4 shrink-0 text-pika-primary"
+          />
+          <span className="min-w-0">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-pika-ink/80">
+              Última localização
+            </span>
+            {driver.lastLocationMapsUrl ? (
+              <a
+                href={driver.lastLocationMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-0.5 inline-block font-mono text-xs text-pika-primary underline-offset-2 hover:underline"
+              >
+                {driver.lastLocationLabel}
+              </a>
+            ) : (
+              <span className="mt-0.5 block text-sm">{driver.lastLocationLabel}</span>
+            )}
+          </span>
         </li>
       </ul>
 

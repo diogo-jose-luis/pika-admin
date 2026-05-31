@@ -1,10 +1,12 @@
 import { formatKz } from "@/lib/format-kz";
+import { readLatLng } from "@/lib/live-map";
 import {
   avatarClassForId,
   formatUserDate,
   initialsFromName,
   mapUserEstadoToLabel,
 } from "@/lib/users-shared";
+import { normalizeUserOnline, onlineStatusLabel } from "@/lib/users-online";
 
 export type DriverStatus = "Ativo" | "Inativo";
 
@@ -21,6 +23,11 @@ export type DriverCard = {
   initials: string;
   verified: boolean;
   status: DriverStatus;
+  online: boolean;
+  onlineLabel: "Online" | "Offline";
+  lastLocationLabel: string;
+  /** Link Google Maps quando há coordenadas válidas. */
+  lastLocationMapsUrl: string | null;
   email: string;
   phone: string;
   vehicle: string;
@@ -86,6 +93,30 @@ export function formatEarningsDisplay(amount: number): string {
   });
 }
 
+export function formatDriverLastLocation(
+  latValue: unknown,
+  lngValue: unknown,
+): { label: string; mapsUrl: string | null } {
+  const coords = readLatLng(latValue, lngValue);
+  if (!coords) {
+    return { label: "—", mapsUrl: null };
+  }
+
+  const latStr = coords.lat.toLocaleString("pt-AO", {
+    minimumFractionDigits: 5,
+    maximumFractionDigits: 5,
+  });
+  const lngStr = coords.lng.toLocaleString("pt-AO", {
+    minimumFractionDigits: 5,
+    maximumFractionDigits: 5,
+  });
+
+  return {
+    label: `${latStr}, ${lngStr}`,
+    mapsUrl: `https://www.google.com/maps?q=${coords.lat},${coords.lng}`,
+  };
+}
+
 export function buildVehicleLabel(vehicle?: VeiculoProvisorioDoc): string {
   if (!vehicle) return "—";
   const cor = vehicle.cor_texto?.trim() || vehicle.cor?.trim() || "—";
@@ -128,6 +159,11 @@ export function mapUserToDriverCard(
     [vehicle?.marca?.trim(), vehicle?.modelo?.trim()].filter(Boolean).join(" ") ||
     "—";
   const plate = vehicle?.matricula?.trim() || "—";
+  const online = normalizeUserOnline(data.online);
+  const location = formatDriverLastLocation(
+    data.localizacao_atual_lat,
+    data.localizacao_atual_lng,
+  );
 
   return {
     userDocId: docId,
@@ -136,6 +172,10 @@ export function mapUserToDriverCard(
     initials: initialsFromName(name),
     verified,
     status: mapUserEstadoToLabel(data.estado),
+    online,
+    onlineLabel: onlineStatusLabel(online),
+    lastLocationLabel: location.label,
+    lastLocationMapsUrl: location.mapsUrl,
     email: data.email?.trim() || "—",
     phone: data.phone_number?.trim() || "—",
     vehicle: vehicleLabel,
@@ -190,6 +230,8 @@ export function driverMatchesSearch(driver: DriverCard, query: string): boolean 
     String(driver.rides),
     driver.earningsKz,
     driver.status,
+    driver.onlineLabel,
+    driver.lastLocationLabel,
     driver.iban,
   ]
     .join(" ")
