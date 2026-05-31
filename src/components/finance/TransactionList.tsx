@@ -31,7 +31,10 @@ export function TransactionList({ items, className }: TransactionListProps) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-pika-ink">{t.label}</p>
-            <p className="text-sm text-pika-muted">{t.when}</p>
+            {t.subtitle ? (
+              <p className="truncate text-sm text-pika-muted">{t.subtitle}</p>
+            ) : null}
+            <p className="text-xs text-pika-muted/90">{t.when}</p>
           </div>
           <p
             className={cn(

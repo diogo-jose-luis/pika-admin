@@ -20,9 +20,12 @@ export type FinanceTransaction = {
   id: string;
   positive: boolean;
   label: string;
+  /** Passageiro e motorista (quando disponível). */
+  subtitle: string;
   when: string;
   amount: string;
   dateKey: string;
+  sortTime: number;
 };
 
 export type FinanceData = {
@@ -110,6 +113,109 @@ function isoFromDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function startOfDayFromIso(iso: string): number | null {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+}
+
+function endOfDayFromIso(iso: string): number | null {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+}
+
+export function defaultTransactionDateRange(): { from: string; to: string } {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  return {
+    from: isoFromDate(from),
+    to: isoFromDate(now),
+  };
+}
+
+export function parseTransactionDateIso(value: string | null): string | null {
+  if (!value?.trim()) return null;
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  return trimmed;
+}
+
+function rideToTransactions(
+  rideId: string,
+  data: CorridaFakeDoc & Record<string, unknown>,
+  rideDate: Date,
+): FinanceTransaction[] {
+  const preco = precoNumber(data.preco);
+  const comissao = comissaoNumber(data.comissao);
+  const category = categorizeRide(data);
+  const categoryLabel =
+    String(data.categoria_nome ?? category).trim() || category;
+  const passenger = data.passageiro_nome?.trim() || "—";
+  const driver = data.motoristaNome?.trim() || "—";
+  const sortTime = rideDate.getTime();
+  const dateKey = isoFromDate(rideDate);
+  const when = formatRideDate(rideDate);
+  const subtitle = `${passenger} • ${driver}`;
+
+  const rows: FinanceTransaction[] = [
+    {
+      id: rideId,
+      positive: true,
+      label: `Corrida concluída — ${categoryLabel}`,
+      subtitle,
+      when,
+      amount: formatKz(preco),
+      dateKey,
+      sortTime,
+    },
+  ];
+
+  if (comissao > 0) {
+    rows.push({
+      id: `${rideId}-comissao`,
+      positive: false,
+      label: `Comissão — ${categoryLabel}`,
+      subtitle,
+      when,
+      amount: formatKz(comissao),
+      dateKey,
+      sortTime: sortTime + 1,
+    });
+  }
+
+  return rows;
+}
+
+/** Transações de corridas concluídas (estado = 1) num intervalo de datas. */
+export function buildFinanceTransactions(
+  rides: Array<{ id: string; data: CorridaFakeDoc & Record<string, unknown> }>,
+  fromIso: string,
+  toIso: string,
+): FinanceTransaction[] {
+  const fromStart = startOfDayFromIso(fromIso);
+  const toEnd = endOfDayFromIso(toIso);
+  if (fromStart == null || toEnd == null) return [];
+
+  const transactions: FinanceTransaction[] = [];
+
+  for (const ride of rides) {
+    const data = ride.data;
+    if (estadoNumber(data.estado) !== 1) continue;
+
+    const rideDate = toDate(data.data);
+    if (!rideDate) continue;
+
+    const ms = rideDate.getTime();
+    if (ms < fromStart || ms > toEnd) continue;
+
+    transactions.push(...rideToTransactions(ride.id, data, rideDate));
+  }
+
+  transactions.sort((a, b) => b.sortTime - a.sortTime);
+  return transactions;
+}
+
 export function buildFinanceData(
   rides: Array<{ id: string; data: CorridaFakeDoc & Record<string, unknown> }>,
   referenceDate: Date,
@@ -173,14 +279,7 @@ export function buildFinanceData(
       );
     }
 
-    transactions.push({
-      id: ride.id,
-      positive: true,
-      label: String(data.categoria_nome ?? category).trim() || category,
-      when: formatRideDate(rideDate),
-      amount: formatKz(preco),
-      dateKey: isoFromDate(rideDate),
-    });
+    transactions.push(...rideToTransactions(ride.id, data, rideDate));
   }
 
   const categoryTotalSum = [...categoryTotals.values()].reduce((a, b) => a + b, 0);

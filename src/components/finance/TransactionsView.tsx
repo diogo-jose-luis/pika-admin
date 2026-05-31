@@ -1,83 +1,137 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarDays } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { TransactionList } from "@/components/finance/TransactionList";
+import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import {
-  TRANSACTION_DATE_FILTERS,
-  TRANSACTION_TODAY_KEY,
-  TRANSACTIONS_ALL,
-  type TransactionDateFilter,
-} from "@/lib/transactions-mock";
-
-function filterByDate(
-  items: typeof TRANSACTIONS_ALL,
-  filter: TransactionDateFilter,
-): typeof TRANSACTIONS_ALL {
-  if (filter === "Todos") return items;
-
-  const today = new Date(`${TRANSACTION_TODAY_KEY}T12:00:00`);
-  const todayKey = TRANSACTION_TODAY_KEY;
-
-  if (filter === "Hoje") {
-    return items.filter((t) => t.dateKey === todayKey);
-  }
-
-  if (filter === "Ontem") {
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const key = yesterday.toISOString().slice(0, 10);
-    return items.filter((t) => t.dateKey === key);
-  }
-
-  const weekAgo = new Date(today);
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  return items.filter((t) => new Date(`${t.dateKey}T12:00:00`) >= weekAgo);
-}
+  defaultTransactionDateRange,
+  type FinanceTransaction,
+} from "@/lib/finance";
 
 export function TransactionsView() {
-  const [dateFilter, setDateFilter] = useState<TransactionDateFilter>("Hoje");
+  const defaults = defaultTransactionDateRange();
+  const [dateFrom, setDateFrom] = useState(defaults.from);
+  const [dateTo, setDateTo] = useState(defaults.to);
+  const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const filtered = useMemo(
-    () => filterByDate(TRANSACTIONS_ALL, dateFilter),
-    [dateFilter],
+  const loadTransactions = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      setLoadError(null);
+
+      try {
+        const params = new URLSearchParams({ from: dateFrom, to: dateTo });
+        const res = await fetch(`/api/financeiro/transacoes?${params}`, {
+          cache: "no-store",
+        });
+        const json = (await res.json()) as {
+          transactions?: FinanceTransaction[];
+          error?: string;
+        };
+
+        if (!res.ok) {
+          throw new Error(json.error ?? "Erro ao carregar transações.");
+        }
+
+        setTransactions(json.transactions ?? []);
+      } catch (err) {
+        setLoadError(
+          err instanceof Error ? err.message : "Erro ao carregar transações.",
+        );
+        setTransactions([]);
+      } finally {
+        if (isRefresh) setRefreshing(false);
+        else setLoading(false);
+      }
+    },
+    [dateFrom, dateTo],
   );
+
+  useEffect(() => {
+    void loadTransactions();
+  }, [loadTransactions]);
 
   return (
     <div className="space-y-5 md:space-y-6">
       <section className="rounded-2xl border border-pika-border bg-pika-card shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-pika-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-pika-border px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-pika-ink">Transações Recentes</h2>
-            <p className="text-xs text-pika-muted">Últimas movimentações</p>
+            <h2 className="text-base font-semibold text-pika-ink">
+              Transações Recentes
+            </h2>
+            <p className="text-xs text-pika-muted">
+              Corridas concluídas e comissões associadas (valores do Firestore)
+            </p>
           </div>
-          <div className="relative shrink-0">
-            <span className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center justify-center text-pika-muted">
-              <FontAwesomeIcon icon={faCalendarDays} className="h-4 w-4" />
-            </span>
-            <select
-              value={dateFilter}
-              onChange={(e) =>
-                setDateFilter(e.target.value as TransactionDateFilter)
-              }
-              className="appearance-none rounded-xl border border-pika-border bg-pika-card py-2.5 pl-10 pr-8 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
-            >
-              {TRANSACTION_DATE_FILTERS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+
+          <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                De
+              </span>
+              <input
+                type="date"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(e) => setDateFrom(e.target.value)}
+                disabled={loading && !refreshing}
+                className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2 disabled:opacity-50"
+                aria-label="Data inicial"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                Até
+              </span>
+              <input
+                type="date"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(e) => setDateTo(e.target.value)}
+                disabled={loading && !refreshing}
+                className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2 disabled:opacity-50"
+                aria-label="Data final"
+              />
+            </label>
+            <RefreshDataButton
+              loading={refreshing}
+              onClick={() => void loadTransactions(true)}
+              className="mb-0.5"
+            />
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {loadError ? (
+          <p
+            className="border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-800"
+            role="alert"
+          >
+            {loadError}
+          </p>
+        ) : null}
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 px-5 py-16 text-pika-muted">
+            <FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin" />
+            <span className="text-sm font-medium">A carregar transações…</span>
+          </div>
+        ) : transactions.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-pika-muted">
-            Nenhuma transação encontrada para este período.
+            Nenhuma transação encontrada para o período seleccionado.
           </p>
         ) : (
-          <TransactionList items={filtered} />
+          <>
+            <p className="border-b border-pika-border bg-pika-page/50 px-5 py-2 text-xs text-pika-muted">
+              {transactions.length} movimentação(ões) • mais recentes primeiro
+            </p>
+            <TransactionList items={transactions} />
+          </>
         )}
       </section>
     </div>
