@@ -22,7 +22,9 @@ import {
   unwrapApiData,
 } from "@/lib/auth-types";
 import { canManageAdminUsers } from "@/lib/permissions";
+import { parseResetPasswordResponse } from "@/lib/parse-reset-password-response";
 import { initialsFromDisplayName } from "@/lib/session-user";
+import { ResetPasswordResultModal } from "@/components/settings/ResetPasswordResultModal";
 import { cn } from "@/lib/cn";
 
 type ViewMode = "cards" | "table";
@@ -93,6 +95,11 @@ export function AdminUsersTab() {
   const [form, setForm] = useState<UserFormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [resettingId, setResettingId] = useState<number | null>(null);
+  const [resetResult, setResetResult] = useState<{
+    user: AuthUser;
+    password: string;
+  } | null>(null);
 
   const loadUsers = useCallback(async () => {
     if (!canManage) {
@@ -209,17 +216,26 @@ export function AdminUsersTab() {
   const resetPassword = async (user: AuthUser) => {
     if (
       !window.confirm(
-        `Enviar nova palavra-passe para ${user.email}?`,
+        `Gerar nova palavra-passe para "${user.name}"?\n\nA senha será exibida neste painel (não é enviada por e-mail).`,
       )
     ) {
       return;
     }
+    setResettingId(user.id);
     setError(null);
     try {
-      await http.post(`/users/${user.id}/reset-password`);
-      alert(`Nova palavra-passe enviada para ${user.email}.`);
+      const { data } = await http.post(`/users/${user.id}/reset-password`);
+      const password = parseResetPasswordResponse(data);
+      if (!password) {
+        throw new Error(
+          "A API não devolveu a nova palavra-passe. Confirme o endpoint reset-password.",
+        );
+      }
+      setResetResult({ user, password });
     } catch (err) {
       setError(apiErrorMessage(err, "Não foi possível redefinir a palavra-passe."));
+    } finally {
+      setResettingId(null);
     }
   };
 
@@ -315,6 +331,7 @@ export function AdminUsersTab() {
               user={u}
               isSelf={u.id === currentUser?.id}
               deleting={deletingId === u.id}
+              resetting={resettingId === u.id}
               onEdit={() => openEdit(u)}
               onDelete={() => void deleteUser(u)}
               onResetPassword={() => void resetPassword(u)}
@@ -326,6 +343,7 @@ export function AdminUsersTab() {
           users={users}
           currentUserId={currentUser?.id}
           deletingId={deletingId}
+          resettingId={resettingId}
           onEdit={openEdit}
           onDelete={(u) => void deleteUser(u)}
           onResetPassword={(u) => void resetPassword(u)}
@@ -436,6 +454,13 @@ export function AdminUsersTab() {
           </div>
         </div>
       ) : null}
+
+      <ResetPasswordResultModal
+        open={resetResult !== null}
+        user={resetResult?.user ?? null}
+        password={resetResult?.password ?? ""}
+        onClose={() => setResetResult(null)}
+      />
     </section>
   );
 }
@@ -444,6 +469,7 @@ function UserCard({
   user,
   isSelf,
   deleting,
+  resetting,
   onEdit,
   onDelete,
   onResetPassword,
@@ -451,6 +477,7 @@ function UserCard({
   user: AuthUser;
   isSelf: boolean;
   deleting: boolean;
+  resetting: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onResetPassword: () => void;
@@ -483,8 +510,12 @@ function UserCard({
         <button
           type="button"
           onClick={onResetPassword}
-          className="inline-flex flex-1 items-center justify-center rounded-lg border border-pika-border bg-pika-card px-2 py-2 text-xs font-semibold text-pika-ink hover:bg-pika-page"
+          disabled={resetting}
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-pika-border bg-pika-card px-2 py-2 text-xs font-semibold text-pika-ink hover:bg-pika-page disabled:opacity-50"
         >
+          {resetting ? (
+            <FontAwesomeIcon icon={faSpinner} className="h-3.5 w-3.5 animate-spin" />
+          ) : null}
           Redefinir senha
         </button>
         {!isSelf ? (
@@ -510,6 +541,7 @@ function UsersTable({
   users,
   currentUserId,
   deletingId,
+  resettingId,
   onEdit,
   onDelete,
   onResetPassword,
@@ -517,6 +549,7 @@ function UsersTable({
   users: AuthUser[];
   currentUserId?: number;
   deletingId: number | null;
+  resettingId: number | null;
   onEdit: (user: AuthUser) => void;
   onDelete: (user: AuthUser) => void;
   onResetPassword: (user: AuthUser) => void;
@@ -557,8 +590,15 @@ function UsersTable({
                   <button
                     type="button"
                     onClick={() => onResetPassword(u)}
-                    className="rounded-lg px-2 py-1 text-xs font-semibold text-pika-primary hover:bg-pika-page"
+                    disabled={resettingId === u.id}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-pika-primary hover:bg-pika-page disabled:opacity-50"
                   >
+                    {resettingId === u.id ? (
+                      <FontAwesomeIcon
+                        icon={faSpinner}
+                        className="h-3.5 w-3.5 animate-spin"
+                      />
+                    ) : null}
                     Senha
                   </button>
                   {u.id !== currentUserId ? (
