@@ -1,8 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import PDFDocument from "pdfkit";
-
-type PdfDoc = InstanceType<typeof PDFDocument>;
 import { formatKz } from "@/lib/format-kz";
 import {
   summaryRowsForDisplay,
@@ -11,11 +9,23 @@ import {
 import { REPORT_TYPES, type ReportTypeId } from "@/lib/reports-meta";
 import { formatGeneratedAt } from "@/lib/reports-period";
 
+type PdfDoc = InstanceType<typeof PDFDocument>;
+
 const MARGIN = 48;
 const PRIMARY = "#00a8ab";
 const INK = "#2d3436";
 const MUTED = "#636e72";
 const LINE = "#d8e0de";
+
+/** Fontes standard PDF (WinAnsi) — remove caracteres que quebram o pdfkit. */
+function pdfSafeText(value: string): string {
+  return value
+    .replace(/\u2014/g, "-")
+    .replace(/\u2013/g, "-")
+    .replace(/\u2192/g, "->")
+    .replace(/[\u00A0\u202F]/g, " ")
+    .replace(/[^\t\n\r\x20-\x7E\xA0-\xFF]/g, "");
+}
 
 function logoPath(): string {
   const candidates = [
@@ -32,26 +42,30 @@ function drawHeader(
 ) {
   const logo = logoPath();
   if (fs.existsSync(logo)) {
-    doc.image(logo, MARGIN, MARGIN, { width: 110 });
+    try {
+      doc.image(logo, MARGIN, MARGIN, { width: 110 });
+    } catch {
+      /* logo opcional — não falha o relatório */
+    }
   }
 
   doc
     .font("Helvetica-Bold")
     .fontSize(18)
     .fillColor(INK)
-    .text(title, MARGIN + 125, MARGIN + 4, { width: 380 });
+    .text(pdfSafeText(title), MARGIN + 125, MARGIN + 4, { width: 380 });
 
   doc
     .font("Helvetica")
     .fontSize(10)
     .fillColor(MUTED)
-    .text(`Período: ${periodLabel}`, MARGIN + 125, MARGIN + 30);
+    .text(pdfSafeText(`Periodo: ${periodLabel}`), MARGIN + 125, MARGIN + 30);
 
   doc
     .font("Helvetica")
     .fontSize(9)
     .fillColor(PRIMARY)
-    .text("Pika Admin • Relatórios operacionais", MARGIN + 125, MARGIN + 46);
+    .text("Pika Admin - Relatorios operacionais", MARGIN + 125, MARGIN + 46);
 
   const y = MARGIN + 78;
   doc
@@ -70,7 +84,7 @@ function drawFooter(
   exportedBy: string,
   generatedAt: string,
 ) {
-  const footerY = doc.page.height - MARGIN + 12;
+  const footerY = doc.page.height - 36;
   doc
     .moveTo(MARGIN, footerY - 10)
     .lineTo(doc.page.width - MARGIN, footerY - 10)
@@ -82,12 +96,12 @@ function drawFooter(
     .font("Helvetica")
     .fontSize(8)
     .fillColor(MUTED)
-    .text(`Exportado por: ${exportedBy}  •  ${generatedAt}`, MARGIN, footerY, {
+    .text(pdfSafeText(`Exportado por: ${exportedBy}  |  ${generatedAt}`), MARGIN, footerY, {
       width: doc.page.width - MARGIN * 2,
       align: "left",
     });
 
-  doc.text(`Página ${pageNumber}`, MARGIN, footerY, {
+  doc.text(pdfSafeText(`Pagina ${pageNumber}`), MARGIN, footerY, {
     width: doc.page.width - MARGIN * 2,
     align: "right",
   });
@@ -95,7 +109,7 @@ function drawFooter(
 
 function sectionTitle(doc: PdfDoc, text: string) {
   doc.moveDown(0.5);
-  doc.font("Helvetica-Bold").fontSize(12).fillColor(PRIMARY).text(text);
+  doc.font("Helvetica-Bold").fontSize(12).fillColor(PRIMARY).text(pdfSafeText(text));
   doc.moveDown(0.35);
 }
 
@@ -104,9 +118,9 @@ function keyValueGrid(doc: PdfDoc, rows: string[][]) {
   for (const [label, value] of rows) {
     doc
       .font("Helvetica-Bold")
-      .text(`${label}: `, { continued: true })
+      .text(`${pdfSafeText(label)}: `, { continued: true })
       .font("Helvetica")
-      .text(value);
+      .text(pdfSafeText(value));
   }
   doc.moveDown(0.5);
 }
@@ -129,7 +143,7 @@ function drawTable(
     let x = startX;
     doc.font(bold ? "Helvetica-Bold" : "Helvetica").fontSize(9).fillColor(INK);
     for (let i = 0; i < cells.length; i++) {
-      doc.text(cells[i] ?? "", x + 4, y + 5, {
+      doc.text(pdfSafeText(cells[i] ?? ""), x + 4, y + 5, {
         width: (colWidths[i] ?? 80) - 8,
         ellipsis: true,
       });
@@ -204,7 +218,11 @@ function renderCorridas(doc: PdfDoc, data: ReportPeriodData) {
       .font("Helvetica")
       .fontSize(9)
       .fillColor(MUTED)
-      .text(`… e mais ${data.rides.length - 80} corridas no Excel completo.`);
+      .text(
+        pdfSafeText(
+          `... e mais ${data.rides.length - 80} corridas no Excel completo.`,
+        ),
+      );
   }
 }
 
@@ -226,7 +244,7 @@ function renderMotoristas(doc: PdfDoc, data: ReportPeriodData) {
       String(d.cancelledRides),
       String(d.inProgressRides),
       formatKz(d.revenue),
-      d.avgRating != null ? String(d.avgRating) : "—",
+      d.avgRating != null ? String(d.avgRating) : "-",
     ]),
     [120, 45, 50, 55, 85, 40],
   );
@@ -237,11 +255,11 @@ function renderTendencias(doc: PdfDoc, data: ReportPeriodData) {
   const revGrowth =
     data.growth.revenuePct != null
       ? `${data.growth.revenuePct >= 0 ? "+" : ""}${data.growth.revenuePct.toFixed(1)}%`
-      : "—";
+      : "-";
   const ridesGrowth =
     data.growth.ridesPct != null
       ? `${data.growth.ridesPct >= 0 ? "+" : ""}${data.growth.ridesPct.toFixed(1)}%`
-      : "—";
+      : "-";
 
   keyValueGrid(doc, [
     ["Mês atual", data.periodLabel],
@@ -277,7 +295,9 @@ function renderTendencias(doc: PdfDoc, data: ReportPeriodData) {
     .fontSize(10)
     .fillColor(MUTED)
     .text(
-      `Projeção simples (média diária × dias do mês): ${formatKz(avgDaily * data.dailyTrend.length)} com base na receita de corridas concluídas.`,
+      pdfSafeText(
+        `Projecao simples (media diaria x dias do mes): ${formatKz(avgDaily * data.dailyTrend.length)} com base na receita de corridas concluidas.`,
+      ),
     );
 }
 

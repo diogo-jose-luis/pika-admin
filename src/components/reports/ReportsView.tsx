@@ -88,8 +88,14 @@ export function ReportsView() {
         });
 
         if (!res.ok) {
-          const json = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(json.error ?? "Não foi possível gerar o relatório.");
+          const json = (await res.json().catch(() => ({}))) as {
+            error?: string;
+            detail?: string;
+          };
+          const msg = json.detail
+            ? `${json.error ?? "Erro"} (${json.detail})`
+            : (json.error ?? "Não foi possível gerar o relatório.");
+          throw new Error(msg);
         }
 
         const blob = await res.blob();

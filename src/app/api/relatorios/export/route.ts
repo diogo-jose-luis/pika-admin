@@ -86,9 +86,15 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
+    const detail =
+      error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[relatorios/export]", error);
     return NextResponse.json(
-      { error: "Não foi possível gerar o relatório." },
+      {
+        error: "Não foi possível gerar o relatório.",
+        detail:
+          process.env.NODE_ENV === "development" ? detail : undefined,
+      },
       { status: 500 },
     );
   }
