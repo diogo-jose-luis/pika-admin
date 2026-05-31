@@ -58,6 +58,8 @@ export type CorridaFakeDoc = {
   viaturaMarcaModelo?: string;
   viaturaMatricula?: string;
   viatura_cor?: string;
+  localizacao_atual_lat?: number;
+  localizacao_atual_lng?: number;
 };
 
 const ESTADO_TO_STATUS: Record<number, RideStatus> = {

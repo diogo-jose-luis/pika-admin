@@ -57,6 +57,9 @@ export type UserDoc = {
   motorista_aprovado?: boolean;
   documento_veiculo_aprovado?: boolean;
   documento_motorista_aprovado?: boolean;
+  online?: boolean;
+  localizacao_atual_lat?: number;
+  localizacao_atual_lng?: number;
 };
 
 export type VeiculoProvisorioDoc = {

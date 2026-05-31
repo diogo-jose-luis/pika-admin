@@ -78,3 +78,13 @@ body {
 html.dark .scroll-pika::-webkit-scrollbar-thumb {
   background: #3d4a52;
 }
+
+/* Leaflet: divIcon sem caixa padrão */
+.pika-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-container {
+  font-family: inherit;
+}
