@@ -43,7 +43,7 @@ const DEFAULT_FILTERS: MapFilters = {
   motoristasOnline: true,
 };
 
-const AUTO_REFRESH_MS = 30_000;
+const AUTO_REFRESH_MS = 2 * 60 * 1000;
 
 export function LiveMapView() {
   const [data, setData] = useState<LiveMapData>(EMPTY_LIVE_MAP);
@@ -245,7 +245,7 @@ export function LiveMapView() {
             </li>
           </ul>
           <p className="mt-4 text-xs text-pika-muted">
-            Atualização automática a cada 30 segundos. Apenas registos com coordenadas
+            Atualização automática a cada 2 minutos. Apenas registos com coordenadas
             GPS válidas são exibidos.
           </p>
         </div>
