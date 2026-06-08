@@ -257,7 +257,7 @@ export function AdminUsersTab() {
             Usuários Administrativos
           </h2>
           <p className="mt-1 text-sm text-pika-muted">
-            Gerencie o acesso ao painel (API Laravel)
+            Gerencie o acesso ao painel
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">

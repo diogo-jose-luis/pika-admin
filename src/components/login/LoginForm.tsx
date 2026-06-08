@@ -8,7 +8,7 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { FaIcon } from "@/components/ui/FaIcon";
 import { ForgotPasswordModal } from "@/components/login/ForgotPasswordModal";
 import { useAuth } from "@/context/AuthContext";
-import { extractApiErrorDebug, extractApiErrorMessage } from "@/lib/api-error";
+import { extractApiErrorMessage } from "@/lib/api-error";
 import { defaultRouteForNivel } from "@/lib/permissions";
 
 const labelClassName = "mb-2 block text-sm font-semibold text-neutral-900";
@@ -25,7 +25,6 @@ export function LoginForm() {
   const [remember, setRemember] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [errorDebug, setErrorDebug] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);
 
   const isPending = pending || authLoading;
@@ -33,7 +32,6 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setErrorDebug(null);
     setPending(true);
 
     try {
@@ -55,7 +53,6 @@ export function LoginForm() {
           "Não foi possível iniciar sessão. Tente novamente.",
         ),
       );
-      setErrorDebug(extractApiErrorDebug(err));
     } finally {
       setPending(false);
     }
@@ -136,11 +133,6 @@ export function LoginForm() {
               role="alert"
             >
               <p>{error}</p>
-              {errorDebug ? (
-                <p className="mt-1.5 text-xs font-medium text-red-700/90">
-                  {errorDebug}
-                </p>
-              ) : null}
             </div>
           ) : null}
 

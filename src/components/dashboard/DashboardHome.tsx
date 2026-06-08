@@ -19,13 +19,15 @@ import {
   faCar,
   faCircleCheck,
   faClock,
-  faDollarSign,
+  faCoins,
   faGaugeHigh,
   faLocationDot,
   faStar,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdminDate } from "@/components/providers/AdminDateProvider";
+import { useAuth } from "@/context/AuthContext";
+import { canViewDashboardRevenue } from "@/lib/permissions";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import type { DashboardData } from "@/lib/dashboard";
 import { cn } from "@/lib/cn";
@@ -106,6 +108,8 @@ function Avatar({ initials, className }: { initials: string; className?: string 
 }
 
 export function DashboardHome() {
+  const { user } = useAuth();
+  const showRevenue = user ? canViewDashboardRevenue(user.nivel) : true;
   const { selectedIso, dateLabel } = useAdminDate();
   const [data, setData] = useState<DashboardData>(EMPTY_DASHBOARD);
   const [loading, setLoading] = useState(true);
@@ -167,20 +171,29 @@ export function DashboardHome() {
         </p>
       ) : null}
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="relative overflow-hidden rounded-2xl bg-pika-primary p-5 text-white shadow-md">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-white/90">Receita total ({dateLabel})</p>
-              <p className="mt-2 text-3xl font-bold tracking-tight">
-                {stat(data.summary.totalRevenueLabel)}
-              </p>
-            </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white">
-              <FontAwesomeIcon icon={faDollarSign} className="h-6 w-6" />
+      <section
+        className={cn(
+          "grid grid-cols-1 gap-4 sm:grid-cols-2",
+          showRevenue ? "xl:grid-cols-4" : "xl:grid-cols-3",
+        )}
+      >
+        {showRevenue ? (
+          <div className="relative overflow-hidden rounded-2xl bg-pika-primary p-5 text-white shadow-md">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-white/90">
+                  Receita total ({dateLabel})
+                </p>
+                <p className="mt-2 text-3xl font-bold tracking-tight">
+                  {stat(data.summary.totalRevenueLabel)}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white">
+                <FontAwesomeIcon icon={faCoins} className="h-6 w-6" />
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
@@ -270,61 +283,68 @@ export function DashboardHome() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-pika-ink">Receita Semanal</h2>
-            <span className="text-xs text-pika-muted">Últimos 7 dias</span>
+      <section
+        className={cn(
+          "grid grid-cols-1 gap-4",
+          showRevenue ? "xl:grid-cols-2" : "xl:grid-cols-1",
+        )}
+      >
+        {showRevenue ? (
+          <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="text-base font-semibold text-pika-ink">Receita Semanal</h2>
+              <span className="text-xs text-pika-muted">Últimos 7 dias</span>
+            </div>
+            <div className="h-64 w-full min-h-[256px] min-w-0">
+              <ChartMount>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={data.weekRevenue}
+                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="fillRev" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#00ced1" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#00ced1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e6eceb" />
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fill: "#636e72", fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={(v) => `Kz ${(v / 1000).toFixed(0)}k`}
+                      tick={{ fill: "#636e72", fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      formatter={(value) => {
+                        const n = typeof value === "number" ? value : Number(value);
+                        const text = Number.isFinite(n)
+                          ? `Kz ${n.toLocaleString("pt-AO")}`
+                          : "";
+                        return [text, "Receita"];
+                      }}
+                      labelFormatter={(l) => l}
+                      contentStyle={{ borderRadius: 12, borderColor: "#e6eceb" }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="kz"
+                      stroke="#00ced1"
+                      strokeWidth={2}
+                      fill="url(#fillRev)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartMount>
+            </div>
           </div>
-          <div className="h-64 w-full min-h-[256px] min-w-0">
-            <ChartMount>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={data.weekRevenue}
-                  margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="fillRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#00ced1" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#00ced1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e6eceb" />
-                  <XAxis
-                    dataKey="day"
-                    tick={{ fill: "#636e72", fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tickFormatter={(v) => `Kz ${(v / 1000).toFixed(0)}k`}
-                    tick={{ fill: "#636e72", fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    formatter={(value) => {
-                      const n = typeof value === "number" ? value : Number(value);
-                      const text = Number.isFinite(n)
-                        ? `Kz ${n.toLocaleString("pt-AO")}`
-                        : "";
-                      return [text, "Receita"];
-                    }}
-                    labelFormatter={(l) => l}
-                    contentStyle={{ borderRadius: 12, borderColor: "#e6eceb" }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="kz"
-                    stroke="#00ced1"
-                    strokeWidth={2}
-                    fill="url(#fillRev)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </ChartMount>
-          </div>
-        </div>
+        ) : null}
 
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="mb-4 flex items-center justify-between gap-2">

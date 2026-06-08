@@ -38,6 +38,10 @@ export function extractApiErrorMessage(
   const status = ax.response?.status;
   const raw = ax.response?.data;
 
+  if (status === 401) {
+    return "Credenciais inválidas.";
+  }
+
   if (typeof raw === "string" && raw.trim()) {
     const text = stripHtml(raw);
     if (text) return text.slice(0, 400);
@@ -60,9 +64,6 @@ export function extractApiErrorMessage(
     }
   }
 
-  if (status === 401) {
-    return "Credenciais inválidas. Verifique o email e a palavra-passe.";
-  }
   if (status === 422) {
     return "Dados inválidos. Verifique os campos introduzidos.";
   }
@@ -80,24 +81,4 @@ export function extractApiErrorMessage(
   }
 
   return fallback;
-}
-
-/** Detalhes técnicos opcionais (ex.: URL upstream) para debug no ecrã de login. */
-export function extractApiErrorDebug(err: unknown): string | null {
-  if (!err || typeof err !== "object" || !("isAxiosError" in err)) return null;
-  const ax = err as AxiosError<ApiErrorBody>;
-  const data = ax.response?.data;
-  if (!data || typeof data !== "object") return null;
-
-  const parts: string[] = [];
-  if (typeof data.upstream_url === "string") {
-    parts.push(`API: ${data.upstream_url}`);
-  }
-  if (typeof data.upstream_status === "number") {
-    parts.push(`HTTP ${data.upstream_status}`);
-  } else if (ax.response?.status) {
-    parts.push(`HTTP ${ax.response.status}`);
-  }
-
-  return parts.length ? parts.join(" · ") : null;
 }

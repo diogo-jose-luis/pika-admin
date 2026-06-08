@@ -9,6 +9,7 @@ import type { NavItem } from "@/lib/nav";
 export type SettingsTabId = "fees" | "users" | "notifications" | "rules" | "prices";
 
 const OPERADOR_PATHS = new Set([
+  "/dashboard",
   "/mapa-ao-vivo",
   "/historico-corridas",
   "/motoristas",
@@ -65,6 +66,11 @@ export function canManageAdminUsers(nivel: number): boolean {
   return nivel >= NIVEL_SUPER_ADMIN;
 }
 
+/** Receita total e receita semanal no dashboard (ocultas para operador). */
+export function canViewDashboardRevenue(nivel: number): boolean {
+  return nivel >= NIVEL_ADMIN;
+}
+
 export function canAccessSettingsTab(
   nivel: number,
   tab: SettingsTabId,
@@ -85,7 +91,6 @@ export function filterSettingsTabs<T extends { id: SettingsTabId }>(
 
 /** Rota inicial após login conforme o nível. */
 export function defaultRouteForNivel(nivel: number): string {
-  if (nivel === NIVEL_OPERADOR) return "/mapa-ao-vivo";
   if (nivel === NIVEL_FINANCEIRO) return "/financeiro";
   return "/dashboard";
 }
