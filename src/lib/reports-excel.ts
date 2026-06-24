@@ -10,7 +10,7 @@ import { formatGeneratedAt } from "@/lib/reports-period";
 const HEADER_FILL: ExcelJS.Fill = {
   type: "pattern",
   pattern: "solid",
-  fgColor: { argb: "FF00CED1" },
+  fgColor: { argb: "FFF96100" },
 };
 
 function styleHeaderRow(row: ExcelJS.Row) {

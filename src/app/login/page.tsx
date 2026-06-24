@@ -9,9 +9,9 @@ export default function LoginPage() {
       </section>
 
       <section className="relative hidden min-h-svh flex-1 items-center justify-center bg-white p-6 lg:flex lg:p-8">
-        <div className="flex h-full w-full items-center justify-center rounded-[2.5rem] bg-[#001a1a]">
+        <div className="flex h-full w-full items-center justify-center rounded-[2.5rem] bg-[#1a1008]">
           <Image
-            src="/logo_pika.png"
+            src="/logo.png"
             alt="Pika"
             width={420}
             height={140}

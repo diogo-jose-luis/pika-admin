@@ -57,7 +57,7 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
             </span>
           ) : (
             <Image
-              src="/logo_pika.png"
+              src="/logo.png"
               alt="Pika"
               width={140}
               height={40}

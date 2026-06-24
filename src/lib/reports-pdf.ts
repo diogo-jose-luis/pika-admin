@@ -12,7 +12,7 @@ import { formatGeneratedAt } from "@/lib/reports-period";
 type PdfDoc = InstanceType<typeof PDFDocument>;
 
 const MARGIN = 48;
-const PRIMARY = "#00a8ab";
+const PRIMARY = "#f96100";
 const INK = "#2d3436";
 const MUTED = "#636e72";
 const LINE = "#d8e0de";
@@ -29,7 +29,7 @@ function pdfSafeText(value: string): string {
 
 function logoPath(): string {
   const candidates = [
-    path.join(process.cwd(), "public", "logo_pika.png"),
+    path.join(process.cwd(), "public", "logo.png"),
     path.join(process.cwd(), "public", "pika.png"),
   ];
   return candidates.find((p) => fs.existsSync(p)) ?? candidates[0]!;

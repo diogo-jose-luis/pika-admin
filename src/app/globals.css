@@ -13,8 +13,8 @@
  */
 @theme {
   --color-pika-page: #f4f7f6;
-  --color-pika-primary: #00ced1;
-  --color-pika-primary-dark: #00a8ab;
+  --color-pika-primary: #f96100;
+  --color-pika-primary-dark: #d45400;
   --color-pika-ink: #2d3436;
   --color-pika-muted: #636e72;
   --color-pika-border: #e6eceb;
@@ -34,8 +34,8 @@ html.dark {
   color-scheme: dark;
 
   --color-pika-page: #0f1419;
-  --color-pika-primary: #22d3d6;
-  --color-pika-primary-dark: #14b8bb;
+  --color-pika-primary: #ff7a26;
+  --color-pika-primary-dark: #f96100;
   --color-pika-ink: #e8ecef;
   --color-pika-muted: #94a3b0;
   --color-pika-border: #2a343c;

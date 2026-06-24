@@ -39,7 +39,7 @@ export type FinanceData = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Corridas Regulares": "#00ced1",
+  "Corridas Regulares": "#f96100",
   "Corridas Premium": "#22c55e",
   Entregas: "#f97316",
   Outros: "#334155",

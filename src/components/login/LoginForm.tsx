@@ -63,7 +63,7 @@ export function LoginForm() {
       <div className="w-full max-w-[400px] text-neutral-900">
         <div className="mb-10 flex justify-center lg:hidden">
           <Image
-            src="/logo_pika.png"
+            src="/logo.png"
             alt="Pika"
             width={280}
             height={90}

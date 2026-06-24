@@ -34,7 +34,7 @@ const EMPTY_FINANCE: FinanceData = {
   pendingPayments: 0,
   monthlyRevenue: [],
   categoryData: [
-    { name: "Corridas Regulares", value: 0, color: "#00ced1" },
+    { name: "Corridas Regulares", value: 0, color: "#f96100" },
     { name: "Corridas Premium", value: 0, color: "#22c55e" },
     { name: "Entregas", value: 0, color: "#f97316" },
     { name: "Outros", value: 0, color: "#334155" },
@@ -234,7 +234,7 @@ export function FinancialView() {
                   <Bar
                     dataKey="receita"
                     name="Receita"
-                    fill="#00ced1"
+                    fill="#f96100"
                     radius={[6, 6, 0, 0]}
                   />
                   <Bar

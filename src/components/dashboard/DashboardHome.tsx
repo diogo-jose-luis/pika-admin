@@ -304,8 +304,8 @@ export function DashboardHome() {
                   >
                     <defs>
                       <linearGradient id="fillRev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#00ced1" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="#00ced1" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#f96100" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#f96100" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e6eceb" />
@@ -335,7 +335,7 @@ export function DashboardHome() {
                     <Area
                       type="monotone"
                       dataKey="kz"
-                      stroke="#00ced1"
+                      stroke="#f96100"
                       strokeWidth={2}
                       fill="url(#fillRev)"
                     />
