@@ -56,7 +56,7 @@ async function proxyRequest(
     return NextResponse.json(
       {
         message:
-          "Não foi possível contactar a API. Verifique se o servidor Laravel está acessível.",
+          "Não foi possível contactar a API. Verifique se o servidor está acessível.",
         upstream_url: publicUpstreamPath(targetUrl),
         detail: error instanceof Error ? error.message : String(error),
       },

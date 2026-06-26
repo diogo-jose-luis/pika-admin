@@ -14,8 +14,10 @@ import {
   faDollarSign,
   faEllipsisVertical,
   faEye,
+  faList,
   faMagnifyingGlass,
   faStar,
+  faTableCells,
   faTriangleExclamation,
   faUserPlus,
   faUsers,
@@ -33,6 +35,8 @@ import { cn } from "@/lib/cn";
 const PAGE_SIZE = 30;
 
 const STATUS_OPTIONS = ["Todos", "Ativo", "Inativo"] as const;
+
+type ViewMode = "cards" | "table";
 
 function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) {
@@ -79,6 +83,7 @@ export function PassengersView() {
   const [statusFilter, setStatusFilter] =
     useState<(typeof STATUS_OPTIONS)[number]>("Todos");
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
   const [detailPassenger, setDetailPassenger] = useState<PassengerRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PassengerRow | null>(null);
@@ -329,6 +334,7 @@ export function PassengersView() {
                 </option>
               ))}
             </select>
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
             <RefreshDataButton
               loading={refreshing}
               onClick={() => void loadPassengers(true)}
@@ -391,7 +397,8 @@ export function PassengersView() {
           </div>
         ) : null}
 
-        <div className="hidden overflow-x-auto scroll-pika rounded-xl border border-pika-border lg:block">
+        {viewMode === "table" ? (
+        <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
           <table className="min-w-[1120px] w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
@@ -441,10 +448,16 @@ export function PassengersView() {
             </tbody>
           </table>
         </div>
-
-        <div className="space-y-3 lg:hidden">
-          {!loading
-            ? pageRows.map((row, idx) => (
+        ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={`sk-card-${i}`}
+                  className="h-60 animate-pulse rounded-2xl border border-pika-border bg-pika-page"
+                />
+              ))
+            : pageRows.map((row, idx) => (
                 <PassengerCard
                   key={row.passengerId}
                   row={row}
@@ -454,9 +467,9 @@ export function PassengersView() {
                   onViewDetails={() => setDetailPassenger(row)}
                   onDelete={() => setDeleteTarget(row)}
                 />
-              ))
-            : null}
+              ))}
         </div>
+        )}
 
         {loadError ? (
           <p className="mt-6 text-center text-sm text-red-600">{loadError}</p>
@@ -540,6 +553,49 @@ export function PassengersView() {
         onConfirm={confirmDeletePassenger}
         onCancel={() => setDeleteTarget(null)}
       />
+    </div>
+  );
+}
+
+function ViewModeToggle({
+  value,
+  onChange,
+}: {
+  value: ViewMode;
+  onChange: (mode: ViewMode) => void;
+}) {
+  const options: { mode: ViewMode; label: string; icon: typeof faTableCells }[] = [
+    { mode: "cards", label: "Cards", icon: faTableCells },
+    { mode: "table", label: "Tabela", icon: faList },
+  ];
+
+  return (
+    <div
+      role="group"
+      aria-label="Alternar visualização"
+      className="inline-flex items-center rounded-xl border border-pika-border bg-pika-card p-1"
+    >
+      {options.map((opt) => {
+        const active = value === opt.mode;
+        return (
+          <button
+            key={opt.mode}
+            type="button"
+            onClick={() => onChange(opt.mode)}
+            aria-pressed={active}
+            title={`Ver em ${opt.label.toLowerCase()}`}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition",
+              active
+                ? "bg-pika-primary text-white shadow-sm"
+                : "text-pika-muted hover:text-pika-ink",
+            )}
+          >
+            <FontAwesomeIcon icon={opt.icon} className="h-4 w-4" />
+            <span className="hidden sm:inline">{opt.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -22,6 +22,7 @@ type RideDetailsModalProps = {
 function statusPillClass(status: RideRow["status"]) {
   const map: Record<RideRow["status"], string> = {
     "Em andamento": "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
+    "Em solicitação": "bg-violet-50 text-violet-700 ring-1 ring-violet-100",
     Concluída: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
     Pendente: "bg-orange-50 text-orange-700 ring-1 ring-orange-100",
     Cancelada: "bg-red-50 text-red-700 ring-1 ring-red-100",

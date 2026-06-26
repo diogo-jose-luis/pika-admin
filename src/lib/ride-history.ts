@@ -1,6 +1,11 @@
 import { formatKz } from "@/lib/format-kz";
 
-export type RideStatus = "Em andamento" | "Concluída" | "Pendente" | "Cancelada";
+export type RideStatus =
+  | "Em andamento"
+  | "Em solicitação"
+  | "Concluída"
+  | "Pendente"
+  | "Cancelada";
 
 export type RideRow = {
   /** ID do documento Firestore (`corrida_fake`). */
@@ -38,6 +43,8 @@ export type CorridaFakeDoc = {
   preco?: number;
   comissao?: number;
   estado?: number;
+  /** Indica que o motorista já chegou ao ponto de recolha. */
+  motorista_chegou?: boolean | string | number;
   data?: { _seconds: number; _nanoseconds: number } | string | null;
   estrelas?: number;
   comentario?: string;
@@ -72,6 +79,10 @@ const ESTADO_TO_STATUS: Record<number, RideStatus> = {
 export function isInProgressEstado(estado: unknown): boolean {
   const n = typeof estado === "number" ? estado : Number(estado);
   return n === 0 || n === 3;
+}
+
+export function isMotoristaChegou(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 export function parseRideStarRating(value: unknown): number | null {
@@ -114,6 +125,22 @@ function formatDurationLabel(value: unknown): string {
 export function mapEstadoToStatus(estado: unknown): RideStatus {
   const n = typeof estado === "number" ? estado : Number(estado);
   return ESTADO_TO_STATUS[n] ?? "Pendente";
+}
+
+/**
+ * Resolve o status considerando `motorista_chegou`: uma corrida cujo `estado`
+ * indica "Em andamento" só permanece assim se o motorista já tiver chegado;
+ * caso contrário fica "Em solicitação".
+ */
+export function resolveRideStatus(
+  estado: unknown,
+  motoristaChegou: unknown,
+): RideStatus {
+  const base = mapEstadoToStatus(estado);
+  if (base === "Em andamento" && !isMotoristaChegou(motoristaChegou)) {
+    return "Em solicitação";
+  }
+  return base;
 }
 
 function pad2(n: number) {
@@ -250,7 +277,7 @@ export function mapCorridaFakeToRideRow(
     vehicleModel: readVehicleField(data.viaturaMarcaModelo),
     vehiclePlate: readVehicleField(data.viaturaMatricula),
     vehicleColor: readVehicleField(data.viatura_cor),
-    status: mapEstadoToStatus(data.estado),
+    status: resolveRideStatus(data.estado, data.motorista_chegou),
     dateLabel: formatRideDate(data.data),
     dateMs: parseRideDateToMs(data.data),
     passengerToDriverStars: parseRideStarRating(data.estrelas),

@@ -14,9 +14,11 @@ import {
   faCar,
   faEye,
   faIdCard,
+  faList,
   faLocationDot,
   faMagnifyingGlass,
   faPalette,
+  faTableCells,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -29,16 +31,19 @@ import { cn } from "@/lib/cn";
 
 const PAGE_SIZE = 12;
 
-const STATUS_FILTER_OPTIONS = ["Todos", "Em andamento", "Concluída", "Pendente", "Cancelada"] as const;
+const STATUS_FILTER_OPTIONS = ["Todos", "Em solicitação", "Em andamento", "Concluída", "Pendente", "Cancelada"] as const;
 
 type DeleteConfirmState =
   | { mode: "single"; row: RideRow }
   | { mode: "bulk" }
   | null;
 
+type ViewMode = "cards" | "table";
+
 function statusPillClass(status: RideStatus) {
   const map: Record<RideStatus, string> = {
     "Em andamento": "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
+    "Em solicitação": "bg-violet-50 text-violet-700 ring-1 ring-violet-100",
     Concluída: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
     Pendente: "bg-orange-50 text-orange-700 ring-1 ring-orange-100",
     Cancelada: "bg-red-50 text-red-700 ring-1 ring-red-100",
@@ -83,6 +88,7 @@ export function RideHistoryView() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [detailRide, setDetailRide] = useState<RideRow | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>(null);
@@ -285,6 +291,7 @@ export function RideHistoryView() {
               </option>
             ))}
           </select>
+          <ViewModeToggle value={viewMode} onChange={setViewMode} />
           <RefreshDataButton
             loading={refreshing}
             onClick={() => void loadRides(true)}
@@ -326,7 +333,8 @@ export function RideHistoryView() {
         </div>
       ) : null}
 
-      <div className="hidden overflow-x-auto scroll-pika rounded-xl border border-pika-border lg:block">
+      {viewMode === "table" ? (
+      <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
         <table className="min-w-[1400px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
@@ -380,10 +388,10 @@ export function RideHistoryView() {
           </tbody>
         </table>
       </div>
-
-      <div className="space-y-3 lg:hidden">
+      ) : (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
+          ? Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={`sk-card-${i}`}
                 className="h-52 animate-pulse rounded-2xl border border-pika-border bg-pika-page"
@@ -401,6 +409,7 @@ export function RideHistoryView() {
               />
             ))}
       </div>
+      )}
 
       {loadError ? (
         <p className="mt-6 text-center text-sm text-red-600">{loadError}</p>
@@ -488,6 +497,49 @@ export function RideHistoryView() {
         title={deleteModalTitle}
         description={deleteModalDescription}
       />
+    </div>
+  );
+}
+
+function ViewModeToggle({
+  value,
+  onChange,
+}: {
+  value: ViewMode;
+  onChange: (mode: ViewMode) => void;
+}) {
+  const options: { mode: ViewMode; label: string; icon: typeof faTableCells }[] = [
+    { mode: "cards", label: "Cards", icon: faTableCells },
+    { mode: "table", label: "Tabela", icon: faList },
+  ];
+
+  return (
+    <div
+      role="group"
+      aria-label="Alternar visualização"
+      className="inline-flex items-center rounded-xl border border-pika-border bg-pika-card p-1"
+    >
+      {options.map((opt) => {
+        const active = value === opt.mode;
+        return (
+          <button
+            key={opt.mode}
+            type="button"
+            onClick={() => onChange(opt.mode)}
+            aria-pressed={active}
+            title={`Ver em ${opt.label.toLowerCase()}`}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition",
+              active
+                ? "bg-pika-primary text-white shadow-sm"
+                : "text-pika-muted hover:text-pika-ink",
+            )}
+          >
+            <FontAwesomeIcon icon={opt.icon} className="h-4 w-4" />
+            <span className="hidden sm:inline">{opt.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

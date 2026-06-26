@@ -56,14 +56,24 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
               P
             </span>
           ) : (
-            <Image
-              src="/logo.png"
-              alt="Pika"
-              width={140}
-              height={40}
-              className="h-9 w-auto object-contain"
-              priority
-            />
+            <>
+              <Image
+                src="/logo.png"
+                alt="Pika"
+                width={140}
+                height={40}
+                className="h-12 w-auto object-contain dark:hidden"
+                priority
+              />
+              <Image
+                src="/pika_dark.png"
+                alt="Pika"
+                width={140}
+                height={40}
+                className="hidden h-12 w-auto object-contain dark:block"
+                priority
+              />
+            </>
           )}
         </Link>
       </div>

@@ -2,7 +2,8 @@ import { formatKz } from "@/lib/format-kz";
 import { refToDocId } from "@/lib/firestore-ref";
 import {
   isInProgressEstado,
-  mapEstadoToStatus,
+  isMotoristaChegou,
+  resolveRideStatus,
   type CorridaFakeDoc,
 } from "@/lib/ride-history";
 import { toDate } from "@/lib/users-shared";
@@ -18,6 +19,7 @@ export type DashboardTodayStats = {
   completed: number;
   cancelled: number;
   inProgress: number;
+  inRequest: number;
 };
 
 export type DashboardWeekRevenue = {
@@ -37,7 +39,7 @@ export type DashboardRecentRide = {
   driver: string;
   from: string;
   to: string;
-  status: "Em andamento" | "Concluída" | "Cancelada" | "Pendente";
+  status: "Em andamento" | "Em solicitação" | "Concluída" | "Cancelada" | "Pendente";
   when: string;
   value: string;
 };
@@ -137,6 +139,7 @@ export function buildDashboardData(
     completed: 0,
     cancelled: 0,
     inProgress: 0,
+    inRequest: 0,
   };
 
   let totalRevenueToday = 0;
@@ -180,10 +183,14 @@ export function buildDashboardData(
     const rideDate = toDate(data.data);
     const estado = estadoNumber(data.estado);
     const preco = precoNumber(data.preco);
-    const status = mapEstadoToStatus(estado);
+    const status = resolveRideStatus(estado, data.motorista_chegou);
 
     if (isInProgressEstado(estado)) {
-      todayStats.inProgress += 1;
+      if (isMotoristaChegou(data.motorista_chegou)) {
+        todayStats.inProgress += 1;
+      } else {
+        todayStats.inRequest += 1;
+      }
     }
 
     if (rideDate && isSameCalendarDay(rideDate, referenceDate)) {

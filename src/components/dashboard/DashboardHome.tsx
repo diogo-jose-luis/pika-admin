@@ -16,6 +16,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBan,
+  faBellConcierge,
   faCar,
   faCircleCheck,
   faClock,
@@ -39,7 +40,7 @@ const EMPTY_DASHBOARD: DashboardData = {
     activeDrivers: 0,
     activePassengers: 0,
   },
-  todayStats: { completed: 0, cancelled: 0, inProgress: 0 },
+  todayStats: { completed: 0, cancelled: 0, inProgress: 0, inRequest: 0 },
   weekRevenue: [],
   ridesByHour: [],
   recentRides: [],
@@ -78,6 +79,7 @@ function StatusPill({
 }) {
   const map = {
     "Em andamento": "bg-blue-50 text-pika-info ring-1 ring-blue-100",
+    "Em solicitação": "bg-violet-50 text-violet-700 ring-1 ring-violet-100",
     Cancelada: "bg-red-50 text-pika-danger ring-1 ring-red-100",
     Concluída: "bg-emerald-50 text-pika-success ring-1 ring-emerald-100",
     Pendente: "bg-orange-50 text-orange-700 ring-1 ring-orange-100",
@@ -238,7 +240,7 @@ export function DashboardHome() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -278,6 +280,20 @@ export function DashboardHome() {
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-pika-info">
               <FontAwesomeIcon icon={faClock} className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-pika-muted">Corridas em Solicitação</p>
+              <p className="mt-2 text-2xl font-bold text-pika-ink">
+                {stat(data.todayStats.inRequest.toLocaleString("pt-AO"))}
+              </p>
+              <p className="mt-2 text-xs text-pika-muted">Em tempo real</p>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+              <FontAwesomeIcon icon={faBellConcierge} className="h-5 w-5" />
             </div>
           </div>
         </div>

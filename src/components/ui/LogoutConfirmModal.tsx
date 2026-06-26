@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { FaIcon } from "@/components/ui/FaIcon";
 
 type LogoutConfirmModalProps = {
@@ -16,6 +17,12 @@ export function LogoutConfirmModal({
   onConfirm,
   onCancel,
 }: LogoutConfirmModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -25,9 +32,9 @@ export function LogoutConfirmModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onCancel, pending]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 p-4"
       role="presentation"
@@ -78,6 +85,7 @@ export function LogoutConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
