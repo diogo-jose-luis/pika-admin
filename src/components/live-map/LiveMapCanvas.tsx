@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useMemo, useRef } from "react";
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import type {
   LiveMapActiveRide,
@@ -31,6 +31,29 @@ function createMarkerIcon(color: string) {
   });
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function createDriverIcon(color: string, name: string) {
+  const safeName = escapeHtml(name);
+  return L.divIcon({
+    className: "pika-leaflet-marker",
+    html: `<div style="display:flex;flex-direction:column;align-items:center;">
+      <span style="display:flex;width:32px;height:32px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.28);align-items:center;justify-content:center;font-size:15px;line-height:1">🚗</span>
+      <span style="margin-top:3px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#fff;color:#111827;font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;box-shadow:0 1px 4px rgba(0,0,0,.25);">${safeName}</span>
+    </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -14],
+  });
+}
+
 function FitBounds({
   drivers,
   rides,
@@ -39,9 +62,12 @@ function FitBounds({
   rides: LiveMapActiveRide[];
 }) {
   const map = useMap();
+  const fittedRef = useRef(false);
 
   useEffect(() => {
-    const points: L.LatLngExpression[] = [
+    if (fittedRef.current) return;
+
+    const points: [number, number][] = [
       ...drivers.map((d) => [d.lat, d.lng] as [number, number]),
       ...rides.map((r) => [r.lat, r.lng] as [number, number]),
     ];
@@ -51,11 +77,11 @@ function FitBounds({
       return;
     }
     if (points.length === 1) {
-      const p = points[0] as [number, number];
-      map.setView(p, 14);
-      return;
+      map.setView(points[0]!, 14);
+    } else {
+      map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 15 });
     }
-    map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 15 });
+    fittedRef.current = true;
   }, [map, drivers, rides]);
 
   return null;
@@ -63,7 +89,6 @@ function FitBounds({
 
 export function LiveMapCanvas({ drivers, rides, filters }: LiveMapCanvasProps) {
   const rideIcon = useMemo(() => createMarkerIcon("#0d9488"), []);
-  const driverIcon = useMemo(() => createMarkerIcon("#22c55e"), []);
 
   const visibleDrivers = filters.motoristasOnline ? drivers : [];
   const visibleRides = filters.corridasAtivas ? rides : [];
@@ -85,8 +110,11 @@ export function LiveMapCanvas({ drivers, rides, filters }: LiveMapCanvasProps) {
         <Marker
           key={`driver-${driver.id}`}
           position={[driver.lat, driver.lng]}
-          icon={driverIcon}
+          icon={createDriverIcon("#22c55e", driver.name)}
         >
+          <Tooltip direction="top" offset={[0, -16]}>
+            {driver.name}
+          </Tooltip>
           <Popup>
             <div className="min-w-[140px] text-sm">
               <p className="font-bold text-neutral-900">{driver.name}</p>

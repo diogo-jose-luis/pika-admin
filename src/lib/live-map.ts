@@ -79,6 +79,8 @@ export type LiveMapUserDoc = {
   display_name?: string;
   isDriver?: boolean;
   online?: boolean;
+  estado?: number;
+  motorista_aprovado?: boolean;
   localizacao_atual_lat?: number;
   localizacao_atual_lng?: number;
 };
@@ -100,6 +102,8 @@ export function mapUserToLiveDriver(
   data: LiveMapUserDoc,
 ): LiveMapDriver | null {
   if (data.isDriver !== true) return null;
+  if (Number(data.estado) !== 1) return null;
+  if (!isOnlineFlag(data.motorista_aprovado)) return null;
   if (!isOnlineFlag(data.online)) return null;
 
   const coords = readLatLng(
