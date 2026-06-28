@@ -214,7 +214,7 @@ export function LiveMapView() {
           <div className="pointer-events-none absolute bottom-4 left-4 z-[1000] rounded-xl border border-pika-border bg-pika-card/95 px-3 py-2.5 text-xs shadow-md backdrop-blur-sm">
             <p className="mb-2 font-semibold text-pika-ink">Legenda</p>
             <div className="flex flex-col gap-2 text-pika-muted">
-              <LegendItem color="bg-pika-primary" label="Corridas ativas (estado 0)" />
+              <LegendItem color="bg-teal-600" label="Corridas em andamento (rota)" />
               <LegendItem color="bg-emerald-500" label="Motoristas online" />
             </div>
           </div>
@@ -259,7 +259,7 @@ export function LiveMapView() {
               </span>
             </div>
             <p className="mt-1 text-xs text-pika-muted">
-              Corridas com estado em andamento (0)
+              Em andamento (motorista já chegou)
             </p>
           </div>
           <ul className="scroll-pika max-h-[min(52vh,420px)] flex-1 divide-y divide-pika-border overflow-y-auto">

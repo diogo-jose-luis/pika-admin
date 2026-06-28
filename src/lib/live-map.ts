@@ -1,5 +1,5 @@
 import { refToDocId } from "@/lib/firestore-ref";
-import { isInProgressEstado } from "@/lib/ride-history";
+import { isInProgressEstado, isMotoristaChegou } from "@/lib/ride-history";
 
 /** Centro aproximado de Luanda para o mapa inicial. */
 export const LUANDA_CENTER = { lat: -8.8383, lng: 13.2344 };
@@ -12,14 +12,16 @@ export type LiveMapDriver = {
   lng: number;
 };
 
+export type LiveMapLatLng = { lat: number; lng: number };
+
 export type LiveMapActiveRide = {
   id: string;
   driver: string;
   passenger: string;
   route: string;
   eta: string;
-  lat: number;
-  lng: number;
+  origin: LiveMapLatLng;
+  destination: LiveMapLatLng | null;
 };
 
 export type LiveMapSummary = {
@@ -87,12 +89,17 @@ export type LiveMapUserDoc = {
 
 export type LiveMapCorridaDoc = {
   estado?: number;
+  motorista_chegou?: boolean | string | number;
   motorista_id?: unknown;
   motoristaNome?: string;
   passageiro_nome?: string;
   local_inicio?: string;
   local_fim?: string;
   duracaoText?: string;
+  local_inicio_lat?: number;
+  local_inicio_lng?: number;
+  local_destino_lat?: number;
+  local_destino_lng?: number;
   localizacao_atual_lat?: number;
   localizacao_atual_lng?: number;
 };
@@ -120,26 +127,28 @@ export function mapCorridaToLiveRide(
   id: string,
   data: LiveMapCorridaDoc,
 ): LiveMapActiveRide | null {
+  // "Em andamento" segue a mesma lógica do dashboard: estado em curso (0/3)
+  // e o motorista já ter chegado ao ponto de recolha.
   if (!isInProgressEstado(data.estado)) return null;
+  if (!isMotoristaChegou(data.motorista_chegou)) return null;
 
-  const coords = readLatLng(
-    data.localizacao_atual_lat,
-    data.localizacao_atual_lng,
-  );
-  if (!coords) return null;
+  const origin = readLatLng(data.local_inicio_lat, data.local_inicio_lng);
+  if (!origin) return null;
 
-  const origin = data.local_inicio?.trim() || "—";
-  const destination = data.local_fim?.trim() || "—";
+  const destination = readLatLng(data.local_destino_lat, data.local_destino_lng);
+
+  const originLabel = data.local_inicio?.trim() || "—";
+  const destinationLabel = data.local_fim?.trim() || "—";
   const eta = data.duracaoText?.trim() || "—";
 
   return {
     id,
     driver: data.motoristaNome?.trim() || "—",
     passenger: data.passageiro_nome?.trim() || "—",
-    route: `${origin} → ${destination}`,
+    route: `${originLabel} → ${destinationLabel}`,
     eta,
-    lat: coords.lat,
-    lng: coords.lng,
+    origin,
+    destination,
   };
 }
 

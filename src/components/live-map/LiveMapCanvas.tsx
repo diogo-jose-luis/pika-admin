@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { Fragment, useEffect, useMemo, useRef } from "react";
+import {
+  MapContainer,
+  Marker,
+  Polyline,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import type {
   LiveMapActiveRide,
@@ -21,10 +29,10 @@ type LiveMapCanvasProps = {
   filters: MapFilters;
 };
 
-function createMarkerIcon(color: string) {
+function createMarkerIcon(color: string, glyph = "🚗") {
   return L.divIcon({
     className: "pika-leaflet-marker",
-    html: `<span style="display:flex;width:32px;height:32px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.28);align-items:center;justify-content:center;font-size:15px;line-height:1">🚗</span>`,
+    html: `<span style="display:flex;width:32px;height:32px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.28);align-items:center;justify-content:center;font-size:15px;line-height:1">${glyph}</span>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
     popupAnchor: [0, -14],
@@ -69,7 +77,10 @@ function FitBounds({
 
     const points: [number, number][] = [
       ...drivers.map((d) => [d.lat, d.lng] as [number, number]),
-      ...rides.map((r) => [r.lat, r.lng] as [number, number]),
+      ...rides.map((r) => [r.origin.lat, r.origin.lng] as [number, number]),
+      ...rides
+        .filter((r) => r.destination)
+        .map((r) => [r.destination!.lat, r.destination!.lng] as [number, number]),
     ];
 
     if (points.length === 0) {
@@ -89,6 +100,7 @@ function FitBounds({
 
 export function LiveMapCanvas({ drivers, rides, filters }: LiveMapCanvasProps) {
   const rideIcon = useMemo(() => createMarkerIcon("#0d9488"), []);
+  const destinationIcon = useMemo(() => createMarkerIcon("#ef4444", "🏁"), []);
 
   const visibleDrivers = filters.motoristasOnline ? drivers : [];
   const visibleRides = filters.corridasAtivas ? rides : [];
@@ -125,27 +137,63 @@ export function LiveMapCanvas({ drivers, rides, filters }: LiveMapCanvasProps) {
       ))}
 
       {visibleRides.map((ride) => (
-        <Marker
-          key={`ride-${ride.id}`}
-          position={[ride.lat, ride.lng]}
-          icon={rideIcon}
-        >
-          <Popup>
-            <div className="min-w-[180px] text-sm">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-teal-700">
-                Corrida em andamento
-              </p>
-              <p className="mt-1 font-bold text-neutral-900">{ride.driver}</p>
-              <p className="text-xs text-neutral-600">{ride.passenger}</p>
-              <p className="mt-2 text-xs text-neutral-800">{ride.route}</p>
-              {ride.eta !== "—" ? (
-                <p className="mt-1 text-xs font-semibold text-teal-700">
-                  ETA: {ride.eta}
+        <Fragment key={`ride-${ride.id}`}>
+          {ride.destination ? (
+            <Polyline
+              positions={[
+                [ride.origin.lat, ride.origin.lng],
+                [ride.destination.lat, ride.destination.lng],
+              ]}
+              pathOptions={{
+                color: "#0d9488",
+                weight: 4,
+                opacity: 0.75,
+                dashArray: "8 8",
+              }}
+            />
+          ) : null}
+
+          <Marker position={[ride.origin.lat, ride.origin.lng]} icon={rideIcon}>
+            <Tooltip direction="top" offset={[0, -16]}>
+              {ride.driver}
+            </Tooltip>
+            <Popup>
+              <div className="min-w-[180px] text-sm">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-teal-700">
+                  Corrida em andamento
                 </p>
-              ) : null}
-            </div>
-          </Popup>
-        </Marker>
+                <p className="mt-1 font-bold text-neutral-900">{ride.driver}</p>
+                <p className="text-xs text-neutral-600">{ride.passenger}</p>
+                <p className="mt-2 text-xs text-neutral-800">{ride.route}</p>
+                {ride.eta !== "—" ? (
+                  <p className="mt-1 text-xs font-semibold text-teal-700">
+                    ETA: {ride.eta}
+                  </p>
+                ) : null}
+              </div>
+            </Popup>
+          </Marker>
+
+          {ride.destination ? (
+            <Marker
+              position={[ride.destination.lat, ride.destination.lng]}
+              icon={destinationIcon}
+            >
+              <Tooltip direction="top" offset={[0, -16]}>
+                Destino — {ride.driver}
+              </Tooltip>
+              <Popup>
+                <div className="min-w-[180px] text-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-red-600">
+                    Destino
+                  </p>
+                  <p className="mt-1 font-bold text-neutral-900">{ride.driver}</p>
+                  <p className="mt-2 text-xs text-neutral-800">{ride.route}</p>
+                </div>
+              </Popup>
+            </Marker>
+          ) : null}
+        </Fragment>
       ))}
     </MapContainer>
   );
