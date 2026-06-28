@@ -110,7 +110,10 @@ export function mapUserToLiveDriver(
 ): LiveMapDriver | null {
   if (data.isDriver !== true) return null;
   if (Number(data.estado) !== 1) return null;
-  if (!isOnlineFlag(data.motorista_aprovado)) return null;
+  // Na base de dados, os motoristas aprovados não trazem o campo definido como
+  // `true` — apenas os reprovados têm `motorista_aprovado === false`. Por isso
+  // só excluímos quando a reprovação é explícita.
+  if (data.motorista_aprovado === false) return null;
   if (!isOnlineFlag(data.online)) return null;
 
   const coords = readLatLng(
