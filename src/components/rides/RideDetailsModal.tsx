@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faBan,
   faCar,
   faCircle,
   faIdCard,
@@ -28,6 +29,12 @@ function statusPillClass(status: RideRow["status"]) {
     Cancelada: "bg-red-50 text-red-700 ring-1 ring-red-100",
   };
   return map[status];
+}
+
+function cancelledByLabel(role: NonNullable<RideRow["cancelledBy"]>["role"]) {
+  if (role === "driver") return "Cancelada pelo motorista";
+  if (role === "passenger") return "Cancelada pelo passageiro";
+  return "Cancelada por outro utilizador";
 }
 
 function DetailField({
@@ -141,6 +148,24 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
             <span className="text-sm text-pika-muted">{ride.durationLabel}</span>
           ) : null}
         </div>
+
+        {ride.status === "Cancelada" && ride.cancelledBy ? (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <FontAwesomeIcon icon={faBan} className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-red-700">
+                {cancelledByLabel(ride.cancelledBy.role)}
+              </p>
+              {ride.cancelledBy.name !== "—" ? (
+                <p className="mt-0.5 truncate text-sm text-red-700/90">
+                  {ride.cancelledBy.name}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <DetailField label="Passageiro">

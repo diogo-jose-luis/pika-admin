@@ -1,4 +1,5 @@
 import { formatKz } from "@/lib/format-kz";
+import { refToDocId } from "@/lib/firestore-ref";
 
 export type RideStatus =
   | "Em andamento"
@@ -33,6 +34,13 @@ export type RideRow = {
   /** Motorista → passageiro (`estrela_driver_passageiro`). */
   driverToPassengerStars: number | null;
   driverToPassengerComment: string;
+  /** Quem cancelou a corrida (resolvido a partir de `cancelada_por`). */
+  cancelledBy: RideCancelledBy | null;
+};
+
+export type RideCancelledBy = {
+  role: "driver" | "passenger" | "other";
+  name: string;
 };
 
 export type CorridaFakeDoc = {
@@ -45,6 +53,12 @@ export type CorridaFakeDoc = {
   estado?: number;
   /** Indica que o motorista já chegou ao ponto de recolha. */
   motorista_chegou?: boolean | string | number;
+  /** Referência (`users/{id}`) de quem cancelou a corrida. */
+  cancelada_por?: unknown;
+  /** Referência (`users/{id}`) do motorista da corrida. */
+  motorista_id?: unknown;
+  /** Referência (`users/{id}`) do passageiro da corrida. */
+  passageiro_id?: unknown;
   data?: { _seconds: number; _nanoseconds: number } | string | null;
   estrelas?: number;
   comentario?: string;
@@ -246,6 +260,23 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
   return haystack.includes(q);
 }
 
+export function resolveCancelledBy(data: CorridaFakeDoc): RideCancelledBy | null {
+  const cancelledId = refToDocId(data.cancelada_por);
+  if (!cancelledId) return null;
+
+  const motoristaId = refToDocId(data.motorista_id);
+  if (motoristaId && cancelledId === motoristaId) {
+    return { role: "driver", name: data.motoristaNome?.trim() || "—" };
+  }
+
+  const passageiroId = refToDocId(data.passageiro_id);
+  if (passageiroId && cancelledId === passageiroId) {
+    return { role: "passenger", name: data.passageiro_nome?.trim() || "—" };
+  }
+
+  return { role: "other", name: "—" };
+}
+
 export function mapCorridaFakeToRideRow(
   docId: string,
   data: CorridaFakeDoc,
@@ -286,5 +317,6 @@ export function mapCorridaFakeToRideRow(
       data.estrela_driver_passageiro ?? data.estrelas_driver_passageiro,
     ),
     driverToPassengerComment: readComment(data.comentario_driver_passageiro),
+    cancelledBy: resolveCancelledBy(data),
   };
 }
