@@ -154,7 +154,7 @@ export function FinancialView() {
               </p>
               <p className="mt-2 text-xs text-pika-muted">Últimos 7 dias</p>
             </div>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">
               <FontAwesomeIcon icon={faChartLine} className="h-6 w-6" />
             </div>
           </div>
@@ -169,7 +169,7 @@ export function FinancialView() {
               </p>
               <p className="mt-2 text-xs text-pika-muted">{dateLabel}</p>
             </div>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-pika-primary text-white shadow-sm">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
               <FontAwesomeIcon icon={faPercent} className="h-6 w-6" />
             </div>
           </div>
@@ -234,13 +234,13 @@ export function FinancialView() {
                   <Bar
                     dataKey="receita"
                     name="Receita"
-                    fill="#f96100"
+                    fill="#22c55e"
                     radius={[6, 6, 0, 0]}
                   />
                   <Bar
                     dataKey="comissao"
                     name="Comissão"
-                    fill="#7dd3fc"
+                    fill="#2563eb"
                     radius={[6, 6, 0, 0]}
                   />
                 </BarChart>
