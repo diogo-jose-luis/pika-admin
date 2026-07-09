@@ -60,6 +60,10 @@ export type UserDoc = {
   created_time?: unknown;
   estado?: number;
   IBAN?: string;
+  bilhete_numero?: string;
+  bilhete?: string;
+  carta_conducao?: string;
+  photo_url?: string;
   isDriver?: boolean;
   motorista_aprovado?: boolean;
   documento_veiculo_aprovado?: boolean;

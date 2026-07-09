@@ -86,12 +86,24 @@ export type ValidacaoMotoristaDetail = {
   plate: string;
   /** @deprecated Use marca + modelo */
   vehicleMakeModel: string;
+  photoUrl: string | null;
   documentTabs: ValidationDocumentTab[];
   documents: Record<
     ValidationDocumentId,
-    { title: string; subtitle: string; fileRef: string }
+    { title: string; subtitle: string; fileRef: string; imageUrl: string | null }
   >;
 };
+
+const FIREBASE_STORAGE_BUCKET = "pika-a83e1.appspot.com";
+
+export function resolveFirestoreImageUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const encodedPath = encodeURIComponent(trimmed);
+  return `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o/${encodedPath}?alt=media`;
+}
 
 const DOCUMENT_TABS: ValidationDocumentTab[] = [
   { id: "cnh", label: "CNH", icon: "license" },
@@ -186,7 +198,8 @@ function vehicleCategoryLabel(vehicle?: VeiculoProvisorioDoc): string {
 function documentMeta(
   row: ValidacaoMotoristaRow,
   kind: ValidationDocumentId,
-): { title: string; subtitle: string; fileRef: string } {
+  imageUrl: string | null,
+): { title: string; subtitle: string; fileRef: string; imageUrl: string | null } {
   const code = row.requestCode.replace("VM-", "");
   const titles: Record<ValidationDocumentId, string> = {
     cnh: "Carteira Nacional de Habilitação",
@@ -206,6 +219,7 @@ function documentMeta(
     title: titles[kind],
     subtitle: `Documento de ${row.driverName}`,
     fileRef: `DOC-${row.requestCode}-${suffix[kind]}`,
+    imageUrl,
   };
 }
 
@@ -322,8 +336,19 @@ export function buildValidacaoDetail(
   const plate = matricula || "—";
   const vehicleMakeModel = [marca, modelo].filter(Boolean).join(" ") || "—";
 
+  const documentImages: Record<ValidationDocumentId, string | null> = {
+    cnh: resolveFirestoreImageUrl(user?.bilhete),
+    seguro: null,
+    clrv: resolveFirestoreImageUrl(user?.carta_conducao),
+    criminal: null,
+    selfie: resolveFirestoreImageUrl(user?.photo_url),
+  };
+
   const documents = Object.fromEntries(
-    DOCUMENT_TABS.map((tab) => [tab.id, documentMeta(row, tab.id)]),
+    DOCUMENT_TABS.map((tab) => [
+      tab.id,
+      documentMeta(row, tab.id, documentImages[tab.id]),
+    ]),
   ) as ValidacaoMotoristaDetail["documents"];
 
   return {
@@ -333,7 +358,8 @@ export function buildValidacaoDetail(
     driverDisplayName,
     documentTabs: DOCUMENT_TABS,
     documents,
-    bi: "—",
+    photoUrl: resolveFirestoreImageUrl(user?.photo_url),
+    bi: user?.bilhete_numero?.trim() || "—",
     phone: user?.phone_number?.trim() || "—",
     email: user?.email?.trim() || "—",
     iban: user?.IBAN?.trim() || "—",

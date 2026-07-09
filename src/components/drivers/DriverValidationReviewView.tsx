@@ -123,14 +123,23 @@ export function DriverValidationReviewView({
         <aside className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="flex flex-col items-center border-b border-pika-border pb-6">
             <div className="relative">
-              <div className="flex h-28 w-28 items-center justify-center rounded-full bg-amber-300 text-3xl font-bold text-amber-950">
-                {detail.driverDisplayName
-                  .split(" ")
-                  .map((p) => p[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase()}
-              </div>
+              {detail.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={detail.photoUrl}
+                  alt={`Fotografia de ${detail.driverDisplayName}`}
+                  className="h-28 w-28 rounded-full border-2 border-white object-cover shadow-sm"
+                />
+              ) : (
+                <div className="flex h-28 w-28 items-center justify-center rounded-full bg-amber-300 text-3xl font-bold text-amber-950">
+                  {detail.driverDisplayName
+                    .split(" ")
+                    .map((p) => p[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </div>
+              )}
               <button
                 type="button"
                 className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-pika-card text-pika-muted shadow-sm transition hover:text-pika-ink"
@@ -152,6 +161,7 @@ export function DriverValidationReviewView({
               <Field label="Telefone" value={detail.phone} />
               <Field label="E-mail" value={detail.email} />
               <Field label="IBAN" value={detail.iban} />
+              <Field label="Ano" value={detail.ano || "—"} />
               <Field label="Cidade" value={detail.city} />
             </dl>
           </section>
@@ -253,20 +263,34 @@ export function DriverValidationReviewView({
             </button>
           </div>
 
-          <div className="flex flex-1 flex-col bg-slate-100/80 p-4 md:p-6">
+          <div className="flex flex-1 flex-col overflow-auto bg-slate-100/80 p-4 md:p-6">
             <div
-              className="flex flex-1 flex-col items-center justify-center rounded-xl border border-pika-border/60 bg-slate-200/60 p-8 text-center transition-transform"
+              className="flex min-h-[320px] flex-1 flex-col items-center justify-center rounded-xl border border-pika-border/60 bg-slate-200/60 p-4 text-center transition-transform md:p-8"
               style={{ transform: `scale(${zoom / 100})`, transformOrigin: "center center" }}
             >
-              <FontAwesomeIcon
-                icon={faFileLines}
-                className="h-16 w-16 text-pika-muted/50"
-              />
-              <p className="mt-4 max-w-md text-base font-semibold text-pika-ink">
-                {doc.title}
-              </p>
-              <p className="mt-1 text-sm text-pika-muted">{doc.subtitle}</p>
-              <p className="mt-2 font-mono text-xs text-pika-muted">{doc.fileRef}</p>
+              {doc.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={doc.imageUrl}
+                  alt={doc.title}
+                  className="max-h-[min(60vh,520px)] w-auto max-w-full rounded-lg object-contain shadow-md"
+                />
+              ) : (
+                <>
+                  <FontAwesomeIcon
+                    icon={faFileLines}
+                    className="h-16 w-16 text-pika-muted/50"
+                  />
+                  <p className="mt-4 max-w-md text-base font-semibold text-pika-ink">
+                    {doc.title}
+                  </p>
+                  <p className="mt-1 text-sm text-pika-muted">{doc.subtitle}</p>
+                  <p className="mt-2 font-mono text-xs text-pika-muted">{doc.fileRef}</p>
+                  <p className="mt-3 text-sm text-pika-muted">
+                    Imagem do documento não disponível.
+                  </p>
+                </>
+              )}
               {activeTabMeta ? (
                 <p className="sr-only">Aba ativa: {activeTabMeta.label}</p>
               ) : null}
