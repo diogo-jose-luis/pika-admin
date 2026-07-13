@@ -26,6 +26,7 @@ import { useAdminDate } from "@/components/providers/AdminDateProvider";
 import { TransactionList } from "@/components/finance/TransactionList";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import type { FinanceData } from "@/lib/finance";
+import { formatKz } from "@/lib/format-kz";
 
 const EMPTY_FINANCE: FinanceData = {
   dailyRevenue: 0,
@@ -135,7 +136,7 @@ export function FinancialView() {
             <div className="min-w-0">
               <p className="text-sm font-medium text-pika-muted">Receita Diária</p>
               <p className="mt-2 text-2xl font-bold tracking-tight text-pika-ink md:text-3xl">
-                {stat(formatKzCompact(data.dailyRevenue))}
+                {stat(formatKz(data.dailyRevenue))}
               </p>
               <p className="mt-2 text-xs text-pika-muted">{dateLabel}</p>
             </div>
