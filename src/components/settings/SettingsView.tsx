@@ -205,6 +205,15 @@ function FeesTab() {
     text: string;
   } | null>(null);
 
+  const [tempoEspera, setTempoEspera] = useState("");
+  const [tempoEsperaDocId, setTempoEsperaDocId] = useState<string | null>(null);
+  const [tempoEsperaLoading, setTempoEsperaLoading] = useState(true);
+  const [tempoEsperaSaving, setTempoEsperaSaving] = useState(false);
+  const [tempoEsperaMessage, setTempoEsperaMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
+
   const loadComissaoPadrao = useCallback(async () => {
     setComissaoLoading(true);
     setComissaoMessage(null);
@@ -238,9 +247,49 @@ function FeesTab() {
     }
   }, []);
 
+  const loadTempoEspera = useCallback(async () => {
+    setTempoEsperaLoading(true);
+    setTempoEsperaMessage(null);
+
+    try {
+      const res = await fetch("/api/tempo-procura-motorista", {
+        cache: "no-store",
+      });
+      const data = (await res.json()) as {
+        record?: { id: string; tempoMinuto: number } | null;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(
+          data.error ?? "Não foi possível carregar o tempo de espera.",
+        );
+      }
+
+      if (data.record) {
+        setTempoEsperaDocId(data.record.id);
+        setTempoEspera(String(data.record.tempoMinuto));
+      } else {
+        setTempoEsperaDocId(null);
+        setTempoEspera("");
+      }
+    } catch (err) {
+      setTempoEsperaMessage({
+        type: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Erro ao carregar o tempo de espera.",
+      });
+    } finally {
+      setTempoEsperaLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadComissaoPadrao();
-  }, [loadComissaoPadrao]);
+    void loadTempoEspera();
+  }, [loadComissaoPadrao, loadTempoEspera]);
 
   const saveComissaoPadrao = async () => {
     const valor = Number(comissaoPadrao.replace(",", ".").trim());
@@ -295,8 +344,114 @@ function FeesTab() {
     }
   };
 
+  const saveTempoEspera = async () => {
+    const valor = Number(tempoEspera.replace(",", ".").trim());
+    if (!Number.isFinite(valor) || !Number.isInteger(valor) || valor < 0) {
+      setTempoEsperaMessage({
+        type: "error",
+        text: "Indique um tempo de espera válido (número inteiro ≥ 0).",
+      });
+      return;
+    }
+
+    setTempoEsperaSaving(true);
+    setTempoEsperaMessage(null);
+
+    try {
+      const res = await fetch("/api/tempo-procura-motorista", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tempoMinuto: valor,
+          id: tempoEsperaDocId,
+        }),
+      });
+      const data = (await res.json()) as {
+        record?: { id: string; tempoMinuto: number };
+        error?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(
+          data.error ?? "Não foi possível guardar o tempo de espera.",
+        );
+      }
+
+      if (data.record) {
+        setTempoEsperaDocId(data.record.id);
+        setTempoEspera(String(data.record.tempoMinuto));
+      }
+
+      setTempoEsperaMessage({
+        type: "success",
+        text: tempoEsperaDocId
+          ? "Tempo de espera atualizado."
+          : "Tempo de espera registado.",
+      });
+    } catch (err) {
+      setTempoEsperaMessage({
+        type: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Erro ao guardar o tempo de espera.",
+      });
+    } finally {
+      setTempoEsperaSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
+      <WhiteCard>
+        <CardTitle>Tempo de espera por motorista</CardTitle>
+        <p className="mt-1 text-sm text-pika-muted">
+          Tempo máximo de procura de motorista antes de cancelar a solicitação
+        </p>
+        <div className="mt-5 max-w-sm">
+          <label className="text-sm font-semibold text-pika-ink">
+            Tempo de espera (minutos)
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="Ex.: 5"
+            value={tempoEspera}
+            onChange={(e) => setTempoEspera(e.target.value)}
+            disabled={tempoEsperaLoading || tempoEsperaSaving}
+            className={inputClass()}
+          />
+          <p className="mt-1 text-xs text-pika-muted">
+            Campo tempo_minuto da coleção tempo_procura_motorista
+          </p>
+          {tempoEsperaMessage ? (
+            <p
+              className={cn(
+                "mt-2 text-xs font-medium",
+                tempoEsperaMessage.type === "error"
+                  ? "text-red-600"
+                  : "text-emerald-700",
+              )}
+            >
+              {tempoEsperaMessage.text}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void saveTempoEspera()}
+            disabled={tempoEsperaLoading || tempoEsperaSaving}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FontAwesomeIcon icon={faFloppyDisk} className="h-4 w-4" />
+            {tempoEsperaSaving
+              ? "A guardar…"
+              : tempoEsperaDocId
+                ? "Atualizar tempo"
+                : "Registar tempo"}
+          </button>
+        </div>
+      </WhiteCard>
+
       <div className="grid gap-5 lg:grid-cols-2">
         <WhiteCard>
           <CardTitle>Comissões da Plataforma</CardTitle>
