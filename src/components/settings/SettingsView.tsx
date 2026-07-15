@@ -421,9 +421,6 @@ function FeesTab() {
             disabled={tempoEsperaLoading || tempoEsperaSaving}
             className={inputClass()}
           />
-          <p className="mt-1 text-xs text-pika-muted">
-            Campo tempo_minuto da coleção tempo_procura_motorista
-          </p>
           {tempoEsperaMessage ? (
             <p
               className={cn(
