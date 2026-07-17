@@ -6,9 +6,11 @@ import {
   faBan,
   faCar,
   faCircle,
+  faClock,
   faIdCard,
   faLocationDot,
   faPalette,
+  faRobot,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { StarRating } from "@/components/ui/StarRating";
@@ -135,6 +137,12 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
           >
             {ride.status}
           </span>
+          {ride.closedBySystem ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+              <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
+              Fechada pelo sistema
+            </span>
+          ) : null}
           <span className="text-sm font-semibold text-pika-ink">{ride.valueLabel}</span>
           {ride.commissionLabel !== "—" ? (
             <span className="text-sm text-pika-muted">
@@ -144,10 +152,39 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
           {ride.distanceLabel ? (
             <span className="text-sm text-pika-muted">{ride.distanceLabel}</span>
           ) : null}
-          {ride.durationLabel ? (
-            <span className="text-sm text-pika-muted">{ride.durationLabel}</span>
-          ) : null}
         </div>
+
+        {ride.startTimeLabel || ride.endTimeLabel || ride.durationLabel ? (
+          <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-pika-border bg-pika-page/60 px-4 py-3 text-sm">
+            <span className="inline-flex items-center gap-2 text-pika-ink">
+              <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5 text-pika-primary" />
+              <span>
+                <span className="font-medium text-pika-muted">Início: </span>
+                {ride.startTimeLabel || "—"}
+              </span>
+            </span>
+            <span className="text-pika-ink">
+              <span className="font-medium text-pika-muted">Fim: </span>
+              {ride.endTimeLabel || "—"}
+            </span>
+            {ride.durationLabel ? (
+              <span className="font-semibold text-pika-ink">
+                Duração: {ride.durationLabel}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {ride.note ? (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+              Nota
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-amber-950">
+              {ride.note}
+            </p>
+          </div>
+        ) : null}
 
         {ride.status === "Cancelada" && ride.cancelledBy ? (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">

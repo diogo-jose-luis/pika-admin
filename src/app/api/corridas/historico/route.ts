@@ -1,10 +1,13 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { NIVEL_SUPER_ADMIN } from "@/lib/auth-types";
 import { getFirestore } from "@/lib/firebase-admin";
 import {
   mapCorridaFakeToRideRow,
   type CorridaFakeDoc,
   type RideRow,
 } from "@/lib/ride-history";
+import { parseSessionUserCookie, USER_COOKIE } from "@/lib/session-user";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +34,80 @@ export async function GET() {
 }
 
 const BATCH_DELETE_SIZE = 450;
+
+export async function PATCH(request: Request) {
+  try {
+    const jar = await cookies();
+    const session = parseSessionUserCookie(jar.get(USER_COOKIE)?.value);
+    if (!session || session.nivel < NIVEL_SUPER_ADMIN) {
+      return NextResponse.json(
+        { error: "Apenas Super Admin pode alterar o estado da corrida." },
+        { status: 403 },
+      );
+    }
+
+    let body: { id?: unknown; estado?: unknown; nota?: unknown };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Corpo inválido." }, { status: 400 });
+    }
+
+    const id =
+      typeof body.id === "string" && body.id.trim().length > 0
+        ? body.id.trim()
+        : "";
+    const estado =
+      typeof body.estado === "number" ? body.estado : Number(body.estado);
+    const nota =
+      typeof body.nota === "string" ? body.nota.trim() : "";
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Indique o id da corrida." },
+        { status: 400 },
+      );
+    }
+
+    if (estado !== 1 && estado !== 2) {
+      return NextResponse.json(
+        { error: "Estado inválido. Use 1 (concluída) ou 2 (cancelada)." },
+        { status: 400 },
+      );
+    }
+
+    const db = getFirestore();
+    const ref = db.collection("corrida_fake").doc(id);
+    const snap = await ref.get();
+
+    if (!snap.exists) {
+      return NextResponse.json(
+        { error: "Corrida não encontrada." },
+        { status: 404 },
+      );
+    }
+
+    await ref.update({
+      estado,
+      nota,
+    });
+
+    const updated = await ref.get();
+    const row = mapCorridaFakeToRideRow(
+      updated.id,
+      updated.data() as CorridaFakeDoc,
+      0,
+    );
+
+    return NextResponse.json({ row });
+  } catch (error) {
+    console.error("[corridas/historico PATCH]", error);
+    return NextResponse.json(
+      { error: "Não foi possível atualizar a corrida." },
+      { status: 500 },
+    );
+  }
+}
 
 export async function DELETE(request: Request) {
   try {

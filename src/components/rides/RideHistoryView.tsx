@@ -2,14 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RideDetailsModal } from "@/components/rides/RideDetailsModal";
+import { RideNoteModal } from "@/components/rides/RideNoteModal";
+import { RideStatusOffCanvas } from "@/components/rides/RideStatusOffCanvas";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { StarRating } from "@/components/ui/StarRating";
+import { useAuth } from "@/context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faChevronRight,
   faCircle,
+  faClock,
   faDownload,
   faCar,
   faEye,
@@ -17,10 +21,14 @@ import {
   faList,
   faLocationDot,
   faMagnifyingGlass,
+  faNoteSticky,
   faPalette,
+  faPenToSquare,
+  faRobot,
   faTableCells,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
+import { canManageAdminUsers } from "@/lib/permissions";
 import {
   rideMatchesDateRange,
   rideMatchesSearch,
@@ -64,6 +72,38 @@ function StatusPill({ status }: { status: RideStatus }) {
   );
 }
 
+function SystemClosedBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+      <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
+      Fechada pelo sistema
+    </span>
+  );
+}
+
+function RideTimingBlock({ row }: { row: RideRow }) {
+  const hasTimes = Boolean(row.startTimeLabel || row.endTimeLabel);
+  if (!hasTimes && !row.durationLabel) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-pika-muted">
+      {hasTimes ? (
+        <span className="inline-flex items-center gap-1.5">
+          <FontAwesomeIcon icon={faClock} className="h-3 w-3 text-pika-primary" />
+          <span>
+            {row.startTimeLabel || "—"}
+            <span className="mx-1 text-pika-muted/70">→</span>
+            {row.endTimeLabel || "—"}
+          </span>
+        </span>
+      ) : null}
+      {row.durationLabel ? (
+        <span className="font-semibold text-pika-ink">{row.durationLabel}</span>
+      ) : null}
+    </div>
+  );
+}
+
 function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) {
     return Array.from({ length: total }, (_, i) => i + 1);
@@ -78,6 +118,8 @@ function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
 }
 
 export function RideHistoryView() {
+  const { user } = useAuth();
+  const isSuperAdmin = user ? canManageAdminUsers(user.nivel) : false;
   const [rides, setRides] = useState<RideRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,9 +132,24 @@ export function RideHistoryView() {
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [detailRide, setDetailRide] = useState<RideRow | null>(null);
+  const [noteRide, setNoteRide] = useState<RideRow | null>(null);
+  const [editRide, setEditRide] = useState<RideRow | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+
+  const applyRideUpdate = useCallback((updated: RideRow) => {
+    setRides((prev) =>
+      prev.map((r) =>
+        r.docId === updated.docId ? { ...updated, id: r.id } : r,
+      ),
+    );
+    setDetailRide((prev) =>
+      prev && prev.docId === updated.docId
+        ? { ...updated, id: prev.id }
+        : prev,
+    );
+  }, []);
 
   const loadRides = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -381,6 +438,10 @@ export function RideHistoryView() {
                     selected={selectedIds.has(row.docId)}
                     onToggleSelect={() => toggleRowSelection(row.docId)}
                     onViewDetails={() => setDetailRide(row)}
+                    onViewNote={() => setNoteRide(row)}
+                    onEditStatus={
+                      isSuperAdmin ? () => setEditRide(row) : undefined
+                    }
                     onDelete={() => setDeleteConfirm({ mode: "single", row })}
                     deleteDisabled={deleteBusy}
                   />
@@ -404,6 +465,10 @@ export function RideHistoryView() {
                 selected={selectedIds.has(row.docId)}
                 onToggleSelect={() => toggleRowSelection(row.docId)}
                 onViewDetails={() => setDetailRide(row)}
+                onViewNote={() => setNoteRide(row)}
+                onEditStatus={
+                  isSuperAdmin ? () => setEditRide(row) : undefined
+                }
                 onDelete={() => setDeleteConfirm({ mode: "single", row })}
                 deleteDisabled={deleteBusy}
               />
@@ -488,6 +553,22 @@ export function RideHistoryView() {
         <RideDetailsModal ride={detailRide} onClose={() => setDetailRide(null)} />
       ) : null}
 
+      {noteRide ? (
+        <RideNoteModal
+          rideId={noteRide.id}
+          note={noteRide.note}
+          onClose={() => setNoteRide(null)}
+        />
+      ) : null}
+
+      {editRide && isSuperAdmin ? (
+        <RideStatusOffCanvas
+          ride={editRide}
+          onClose={() => setEditRide(null)}
+          onSaved={applyRideUpdate}
+        />
+      ) : null}
+
       <DeleteConfirmModal
         open={deleteConfirm !== null}
         onConfirm={() => void confirmDelete()}
@@ -549,6 +630,8 @@ function RideHistoryCard({
   selected,
   onToggleSelect,
   onViewDetails,
+  onViewNote,
+  onEditStatus,
   onDelete,
   deleteDisabled,
 }: {
@@ -556,6 +639,8 @@ function RideHistoryCard({
   selected: boolean;
   onToggleSelect: () => void;
   onViewDetails: () => void;
+  onViewNote: () => void;
+  onEditStatus?: () => void;
   onDelete: () => void;
   deleteDisabled: boolean;
 }) {
@@ -584,6 +669,21 @@ function RideHistoryCard({
         <div className="flex items-center gap-1">
           <button
             type="button"
+            onClick={onViewNote}
+            disabled={deleteDisabled}
+            className={cn(
+              "inline-flex h-9 w-9 items-center justify-center rounded-lg transition",
+              row.note
+                ? "text-amber-700 hover:bg-amber-50"
+                : "text-pika-muted hover:bg-pika-page hover:text-pika-primary",
+            )}
+            aria-label={`Ver nota da corrida #${row.id}`}
+            title="Ver nota"
+          >
+            <FontAwesomeIcon icon={faNoteSticky} className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
             onClick={onViewDetails}
             disabled={deleteDisabled}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
@@ -591,6 +691,18 @@ function RideHistoryCard({
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
+          {onEditStatus ? (
+            <button
+              type="button"
+              onClick={onEditStatus}
+              disabled={deleteDisabled}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
+              aria-label={`Alterar estado da corrida #${row.id}`}
+              title="Alterar estado"
+            >
+              <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onDelete}
@@ -605,8 +717,13 @@ function RideHistoryCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <StatusPill status={row.status} />
+        {row.closedBySystem ? <SystemClosedBadge /> : null}
         <span className="text-sm font-semibold text-pika-ink">{row.valueLabel}</span>
         <span className="text-sm text-pika-muted">Comissão {row.commissionLabel}</span>
+      </div>
+
+      <div className="mt-3">
+        <RideTimingBlock row={row} />
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
@@ -643,7 +760,6 @@ function RideHistoryCard({
 
       <div className="mt-3 flex flex-wrap gap-3 text-xs text-pika-muted">
         {row.distanceLabel ? <span>{row.distanceLabel}</span> : null}
-        {row.durationLabel ? <span>{row.durationLabel}</span> : null}
       </div>
 
       <div className="mt-3 border-t border-pika-border pt-3">
@@ -673,6 +789,8 @@ function RideTableRow({
   selected,
   onToggleSelect,
   onViewDetails,
+  onViewNote,
+  onEditStatus,
   onDelete,
   deleteDisabled,
 }: {
@@ -680,6 +798,8 @@ function RideTableRow({
   selected: boolean;
   onToggleSelect: () => void;
   onViewDetails: () => void;
+  onViewNote: () => void;
+  onEditStatus?: () => void;
   onDelete: () => void;
   deleteDisabled: boolean;
 }) {
@@ -707,6 +827,21 @@ function RideTableRow({
         <div className="inline-flex items-center gap-1">
           <button
             type="button"
+            onClick={onViewNote}
+            disabled={deleteDisabled}
+            className={cn(
+              "inline-flex h-9 w-9 items-center justify-center rounded-lg transition disabled:opacity-40",
+              row.note
+                ? "text-amber-700 hover:bg-amber-50"
+                : "text-pika-muted hover:bg-pika-page hover:text-pika-primary",
+            )}
+            aria-label={`Ver nota da corrida #${row.id}`}
+            title="Ver nota"
+          >
+            <FontAwesomeIcon icon={faNoteSticky} className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
             onClick={onViewDetails}
             disabled={deleteDisabled}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary disabled:opacity-40"
@@ -715,6 +850,18 @@ function RideTableRow({
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
+          {onEditStatus ? (
+            <button
+              type="button"
+              onClick={onEditStatus}
+              disabled={deleteDisabled}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary disabled:opacity-40"
+              aria-label={`Alterar estado da corrida #${row.id}`}
+              title="Alterar estado"
+            >
+              <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onDelete}
@@ -759,7 +906,16 @@ function RideTableRow({
         {row.distanceLabel || "\u00a0"}
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">
-        {row.durationLabel || "\u00a0"}
+        <div className="flex flex-col gap-0.5">
+          {row.startTimeLabel || row.endTimeLabel ? (
+            <span>
+              {row.startTimeLabel || "—"} → {row.endTimeLabel || "—"}
+            </span>
+          ) : null}
+          <span className="font-medium text-pika-ink">
+            {row.durationLabel || "\u00a0"}
+          </span>
+        </div>
       </td>
       <td className="px-4 py-3">
         <div className="flex min-w-0 flex-col gap-1.5 text-xs">
@@ -794,7 +950,10 @@ function RideTableRow({
         />
       </td>
       <td className="whitespace-nowrap px-4 py-3">
-        <StatusPill status={row.status} />
+        <div className="flex flex-col items-start gap-1.5">
+          <StatusPill status={row.status} />
+          {row.closedBySystem ? <SystemClosedBadge /> : null}
+        </div>
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">{row.dateLabel}</td>
     </tr>

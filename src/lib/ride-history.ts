@@ -21,6 +21,16 @@ export type RideRow = {
   commissionLabel: string;
   distanceLabel: string;
   durationLabel: string;
+  /** Horário de início (`hora_minuto_inicio`), formato HH:mm. */
+  startTimeLabel: string;
+  /** Horário de fim (`hora_minuto_fim`), formato HH:mm. */
+  endTimeLabel: string;
+  /** Nota administrativa / do sistema (`nota`). */
+  note: string;
+  /** Corrida encerrada automaticamente pelo sistema. */
+  closedBySystem: boolean;
+  /** Valor bruto de `estado` no Firestore (0/1/2/3). */
+  estado: number | null;
   vehicleModel: string;
   vehiclePlate: string;
   vehicleColor: string;
@@ -76,6 +86,16 @@ export type CorridaFakeDoc = {
   /** Campos legados — mantidos para documentos antigos. */
   distancia?: number | string;
   duracao?: number | string;
+  /** Início real da corrida (hora/minuto). */
+  hora_minuto_inicio?: { _seconds: number; _nanoseconds: number } | string | null;
+  /** Fim real da corrida (hora/minuto). */
+  hora_minuto_fim?: { _seconds: number; _nanoseconds: number } | string | null;
+  /** Nota administrativa ou do sistema. */
+  nota?: string;
+  /** True quando o sistema encerrou a corrida automaticamente. */
+  fechada_pelo_sistema?: boolean | string | number;
+  /** Alias tipográfico legado (fechado vs fechada). */
+  fechado_pelo_sistema?: boolean | string | number;
   viaturaMarcaModelo?: string;
   viaturaMatricula?: string;
   viatura_cor?: string;
@@ -136,6 +156,43 @@ function formatDurationLabel(value: unknown): string {
   return `${Math.round(n)} min`;
 }
 
+export function formatRideTimeOfDay(value: unknown): string {
+  const ms = parseRideDateToMs(value);
+  if (ms == null) return "";
+  const date = new Date(ms);
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
+/** Duração entre dois timestamps em horas e/ou minutos (ex.: "1h 12 min", "45 min"). */
+export function formatDurationFromRange(
+  start: unknown,
+  end: unknown,
+): string {
+  const startMs = parseRideDateToMs(start);
+  const endMs = parseRideDateToMs(end);
+  if (startMs == null || endMs == null || endMs < startMs) return "";
+
+  const totalMinutes = Math.round((endMs - startMs) / 60_000);
+  if (totalMinutes <= 0) return "";
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes} min`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes} min`;
+}
+
+export function isClosedBySystem(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+function parseEstadoNumber(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
 export function mapEstadoToStatus(estado: unknown): RideStatus {
   const n = typeof estado === "number" ? estado : Number(estado);
   return ESTADO_TO_STATUS[n] ?? "Pendente";
@@ -171,6 +228,9 @@ export function parseRideDateToMs(value: unknown): number | null {
   } else if (typeof value === "object" && value !== null && "_seconds" in value) {
     const sec = (value as { _seconds: number })._seconds;
     date = new Date(sec * 1000);
+  } else if (typeof value === "object" && value !== null && "seconds" in value) {
+    const sec = (value as { seconds: number }).seconds;
+    if (typeof sec === "number") date = new Date(sec * 1000);
   } else if (
     typeof value === "object" &&
     value !== null &&
@@ -244,6 +304,9 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
     row.commissionLabel,
     row.distanceLabel,
     row.durationLabel,
+    row.startTimeLabel,
+    row.endTimeLabel,
+    row.note,
     row.vehicleModel,
     row.vehiclePlate,
     row.vehicleColor,
@@ -253,6 +316,7 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
     row.driverToPassengerComment,
     row.passengerToDriverStars != null ? String(row.passengerToDriverStars) : "",
     row.driverToPassengerStars != null ? String(row.driverToPassengerStars) : "",
+    row.closedBySystem ? "sistema" : "",
   ]
     .join(" ")
     .toLowerCase();
@@ -290,7 +354,10 @@ export function mapCorridaFakeToRideRow(
   const distanceLabel =
     readRouteTextLabel(data.distanciaKmText) ||
     formatDistanceLabel(data.distancia);
+  const startTimeLabel = formatRideTimeOfDay(data.hora_minuto_inicio);
+  const endTimeLabel = formatRideTimeOfDay(data.hora_minuto_fim);
   const durationLabel =
+    formatDurationFromRange(data.hora_minuto_inicio, data.hora_minuto_fim) ||
     readRouteTextLabel(data.duracaoText) ||
     formatDurationLabel(data.duracao);
 
@@ -305,6 +372,13 @@ export function mapCorridaFakeToRideRow(
     commissionLabel: comissao > 0 ? formatKz(comissao) : "—",
     distanceLabel,
     durationLabel,
+    startTimeLabel,
+    endTimeLabel,
+    note: readComment(data.nota),
+    closedBySystem: isClosedBySystem(
+      data.fechada_pelo_sistema ?? data.fechado_pelo_sistema,
+    ),
+    estado: parseEstadoNumber(data.estado),
     vehicleModel: readVehicleField(data.viaturaMarcaModelo),
     vehiclePlate: readVehicleField(data.viaturaMatricula),
     vehicleColor: readVehicleField(data.viatura_cor),

@@ -159,8 +159,7 @@ export function DashboardHome() {
   const stat = (value: string | number) => (loading ? "…" : value);
   const formatStatNumber = (value: number) =>
     value.toLocaleString("pt-AO", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 0,
     });
 
   return (
