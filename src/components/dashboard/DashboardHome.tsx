@@ -157,6 +157,11 @@ export function DashboardHome() {
   }, [loadDashboard]);
 
   const stat = (value: string | number) => (loading ? "…" : value);
+  const formatStatNumber = (value: number) =>
+    value.toLocaleString("pt-AO", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -202,7 +207,7 @@ export function DashboardHome() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Total de Corridas ({dateLabel})</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {stat(data.summary.totalRidesToday.toLocaleString("pt-AO"))}
+                {stat(formatStatNumber(data.summary.totalRidesToday))}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-pika-primary-dark/15 text-pika-primary-dark">
@@ -216,7 +221,7 @@ export function DashboardHome() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Motoristas Ativos</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {stat(data.summary.activeDrivers.toLocaleString("pt-AO"))}
+                {stat(formatStatNumber(data.summary.activeDrivers))}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-pika-lime/30 text-pika-ink">
@@ -230,7 +235,7 @@ export function DashboardHome() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Passageiros Ativos</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
-                {stat(data.summary.activePassengers.toLocaleString("pt-AO"))}
+                {stat(formatStatNumber(data.summary.activePassengers))}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-pika-blue/15 text-pika-blue">
@@ -246,7 +251,7 @@ export function DashboardHome() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Corridas Concluídas</p>
               <p className="mt-2 text-2xl font-bold text-pika-ink">
-                {stat(data.todayStats.completed.toLocaleString("pt-AO"))}
+                {stat(formatStatNumber(data.todayStats.completed))}
               </p>
               <p className="mt-2 text-xs text-pika-muted">{dateLabel}</p>
             </div>
@@ -260,7 +265,7 @@ export function DashboardHome() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Corridas Canceladas</p>
               <p className="mt-2 text-2xl font-bold text-pika-ink">
-                {stat(data.todayStats.cancelled.toLocaleString("pt-AO"))}
+                {stat(formatStatNumber(data.todayStats.cancelled))}
               </p>
               <p className="mt-2 text-xs text-pika-muted">{dateLabel}</p>
             </div>
@@ -274,7 +279,7 @@ export function DashboardHome() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Corridas em Andamento</p>
               <p className="mt-2 text-2xl font-bold text-pika-ink">
-                {stat(data.todayStats.inProgress.toLocaleString("pt-AO"))}
+                {stat(formatStatNumber(data.todayStats.inProgress))}
               </p>
               <p className="mt-2 text-xs text-pika-muted">Em tempo real</p>
             </div>
@@ -288,7 +293,7 @@ export function DashboardHome() {
             <div>
               <p className="text-sm font-medium text-pika-muted">Corridas em Solicitação</p>
               <p className="mt-2 text-2xl font-bold text-pika-ink">
-                {stat(data.todayStats.inRequest.toLocaleString("pt-AO"))}
+                {stat(formatStatNumber(data.todayStats.inRequest))}
               </p>
               <p className="mt-2 text-xs text-pika-muted">Em tempo real</p>
             </div>

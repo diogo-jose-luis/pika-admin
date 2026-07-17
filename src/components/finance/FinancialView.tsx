@@ -61,7 +61,10 @@ function ChartMount({ children }: { children: React.ReactNode }) {
 }
 
 function formatKzCompact(amount: number) {
-  return `Kz ${amount.toLocaleString("pt-AO", { maximumFractionDigits: 0 })}`;
+  return `Kz ${amount.toLocaleString("pt-AO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export function FinancialView() {
@@ -302,7 +305,12 @@ export function FinancialView() {
                     {c.name}
                   </span>
                   <span className="shrink-0 font-semibold text-pika-ink">
-                    {loading ? "…" : `${c.value}%`}
+                    {loading
+                      ? "…"
+                      : `${c.value.toLocaleString("pt-AO", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}%`}
                   </span>
                 </li>
               ))}
