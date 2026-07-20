@@ -1,13 +1,11 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { NIVEL_SUPER_ADMIN } from "@/lib/auth-types";
 import { getFirestore } from "@/lib/firebase-admin";
 import {
   mapCorridaFakeToRideRow,
   type CorridaFakeDoc,
   type RideRow,
 } from "@/lib/ride-history";
-import { parseSessionUserCookie, USER_COOKIE } from "@/lib/session-user";
+import { requireSuperAdmin } from "@/lib/require-super-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -37,14 +35,8 @@ const BATCH_DELETE_SIZE = 450;
 
 export async function PATCH(request: Request) {
   try {
-    const jar = await cookies();
-    const session = parseSessionUserCookie(jar.get(USER_COOKIE)?.value);
-    if (!session || session.nivel < NIVEL_SUPER_ADMIN) {
-      return NextResponse.json(
-        { error: "Apenas Super Admin pode alterar o estado da corrida." },
-        { status: 403 },
-      );
-    }
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
 
     let body: { id?: unknown; estado?: unknown; nota?: unknown };
     try {
@@ -59,8 +51,7 @@ export async function PATCH(request: Request) {
         : "";
     const estado =
       typeof body.estado === "number" ? body.estado : Number(body.estado);
-    const nota =
-      typeof body.nota === "string" ? body.nota.trim() : "";
+    const nota = typeof body.nota === "string" ? body.nota.trim() : "";
 
     if (!id) {
       return NextResponse.json(
@@ -111,6 +102,9 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const denied = await requireSuperAdmin();
+    if (denied) return denied;
+
     let body: { ids?: unknown };
     try {
       body = await request.json();

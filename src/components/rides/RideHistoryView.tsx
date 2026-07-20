@@ -234,7 +234,7 @@ export function RideHistoryView() {
   };
 
   const confirmDelete = useCallback(async () => {
-    if (!deleteConfirm || deleteBusy) return;
+    if (!deleteConfirm || deleteBusy || !isSuperAdmin) return;
 
     const ids =
       deleteConfirm.mode === "single"
@@ -277,7 +277,14 @@ export function RideHistoryView() {
     } finally {
       setDeleteBusy(false);
     }
-  }, [deleteConfirm, deleteBusy, selectedIds, detailRide, loadRides]);
+  }, [
+    deleteConfirm,
+    deleteBusy,
+    isSuperAdmin,
+    selectedIds,
+    detailRide,
+    loadRides,
+  ]);
 
   const deleteModalTitle =
     deleteConfirm?.mode === "single"
@@ -285,6 +292,13 @@ export function RideHistoryView() {
       : deleteConfirm?.mode === "bulk"
         ? `Eliminar ${selectedIds.size} corrida(s)?`
         : "";
+
+  const deleteModalEntityLabel =
+    deleteConfirm?.mode === "single"
+      ? `${deleteConfirm.row.passenger} → ${deleteConfirm.row.driver}`
+      : deleteConfirm?.mode === "bulk"
+        ? `${selectedIds.size} registo(s) selecionado(s)`
+        : undefined;
 
   const deleteModalDescription =
     deleteConfirm?.mode === "single"
@@ -363,7 +377,7 @@ export function RideHistoryView() {
         </div>
       </div>
 
-      {selectedIds.size > 0 ? (
+      {selectedIds.size > 0 && isSuperAdmin ? (
         <div className="mb-4 flex flex-col gap-3 rounded-xl border border-red-200/80 bg-red-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-semibold text-pika-ink">
             {selectedIds.size} corrida(s) selecionada(s)
@@ -442,7 +456,11 @@ export function RideHistoryView() {
                     onEditStatus={
                       isSuperAdmin ? () => setEditRide(row) : undefined
                     }
-                    onDelete={() => setDeleteConfirm({ mode: "single", row })}
+                    onDelete={
+                      isSuperAdmin
+                        ? () => setDeleteConfirm({ mode: "single", row })
+                        : undefined
+                    }
                     deleteDisabled={deleteBusy}
                   />
                 ))}
@@ -469,7 +487,11 @@ export function RideHistoryView() {
                 onEditStatus={
                   isSuperAdmin ? () => setEditRide(row) : undefined
                 }
-                onDelete={() => setDeleteConfirm({ mode: "single", row })}
+                onDelete={
+                  isSuperAdmin
+                    ? () => setDeleteConfirm({ mode: "single", row })
+                    : undefined
+                }
                 deleteDisabled={deleteBusy}
               />
             ))}
@@ -576,7 +598,14 @@ export function RideHistoryView() {
           if (!deleteBusy) setDeleteConfirm(null);
         }}
         title={deleteModalTitle}
+        entityLabel={deleteModalEntityLabel}
         description={deleteModalDescription}
+        confirmLabel={
+          deleteConfirm?.mode === "bulk"
+            ? "Eliminar selecionadas"
+            : "Eliminar corrida"
+        }
+        busy={deleteBusy}
       />
     </div>
   );
@@ -641,7 +670,7 @@ function RideHistoryCard({
   onViewDetails: () => void;
   onViewNote: () => void;
   onEditStatus?: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   deleteDisabled: boolean;
 }) {
   return (
@@ -703,15 +732,17 @@ function RideHistoryCard({
               <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" />
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={deleteDisabled}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-red-50 hover:text-red-600"
-            aria-label={`Eliminar corrida #${row.id}`}
-          >
-            <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-          </button>
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={deleteDisabled}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-red-50 hover:text-red-600"
+              aria-label={`Eliminar corrida #${row.id}`}
+            >
+              <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -800,7 +831,7 @@ function RideTableRow({
   onViewDetails: () => void;
   onViewNote: () => void;
   onEditStatus?: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   deleteDisabled: boolean;
 }) {
   return (
@@ -862,16 +893,18 @@ function RideTableRow({
               <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" />
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={deleteDisabled}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-            aria-label={`Eliminar corrida #${row.id}`}
-            title="Eliminar corrida"
-          >
-            <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-          </button>
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={deleteDisabled}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+              aria-label={`Eliminar corrida #${row.id}`}
+              title="Eliminar corrida"
+            >
+              <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </td>
       <td className="whitespace-nowrap px-4 py-3 font-semibold text-pika-ink">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PassengerDetailsModal } from "@/components/passengers/PassengerDetailsModal";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
+import { useAuth } from "@/context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
@@ -29,6 +30,7 @@ import {
   type PassengerStatus,
   type PassengersSummary,
 } from "@/lib/passengers";
+import { canManageAdminUsers } from "@/lib/permissions";
 import { USER_ESTADO_BULK_OPTIONS } from "@/lib/users-estado";
 import { cn } from "@/lib/cn";
 
@@ -74,6 +76,8 @@ const EMPTY_SUMMARY: PassengersSummary = {
 };
 
 export function PassengersView() {
+  const { user } = useAuth();
+  const isSuperAdmin = user ? canManageAdminUsers(user.nivel) : false;
   const [passengers, setPassengers] = useState<PassengerRow[]>([]);
   const [summary, setSummary] = useState<PassengersSummary>(EMPTY_SUMMARY);
   const [loading, setLoading] = useState(true);
@@ -84,9 +88,9 @@ export function PassengersView() {
     useState<(typeof STATUS_OPTIONS)[number]>("Todos");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
   const [detailPassenger, setDetailPassenger] = useState<PassengerRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PassengerRow | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEstado, setBulkEstado] = useState("1");
   const [bulkSaving, setBulkSaving] = useState(false);
@@ -129,22 +133,54 @@ export function PassengersView() {
 
   const filtered = useMemo(() => {
     return passengers.filter((p) => {
-      if (deletedIds.has(p.passengerId)) return false;
       if (statusFilter === "Ativo" && p.status !== "Ativo") return false;
       if (statusFilter === "Inativo" && p.status !== "Inativo") return false;
       return passengerMatchesSearch(p, search);
     });
-  }, [passengers, search, statusFilter, deletedIds]);
+  }, [passengers, search, statusFilter]);
 
-  const confirmDeletePassenger = useCallback(() => {
-    if (!deleteTarget) return;
-    const id = deleteTarget.passengerId;
-    setDeletedIds((prev) => new Set(prev).add(id));
-    setDetailPassenger((current) =>
-      current?.passengerId === id ? null : current,
-    );
-    setDeleteTarget(null);
-  }, [deleteTarget]);
+  const confirmDeletePassenger = useCallback(async () => {
+    if (!deleteTarget || deleteBusy || !isSuperAdmin) return;
+
+    setDeleteBusy(true);
+    setLoadError(null);
+
+    try {
+      const res = await fetch("/api/passageiros", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [deleteTarget.userDocId] }),
+      });
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        throw new Error(
+          data.error ?? "Não foi possível eliminar o passageiro.",
+        );
+      }
+
+      const id = deleteTarget.userDocId;
+      setPassengers((prev) => prev.filter((p) => p.userDocId !== id));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      setDetailPassenger((current) =>
+        current?.userDocId === id ? null : current,
+      );
+      setDeleteTarget(null);
+      await loadPassengers(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível eliminar o passageiro.",
+      );
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [deleteTarget, deleteBusy, isSuperAdmin, loadPassengers]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
@@ -441,7 +477,9 @@ export function PassengersView() {
                       selected={selectedIds.has(row.userDocId)}
                       onToggleSelect={() => toggleRow(row.userDocId)}
                       onViewDetails={() => setDetailPassenger(row)}
-                      onDelete={() => setDeleteTarget(row)}
+                      onDelete={
+                        isSuperAdmin ? () => setDeleteTarget(row) : undefined
+                      }
                     />
                   ))
                 : null}
@@ -465,7 +503,9 @@ export function PassengersView() {
                   selected={selectedIds.has(row.userDocId)}
                   onToggleSelect={() => toggleRow(row.userDocId)}
                   onViewDetails={() => setDetailPassenger(row)}
-                  onDelete={() => setDeleteTarget(row)}
+                  onDelete={
+                    isSuperAdmin ? () => setDeleteTarget(row) : undefined
+                  }
                 />
               ))}
         </div>
@@ -550,8 +590,19 @@ export function PassengersView() {
 
       <DeleteConfirmModal
         open={deleteTarget !== null}
-        onConfirm={confirmDeletePassenger}
-        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDeletePassenger()}
+        onCancel={() => {
+          if (!deleteBusy) setDeleteTarget(null);
+        }}
+        title="Eliminar passageiro?"
+        entityLabel={
+          deleteTarget
+            ? `${deleteTarget.name} (${deleteTarget.passengerId})`
+            : undefined
+        }
+        description="Tem certeza de que deseja eliminar este passageiro? Esta ação é irreversível e remove o registo do utilizador."
+        confirmLabel="Eliminar passageiro"
+        busy={deleteBusy}
       />
     </div>
   );
@@ -613,7 +664,7 @@ function PassengerCard({
   selected: boolean;
   onToggleSelect: () => void;
   onViewDetails: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -671,37 +722,39 @@ function PassengerCard({
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
-          <div ref={menuRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              className={cn(
-                "inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink",
-                menuOpen && "bg-pika-page text-pika-ink",
-              )}
-              aria-label="Mais opções"
-            >
-              <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
-            </button>
-            {menuOpen ? (
-              <div
-                role="menu"
-                className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-pika-border bg-pika-card p-2 shadow-lg"
+          {onDelete ? (
+            <div ref={menuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((open) => !open)}
+                className={cn(
+                  "inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink",
+                  menuOpen && "bg-pika-page text-pika-ink",
+                )}
+                aria-label="Mais opções"
               >
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onDelete();
-                  }}
-                  className="w-full rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
+              </button>
+              {menuOpen ? (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-pika-border bg-pika-card p-2 shadow-lg"
                 >
-                  Eliminar Passageiro
-                </button>
-              </div>
-            ) : null}
-          </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete();
+                    }}
+                    className="w-full rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                  >
+                    Eliminar Passageiro
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -760,7 +813,7 @@ function PassengerTableRow({
   selected: boolean;
   onToggleSelect: () => void;
   onViewDetails: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -859,39 +912,41 @@ function PassengerTableRow({
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
-          <div ref={menuRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              className={cn(
-                "inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink",
-                menuOpen && "bg-pika-page text-pika-ink",
-              )}
-              aria-label="Mais opções"
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-            >
-              <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
-            </button>
-            {menuOpen ? (
-              <div
-                role="menu"
-                className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-pika-border bg-pika-card p-2 shadow-lg"
+          {onDelete ? (
+            <div ref={menuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((open) => !open)}
+                className={cn(
+                  "inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-ink",
+                  menuOpen && "bg-pika-page text-pika-ink",
+                )}
+                aria-label="Mais opções"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
               >
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onDelete();
-                  }}
-                  className="w-full rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
+              </button>
+              {menuOpen ? (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-pika-border bg-pika-card p-2 shadow-lg"
                 >
-                  Eliminar Passageiro
-                </button>
-              </div>
-            ) : null}
-          </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete();
+                    }}
+                    className="w-full rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                  >
+                    Eliminar Passageiro
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </td>
     </tr>

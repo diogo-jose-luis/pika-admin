@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DriverDetailsModal } from "@/components/drivers/DriverDetailsModal";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
+import { useAuth } from "@/context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCar,
@@ -27,6 +28,7 @@ import {
   type DriverStatus,
   type DriversSummary,
 } from "@/lib/drivers";
+import { canManageAdminUsers } from "@/lib/permissions";
 import { USER_ESTADO_BULK_OPTIONS } from "@/lib/users-estado";
 import { USER_ONLINE_BULK_OPTIONS } from "@/lib/users-online";
 import { cn } from "@/lib/cn";
@@ -71,6 +73,8 @@ const EMPTY_SUMMARY: DriversSummary = {
 };
 
 export function DriversView() {
+  const { user } = useAuth();
+  const isSuperAdmin = user ? canManageAdminUsers(user.nivel) : false;
   const [drivers, setDrivers] = useState<DriverCard[]>([]);
   const [summary, setSummary] = useState<DriversSummary>(EMPTY_SUMMARY);
   const [loading, setLoading] = useState(true);
@@ -81,6 +85,7 @@ export function DriversView() {
   const [docFilter, setDocFilter] = useState<(typeof DOC_OPTIONS)[number]>("Todos");
   const [detailDriver, setDetailDriver] = useState<DriverCard | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DriverCard | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEstado, setBulkEstado] = useState("1");
   const [bulkOnline, setBulkOnline] = useState("true");
@@ -248,13 +253,46 @@ export function DriversView() {
     }
   };
 
-  const confirmDeleteDriver = useCallback(() => {
-    if (!deleteTarget) return;
-    const id = deleteTarget.id;
-    setDrivers((prev) => prev.filter((d) => d.id !== id));
-    setDetailDriver((current) => (current?.id === id ? null : current));
-    setDeleteTarget(null);
-  }, [deleteTarget]);
+  const confirmDeleteDriver = useCallback(async () => {
+    if (!deleteTarget || deleteBusy || !isSuperAdmin) return;
+
+    setDeleteBusy(true);
+    setLoadError(null);
+
+    try {
+      const res = await fetch("/api/motoristas", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [deleteTarget.userDocId] }),
+      });
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Não foi possível eliminar o motorista.");
+      }
+
+      const id = deleteTarget.userDocId;
+      setDrivers((prev) => prev.filter((d) => d.userDocId !== id));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      setDetailDriver((current) =>
+        current?.userDocId === id ? null : current,
+      );
+      setDeleteTarget(null);
+      await loadDrivers(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível eliminar o motorista.",
+      );
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [deleteTarget, deleteBusy, isSuperAdmin, loadDrivers]);
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -495,7 +533,9 @@ export function DriversView() {
               selected={selectedIds.has(driver.userDocId)}
               onToggleSelect={() => toggleSelect(driver.userDocId)}
               onViewDetails={() => setDetailDriver(driver)}
-              onDelete={() => setDeleteTarget(driver)}
+              onDelete={
+                isSuperAdmin ? () => setDeleteTarget(driver) : undefined
+              }
             />
           ))}
         </section>
@@ -510,8 +550,19 @@ export function DriversView() {
 
       <DeleteConfirmModal
         open={deleteTarget !== null}
-        onConfirm={confirmDeleteDriver}
-        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDeleteDriver()}
+        onCancel={() => {
+          if (!deleteBusy) setDeleteTarget(null);
+        }}
+        title="Eliminar motorista?"
+        entityLabel={
+          deleteTarget
+            ? `${deleteTarget.name} (${deleteTarget.id})`
+            : undefined
+        }
+        description="Tem certeza de que deseja eliminar este motorista? Esta ação é irreversível e remove o registo do utilizador e a viatura associada."
+        confirmLabel="Eliminar motorista"
+        busy={deleteBusy}
       />
     </div>
   );
@@ -528,7 +579,7 @@ function DriverCard({
   selected: boolean;
   onToggleSelect: () => void;
   onViewDetails: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -550,6 +601,7 @@ function DriverCard({
   };
 
   const deleteDriver = () => {
+    if (!onDelete) return;
     setMenuOpen(false);
     onDelete();
   };
@@ -626,14 +678,16 @@ function DriverCard({
               >
                 Ver detalhes
               </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={deleteDriver}
-                className="mt-1 w-full rounded-lg px-3 py-2 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
-              >
-                Eliminar Motorista
-              </button>
+              {onDelete ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={deleteDriver}
+                  className="mt-1 w-full rounded-lg px-3 py-2 text-center text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                >
+                  Eliminar Motorista
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>
