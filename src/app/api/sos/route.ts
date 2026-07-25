@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getFirestore } from "@/lib/firebase-admin";
 import { refToDocId } from "@/lib/firestore-ref";
+import { requireAdmin } from "@/lib/require-admin";
 import {
   mapSosToAlertRow,
   type SosAlertRow,
@@ -91,6 +92,51 @@ export async function GET() {
     console.error("[sos GET]", error);
     return NextResponse.json(
       { error: "Não foi possível carregar os alertas SOS." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const denied = await requireAdmin();
+    if (denied) return denied;
+
+    let body: { id?: unknown };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Corpo inválido." }, { status: 400 });
+    }
+
+    const id =
+      typeof body.id === "string" && body.id.trim() ? body.id.trim() : "";
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Indique o id do alerta SOS." },
+        { status: 400 },
+      );
+    }
+
+    const db = getFirestore();
+    const ref = db.collection("SOS").doc(id);
+    const snap = await ref.get();
+
+    if (!snap.exists) {
+      return NextResponse.json(
+        { error: "Alerta SOS não encontrado." },
+        { status: 404 },
+      );
+    }
+
+    await ref.delete();
+
+    return NextResponse.json({ ok: true, id });
+  } catch (error) {
+    console.error("[sos DELETE]", error);
+    return NextResponse.json(
+      { error: "Não foi possível remover o alerta SOS." },
       { status: 500 },
     );
   }

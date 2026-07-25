@@ -66,6 +66,11 @@ export function canManageAdminUsers(nivel: number): boolean {
   return nivel >= NIVEL_SUPER_ADMIN;
 }
 
+/** Remover alertas SOS (Admin e Super Admin). */
+export function canDeleteSos(nivel: number): boolean {
+  return nivel >= NIVEL_ADMIN;
+}
+
 /** Receita total e receita semanal no dashboard (ocultas para operador). */
 export function canViewDashboardRevenue(nivel: number): boolean {
   return nivel >= NIVEL_ADMIN;

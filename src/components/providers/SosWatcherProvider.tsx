@@ -27,6 +27,7 @@ type SosWatcherContextValue = {
   markAllRead: () => void;
   markRead: (id: string) => void;
   clearNotifications: () => void;
+  dismissNotification: (id: string) => void;
 };
 
 const SosWatcherContext = createContext<SosWatcherContextValue | null>(null);
@@ -161,6 +162,10 @@ export function SosWatcherProvider({ children }: { children: ReactNode }) {
     setNotifications([]);
   }, []);
 
+  const dismissNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
     [notifications],
@@ -173,8 +178,16 @@ export function SosWatcherProvider({ children }: { children: ReactNode }) {
       markAllRead,
       markRead,
       clearNotifications,
+      dismissNotification,
     }),
-    [notifications, unreadCount, markAllRead, markRead, clearNotifications],
+    [
+      notifications,
+      unreadCount,
+      markAllRead,
+      markRead,
+      clearNotifications,
+      dismissNotification,
+    ],
   );
 
   return (

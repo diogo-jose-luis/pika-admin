@@ -8,15 +8,26 @@ import {
   faLocationDot,
   faMapLocationDot,
   faPhone,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
+import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
+import { useSosWatcher } from "@/components/providers/SosWatcherProvider";
+import { useAuth } from "@/context/AuthContext";
+import { canDeleteSos } from "@/lib/permissions";
 import type { SosAlertRow } from "@/lib/sos-alerts";
 
 export function SosView() {
+  const { user } = useAuth();
+  const { dismissNotification } = useSosWatcher();
+  const canRemove = user ? canDeleteSos(user.nivel) : false;
+
   const [alerts, setAlerts] = useState<SosAlertRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SosAlertRow | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const loadAlerts = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -50,6 +61,39 @@ export function SosView() {
     void loadAlerts();
   }, [loadAlerts]);
 
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget || deleteBusy || !canRemove) return;
+
+    setDeleteBusy(true);
+    setLoadError(null);
+
+    try {
+      const res = await fetch("/api/sos", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: deleteTarget.id }),
+      });
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        throw new Error(data.error ?? "Não foi possível remover o alerta SOS.");
+      }
+
+      const removedId = deleteTarget.id;
+      setAlerts((prev) => prev.filter((a) => a.id !== removedId));
+      dismissNotification(removedId);
+      setDeleteTarget(null);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível remover o alerta SOS.",
+      );
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [deleteTarget, deleteBusy, canRemove, dismissNotification]);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -81,15 +125,45 @@ export function SosView() {
       ) : (
         <div className="mx-auto max-w-3xl space-y-4">
           {alerts.map((alert) => (
-            <SosAlertCard key={alert.id} alert={alert} />
+            <SosAlertCard
+              key={alert.id}
+              alert={alert}
+              canRemove={canRemove}
+              onRemove={() => setDeleteTarget(alert)}
+            />
           ))}
         </div>
       )}
+
+      <DeleteConfirmModal
+        open={deleteTarget !== null}
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => {
+          if (!deleteBusy) setDeleteTarget(null);
+        }}
+        title="Remover alerta SOS?"
+        entityLabel={
+          deleteTarget
+            ? `${deleteTarget.code} · ${deleteTarget.titleLine}`
+            : undefined
+        }
+        description="Tem certeza de que deseja remover este alerta SOS? Esta ação é irreversível."
+        confirmLabel="Remover SOS"
+        busy={deleteBusy}
+      />
     </div>
   );
 }
 
-function SosAlertCard({ alert }: { alert: SosAlertRow }) {
+function SosAlertCard({
+  alert,
+  canRemove,
+  onRemove,
+}: {
+  alert: SosAlertRow;
+  canRemove: boolean;
+  onRemove: () => void;
+}) {
   const phoneDigits = alert.phone.replace(/\D/g, "");
   const canCall = phoneDigits.length > 0;
 
@@ -132,6 +206,16 @@ function SosAlertCard({ alert }: { alert: SosAlertRow }) {
             >
               Acionar 111
             </button>
+            {canRemove ? (
+              <button
+                type="button"
+                onClick={onRemove}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
+              >
+                <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
+                Remover SOS
+              </button>
+            ) : null}
           </div>
         </div>
 
