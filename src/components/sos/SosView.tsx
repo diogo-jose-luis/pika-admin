@@ -6,6 +6,7 @@ import {
   faCircle,
   faClock,
   faLocationDot,
+  faMapLocationDot,
   faPhone,
 } from "@fortawesome/free-solid-svg-icons";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
@@ -163,6 +164,33 @@ function SosAlertCard({ alert }: { alert: SosAlertRow }) {
                 {alert.destination}
               </span>
             </span>
+            {alert.latitude != null && alert.longitude != null ? (
+              <span className="inline-flex items-start gap-2 text-pika-ink">
+                <FontAwesomeIcon
+                  icon={faMapLocationDot}
+                  className="mt-0.5 h-3 w-3 shrink-0 text-red-600"
+                />
+                <span className="leading-snug">
+                  <span className="font-medium text-pika-muted">
+                    Coordenadas:{" "}
+                  </span>
+                  {alert.mapsUrl ? (
+                    <a
+                      href={alert.mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-pika-primary hover:underline"
+                    >
+                      {alert.latitude.toFixed(6)}, {alert.longitude.toFixed(6)}
+                    </a>
+                  ) : (
+                    <>
+                      {alert.latitude.toFixed(6)}, {alert.longitude.toFixed(6)}
+                    </>
+                  )}
+                </span>
+              </span>
+            ) : null}
           </div>
           <div className="flex flex-col gap-2 text-pika-muted sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
             <span className="inline-flex items-center gap-2">
@@ -178,6 +206,20 @@ function SosAlertCard({ alert }: { alert: SosAlertRow }) {
                 {alert.trackingStatusLabel}
               </span>
             </span>
+            {alert.mapsUrl ? (
+              <a
+                href={alert.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 font-semibold text-pika-primary transition hover:underline"
+              >
+                <FontAwesomeIcon
+                  icon={faMapLocationDot}
+                  className="h-4 w-4 shrink-0"
+                />
+                Ver no Google Maps
+              </a>
+            ) : null}
           </div>
         </div>
       </div>

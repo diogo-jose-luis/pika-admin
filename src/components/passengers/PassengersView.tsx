@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PassengerDetailsModal } from "@/components/passengers/PassengerDetailsModal";
+import { PushNotificationOffCanvas } from "@/components/notifications/PushNotificationOffCanvas";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { useAuth } from "@/context/AuthContext";
@@ -17,6 +18,7 @@ import {
   faEye,
   faList,
   faMagnifyingGlass,
+  faPaperPlane,
   faStar,
   faTableCells,
   faTriangleExclamation,
@@ -94,6 +96,7 @@ export function PassengersView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEstado, setBulkEstado] = useState("1");
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [pushOpen, setPushOpen] = useState(false);
 
   const loadPassengers = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -375,6 +378,14 @@ export function PassengersView() {
               loading={refreshing}
               onClick={() => void loadPassengers(true)}
             />
+            <button
+              type="button"
+              onClick={() => setPushOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark"
+            >
+              <FontAwesomeIcon icon={faPaperPlane} className="h-4 w-4" />
+              Push notification
+            </button>
           </div>
         </div>
       </div>
@@ -603,6 +614,14 @@ export function PassengersView() {
         description="Tem certeza de que deseja eliminar este passageiro? Esta ação é irreversível e remove o registo do utilizador."
         confirmLabel="Eliminar passageiro"
         busy={deleteBusy}
+      />
+
+      <PushNotificationOffCanvas
+        open={pushOpen}
+        onClose={() => setPushOpen(false)}
+        selectedIds={[...selectedIds]}
+        defaultAudience="passageiros"
+        contextLabel="passageiro"
       />
     </div>
   );

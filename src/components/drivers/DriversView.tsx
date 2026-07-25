@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DriverDetailsModal } from "@/components/drivers/DriverDetailsModal";
+import { PushNotificationOffCanvas } from "@/components/notifications/PushNotificationOffCanvas";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +17,7 @@ import {
   faGaugeHigh,
   faLocationDot,
   faMagnifyingGlass,
+  faPaperPlane,
   faPhone,
   faStar,
   faUserCheck,
@@ -90,6 +92,7 @@ export function DriversView() {
   const [bulkEstado, setBulkEstado] = useState("1");
   const [bulkOnline, setBulkOnline] = useState("true");
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [pushOpen, setPushOpen] = useState(false);
 
   const loadDrivers = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -399,6 +402,14 @@ export function DriversView() {
             />
             <button
               type="button"
+              onClick={() => setPushOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-primary-dark"
+            >
+              <FontAwesomeIcon icon={faPaperPlane} className="h-4 w-4" />
+              Push notification
+            </button>
+            <button
+              type="button"
               className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2.5 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white"
             >
               <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />
@@ -563,6 +574,14 @@ export function DriversView() {
         description="Tem certeza de que deseja eliminar este motorista? Esta ação é irreversível e remove o registo do utilizador e a viatura associada."
         confirmLabel="Eliminar motorista"
         busy={deleteBusy}
+      />
+
+      <PushNotificationOffCanvas
+        open={pushOpen}
+        onClose={() => setPushOpen(false)}
+        selectedIds={[...selectedIds]}
+        defaultAudience="motoristas"
+        contextLabel="motorista"
       />
     </div>
   );

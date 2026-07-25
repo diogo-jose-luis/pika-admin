@@ -6,6 +6,8 @@ export type SosDoc = {
   userRef?: unknown;
   corridaID?: unknown;
   dataHora?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
 };
 
 export type SosUserDoc = {
@@ -34,7 +36,40 @@ export type SosAlertRow = {
   phone: string;
   timeAgoLabel: string;
   trackingStatusLabel: string;
+  latitude: number | null;
+  longitude: number | null;
+  mapsUrl: string | null;
 };
+
+/** Resumo leve para o watcher global do header. */
+export type SosWatchItem = {
+  id: string;
+  code: string;
+  severityLabel: string;
+  titleLine: string;
+  timeAgoLabel: string;
+  dataHoraIso: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  mapsUrl: string | null;
+};
+
+export function parseCoord(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value.trim().replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+export function googleMapsUrl(
+  latitude: number | null,
+  longitude: number | null,
+): string | null {
+  if (latitude == null || longitude == null) return null;
+  return `https://www.google.com/maps?q=${latitude},${longitude}`;
+}
 
 export function formatTimeAgo(date: Date): string {
   const diffMs = Date.now() - date.getTime();
@@ -111,6 +146,8 @@ export function mapSosToAlertRow(
 
   const eventDate = toDate(data.dataHora);
   const timeAgoLabel = eventDate ? formatTimeAgo(eventDate) : "—";
+  const latitude = parseCoord(data.latitude);
+  const longitude = parseCoord(data.longitude);
 
   return {
     id: docId,
@@ -123,5 +160,31 @@ export function mapSosToAlertRow(
     phone: readPhone(user),
     timeAgoLabel,
     trackingStatusLabel: "Em rastreio ao vivo",
+    latitude,
+    longitude,
+    mapsUrl: googleMapsUrl(latitude, longitude),
+  };
+}
+
+export function mapSosToWatchItem(
+  docId: string,
+  data: SosDoc,
+  user: SosUserDoc | undefined,
+): SosWatchItem {
+  const eventDate = toDate(data.dataHora);
+  const latitude = parseCoord(data.latitude);
+  const longitude = parseCoord(data.longitude);
+  const titleLine = user?.display_name?.trim() || "Alerta SOS";
+
+  return {
+    id: docId,
+    code: nivelToCode(data.nivel),
+    severityLabel: nivelToSeverityLabel(data.nivel),
+    titleLine,
+    timeAgoLabel: eventDate ? formatTimeAgo(eventDate) : "—",
+    dataHoraIso: eventDate ? eventDate.toISOString() : null,
+    latitude,
+    longitude,
+    mapsUrl: googleMapsUrl(latitude, longitude),
   };
 }

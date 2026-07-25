@@ -7,6 +7,7 @@ import { AdminHeader } from "@/components/layout/AdminHeader";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { AuthGate } from "@/components/auth/AuthGate";
 import { AdminDateProvider } from "@/components/providers/AdminDateProvider";
+import { SosWatcherProvider } from "@/components/providers/SosWatcherProvider";
 import type { SessionUser } from "@/lib/session-user";
 import { cn } from "@/lib/cn";
 import { SIDEBAR_COLLAPSED_KEY } from "@/lib/storage-keys";
@@ -81,16 +82,18 @@ export function AdminShell({ children, user }: AdminShellProps) {
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <AdminDateProvider>
-          <AdminHeader
-            user={user}
-            sidebarCollapsed={collapsed}
-            onMenuClick={() => setMenuOpen(true)}
-            onSidebarToggle={toggleSidebarCollapsed}
-          />
-          <main className="scroll-pika min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-            <AuthGate>{children}</AuthGate>
-          </main>
-          <AdminFooter />
+          <SosWatcherProvider>
+            <AdminHeader
+              user={user}
+              sidebarCollapsed={collapsed}
+              onMenuClick={() => setMenuOpen(true)}
+              onSidebarToggle={toggleSidebarCollapsed}
+            />
+            <main className="scroll-pika min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <AuthGate>{children}</AuthGate>
+            </main>
+            <AdminFooter />
+          </SosWatcherProvider>
         </AdminDateProvider>
       </div>
     </div>

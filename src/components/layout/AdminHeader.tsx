@@ -6,7 +6,6 @@ import {
   faAnglesLeft,
   faAnglesRight,
   faBars,
-  faBell,
   faCalendarDays,
   faChevronDown,
   faLocationDot,
@@ -17,6 +16,7 @@ import { titleForPath } from "@/lib/nav";
 import { ANGOLA_PROVINCES } from "@/lib/angola-provinces";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/layout/LogoutButton";
+import { SosNotificationsBell } from "@/components/layout/SosNotificationsBell";
 import { useAdminDate } from "@/components/providers/AdminDateProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { initialsFromDisplayName, type SessionUser } from "@/lib/session-user";
@@ -188,13 +188,7 @@ export function AdminHeader({
           </span>
         </button>
 
-        <button
-          type="button"
-          className={iconBtnClass}
-          aria-label="Notificações"
-        >
-          <FontAwesomeIcon icon={faBell} className="h-5 w-5" />
-        </button>
+        <SosNotificationsBell />
 
         <div className="relative" ref={userMenuRef}>
           <button
