@@ -8,6 +8,7 @@ import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { AuthGate } from "@/components/auth/AuthGate";
 import { AdminDateProvider } from "@/components/providers/AdminDateProvider";
 import { SosWatcherProvider } from "@/components/providers/SosWatcherProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import type { SessionUser } from "@/lib/session-user";
 import { cn } from "@/lib/cn";
 import { SIDEBAR_COLLAPSED_KEY } from "@/lib/storage-keys";
@@ -28,6 +29,7 @@ function readSidebarCollapsed(): boolean {
 
 export function AdminShell({ children, user }: AdminShellProps) {
   const pathname = usePathname();
+  const { t } = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarReady, setSidebarReady] = useState(false);
@@ -61,7 +63,7 @@ export function AdminShell({ children, user }: AdminShellProps) {
       {menuOpen ? (
         <button
           type="button"
-          aria-label="Fechar menu"
+          aria-label={t("common.closeMenu")}
           className="fixed inset-0 z-40 bg-black/40 md:hidden"
           onClick={() => setMenuOpen(false)}
         />

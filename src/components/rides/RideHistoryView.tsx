@@ -8,6 +8,7 @@ import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { StarRating } from "@/components/ui/StarRating";
 import { useAuth } from "@/context/AuthContext";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
@@ -35,6 +36,7 @@ import {
   type RideRow,
   type RideStatus,
 } from "@/lib/ride-history";
+import { translateRideStatus } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 
 const PAGE_SIZE = 12;
@@ -60,6 +62,7 @@ function statusPillClass(status: RideStatus) {
 }
 
 function StatusPill({ status }: { status: RideStatus }) {
+  const { t } = useLocale();
   return (
     <span
       className={cn(
@@ -67,16 +70,17 @@ function StatusPill({ status }: { status: RideStatus }) {
         statusPillClass(status),
       )}
     >
-      {status}
+      {translateRideStatus(status, t)}
     </span>
   );
 }
 
 function SystemClosedBadge() {
+  const { t } = useLocale();
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
       <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
-      Fechada pelo sistema
+      {t("rides.closedBySystem")}
     </span>
   );
 }
@@ -119,6 +123,7 @@ function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
 
 export function RideHistoryView() {
   const { user } = useAuth();
+  const { t } = useLocale();
   const isSuperAdmin = user ? canManageAdminUsers(user.nivel) : false;
   const [rides, setRides] = useState<RideRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,20 +168,20 @@ export function RideHistoryView() {
       const data = (await res.json()) as { rows?: RideRow[]; error?: string };
 
       if (!res.ok) {
-        throw new Error(data.error ?? "Erro ao carregar corridas.");
+        throw new Error(data.error ?? t("rides.loadError"));
       }
 
       setRides(data.rows ?? []);
     } catch (err) {
       setLoadError(
-        err instanceof Error ? err.message : "Erro ao carregar corridas.",
+        err instanceof Error ? err.message : t("rides.loadError"),
       );
       setRides([]);
     } finally {
       if (isRefresh) setRefreshing(false);
       else setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadRides();
@@ -255,7 +260,7 @@ export function RideHistoryView() {
       const data = (await res.json()) as { error?: string };
 
       if (!res.ok) {
-        throw new Error(data.error ?? "Não foi possível eliminar as corridas.");
+        throw new Error(data.error ?? t("rides.deleteError"));
       }
 
       const deletedSet = new Set(ids);
@@ -272,7 +277,7 @@ export function RideHistoryView() {
       await loadRides(true);
     } catch (err) {
       setLoadError(
-        err instanceof Error ? err.message : "Erro ao eliminar as corridas.",
+        err instanceof Error ? err.message : t("rides.deleteGenericError"),
       );
     } finally {
       setDeleteBusy(false);
@@ -284,27 +289,28 @@ export function RideHistoryView() {
     selectedIds,
     detailRide,
     loadRides,
+    t,
   ]);
 
   const deleteModalTitle =
     deleteConfirm?.mode === "single"
-      ? `Eliminar corrida #${deleteConfirm.row.id}?`
+      ? t("rides.deleteTitleSingle", { id: deleteConfirm.row.id })
       : deleteConfirm?.mode === "bulk"
-        ? `Eliminar ${selectedIds.size} corrida(s)?`
+        ? t("rides.deleteTitleBulk", { count: selectedIds.size })
         : "";
 
   const deleteModalEntityLabel =
     deleteConfirm?.mode === "single"
       ? `${deleteConfirm.row.passenger} → ${deleteConfirm.row.driver}`
       : deleteConfirm?.mode === "bulk"
-        ? `${selectedIds.size} registo(s) selecionado(s)`
+        ? t("rides.deleteEntityBulk", { count: selectedIds.size })
         : undefined;
 
   const deleteModalDescription =
     deleteConfirm?.mode === "single"
-      ? "Tem certeza de que deseja eliminar esta corrida? Esta ação é irreversível e remove o registo do histórico."
+      ? t("rides.deleteDescSingle")
       : deleteConfirm?.mode === "bulk"
-        ? `Tem certeza de que deseja eliminar ${selectedIds.size} corrida(s) selecionada(s)? Esta ação é irreversível.`
+        ? t("rides.deleteDescBulk", { count: selectedIds.size })
         : "";
 
   return (
@@ -318,14 +324,14 @@ export function RideHistoryView() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por ID, passageiro, motorista, trajeto, viatura, valor, status, data..."
+            placeholder={t("rides.searchPlaceholder")}
             className="w-full rounded-xl border border-pika-border bg-pika-card py-2.5 pl-11 pr-3 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2"
           />
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3">
           <label className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-              De
+              {t("common.from")}
             </span>
             <input
               type="date"
@@ -333,12 +339,12 @@ export function RideHistoryView() {
               max={dateTo || undefined}
               onChange={(e) => setDateFrom(e.target.value)}
               className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
-              aria-label="Data inicial"
+              aria-label={t("common.dateFrom")}
             />
           </label>
           <label className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-              Até
+              {t("common.to")}
             </span>
             <input
               type="date"
@@ -346,7 +352,7 @@ export function RideHistoryView() {
               min={dateFrom || undefined}
               onChange={(e) => setDateTo(e.target.value)}
               className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2"
-              aria-label="Data final"
+              aria-label={t("common.dateTo")}
             />
           </label>
           <select
@@ -358,7 +364,7 @@ export function RideHistoryView() {
           >
             {STATUS_FILTER_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
-                {opt}
+                {opt === "Todos" ? t("common.all") : translateRideStatus(opt, t)}
               </option>
             ))}
           </select>
@@ -372,7 +378,7 @@ export function RideHistoryView() {
             className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2.5 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white"
           >
             <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />
-            Exportar
+            {t("rides.export")}
           </button>
         </div>
       </div>
@@ -380,7 +386,7 @@ export function RideHistoryView() {
       {selectedIds.size > 0 && isSuperAdmin ? (
         <div className="mb-4 flex flex-col gap-3 rounded-xl border border-red-200/80 bg-red-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-semibold text-pika-ink">
-            {selectedIds.size} corrida(s) selecionada(s)
+            {t("rides.selectedCount", { count: selectedIds.size })}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -390,7 +396,7 @@ export function RideHistoryView() {
               className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-              {deleteBusy ? "A eliminar…" : "Eliminar selecionadas"}
+              {deleteBusy ? t("common.deleting") : t("rides.deleteSelected")}
             </button>
             <button
               type="button"
@@ -398,7 +404,7 @@ export function RideHistoryView() {
               disabled={deleteBusy}
               className="inline-flex items-center justify-center rounded-xl border border-pika-border bg-pika-card px-4 py-2 text-sm font-semibold text-pika-muted transition hover:text-pika-ink disabled:opacity-50"
             >
-              Limpar seleção
+              {t("rides.clearSelection")}
             </button>
           </div>
         </div>
@@ -415,23 +421,23 @@ export function RideHistoryView() {
                   checked={allPageSelected}
                   onChange={toggleSelectAllPage}
                   disabled={loading || pageRows.length === 0}
-                  aria-label="Selecionar todas nesta página"
+                  aria-label={t("rides.selectAllPage")}
                   className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary disabled:opacity-40"
                 />
               </th>
               <th className="whitespace-nowrap px-4 py-3">ID</th>
-              <th className="whitespace-nowrap px-4 py-3 text-center">Detalhes</th>
-              <th className="whitespace-nowrap px-4 py-3">Passageiro</th>
-              <th className="whitespace-nowrap px-4 py-3">Motorista</th>
-              <th className="min-w-[220px] px-4 py-3">Trajeto</th>
-              <th className="whitespace-nowrap px-4 py-3">Valor</th>
-              <th className="whitespace-nowrap px-4 py-3">Comissão</th>
-              <th className="whitespace-nowrap px-4 py-3">Distância</th>
-              <th className="whitespace-nowrap px-4 py-3">Duração</th>
-              <th className="min-w-[180px] px-4 py-3">Viatura</th>
-              <th className="whitespace-nowrap px-4 py-3">Classificação</th>
-              <th className="whitespace-nowrap px-4 py-3">Status</th>
-              <th className="whitespace-nowrap px-4 py-3">Data</th>
+              <th className="whitespace-nowrap px-4 py-3 text-center">{t("rides.details")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("common.passenger")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("common.driver")}</th>
+              <th className="min-w-[220px] px-4 py-3">{t("rides.route")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.value")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.commission")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.distance")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.duration")}</th>
+              <th className="min-w-[180px] px-4 py-3">{t("rides.vehicle")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.rating")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.status")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.date")}</th>
             </tr>
           </thead>
           <tbody>
@@ -504,13 +510,13 @@ export function RideHistoryView() {
 
       {!loading && !loadError && pageRows.length === 0 ? (
         <p className="mt-6 text-center text-sm text-pika-muted">
-          Nenhuma corrida encontrada com estes critérios.
+          {t("rides.empty")}
         </p>
       ) : null}
 
       <div className="mt-4 flex flex-col gap-3 border-t border-pika-border pt-4 text-sm text-pika-muted sm:flex-row sm:items-center sm:justify-between">
         <p>
-          Mostrando {showingFrom}-{showingTo} de {filtered.length} Corridas
+          {t("rides.showing", { from: showingFrom, to: showingTo, total: filtered.length })}
         </p>
         <div className="flex flex-wrap items-center gap-1">
           <button
@@ -525,7 +531,7 @@ export function RideHistoryView() {
             )}
           >
             <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" />
-            Anterior
+            {t("common.previous")}
           </button>
           <div className="mx-1 flex flex-wrap items-center gap-1">
             {pages.map((p, i) =>
@@ -565,7 +571,7 @@ export function RideHistoryView() {
                 : "hover:border-pika-primary hover:text-pika-primary",
             )}
           >
-            Próximo
+            {t("common.next")}
             <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
           </button>
         </div>
@@ -602,8 +608,8 @@ export function RideHistoryView() {
         description={deleteModalDescription}
         confirmLabel={
           deleteConfirm?.mode === "bulk"
-            ? "Eliminar selecionadas"
-            : "Eliminar corrida"
+            ? t("rides.deleteSelected")
+            : t("rides.deleteRide")
         }
         busy={deleteBusy}
       />
@@ -618,15 +624,16 @@ function ViewModeToggle({
   value: ViewMode;
   onChange: (mode: ViewMode) => void;
 }) {
+  const { t } = useLocale();
   const options: { mode: ViewMode; label: string; icon: typeof faTableCells }[] = [
-    { mode: "cards", label: "Cards", icon: faTableCells },
-    { mode: "table", label: "Tabela", icon: faList },
+    { mode: "cards", label: t("rides.cards"), icon: faTableCells },
+    { mode: "table", label: t("rides.table"), icon: faList },
   ];
 
   return (
     <div
       role="group"
-      aria-label="Alternar visualização"
+      aria-label={t("rides.viewMode")}
       className="inline-flex items-center rounded-xl border border-pika-border bg-pika-card p-1"
     >
       {options.map((opt) => {
@@ -637,7 +644,7 @@ function ViewModeToggle({
             type="button"
             onClick={() => onChange(opt.mode)}
             aria-pressed={active}
-            title={`Ver em ${opt.label.toLowerCase()}`}
+            title={t("rides.viewAs", { mode: opt.label.toLowerCase() })}
             className={cn(
               "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition",
               active
@@ -673,6 +680,7 @@ function RideHistoryCard({
   onDelete?: () => void;
   deleteDisabled: boolean;
 }) {
+  const { t } = useLocale();
   return (
     <article
       className={cn(
@@ -687,7 +695,7 @@ function RideHistoryCard({
             checked={selected}
             onChange={onToggleSelect}
             disabled={deleteDisabled}
-            aria-label={`Selecionar corrida #${row.id}`}
+            aria-label={t("rides.selectRide", { id: row.id })}
             className="h-4 w-4 shrink-0 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
           />
           <div>
@@ -706,8 +714,8 @@ function RideHistoryCard({
                 ? "text-amber-700 hover:bg-amber-50"
                 : "text-pika-muted hover:bg-pika-page hover:text-pika-primary",
             )}
-            aria-label={`Ver nota da corrida #${row.id}`}
-            title="Ver nota"
+            aria-label={t("rides.viewNoteAria", { id: row.id })}
+            title={t("rides.viewNote")}
           >
             <FontAwesomeIcon icon={faNoteSticky} className="h-4 w-4" />
           </button>
@@ -716,7 +724,7 @@ function RideHistoryCard({
             onClick={onViewDetails}
             disabled={deleteDisabled}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
-            aria-label={`Ver detalhes da corrida #${row.id}`}
+            aria-label={t("rides.viewDetailsAria", { id: row.id })}
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
@@ -726,8 +734,8 @@ function RideHistoryCard({
               onClick={onEditStatus}
               disabled={deleteDisabled}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary"
-              aria-label={`Alterar estado da corrida #${row.id}`}
-              title="Alterar estado"
+              aria-label={t("rides.editStatusAria", { id: row.id })}
+              title={t("rides.editStatus")}
             >
               <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" />
             </button>
@@ -738,7 +746,7 @@ function RideHistoryCard({
               onClick={onDelete}
               disabled={deleteDisabled}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-red-50 hover:text-red-600"
-              aria-label={`Eliminar corrida #${row.id}`}
+              aria-label={t("rides.deleteAria", { id: row.id })}
             >
               <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
             </button>
@@ -750,7 +758,9 @@ function RideHistoryCard({
         <StatusPill status={row.status} />
         {row.closedBySystem ? <SystemClosedBadge /> : null}
         <span className="text-sm font-semibold text-pika-ink">{row.valueLabel}</span>
-        <span className="text-sm text-pika-muted">Comissão {row.commissionLabel}</span>
+        <span className="text-sm text-pika-muted">
+          {t("rides.commission")} {row.commissionLabel}
+        </span>
       </div>
 
       <div className="mt-3">
@@ -760,13 +770,13 @@ function RideHistoryCard({
       <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-            Passageiro
+            {t("common.passenger")}
           </p>
           <p className="font-medium text-pika-ink">{row.passenger}</p>
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-            Motorista
+            {t("common.driver")}
           </p>
           <p className="text-pika-ink">{row.driver}</p>
         </div>
@@ -795,7 +805,7 @@ function RideHistoryCard({
 
       <div className="mt-3 border-t border-pika-border pt-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-          Viatura
+          {t("rides.vehicle")}
         </p>
         <p className="mt-1 text-sm font-medium text-pika-ink">{row.vehicleModel}</p>
         <p className="text-xs text-pika-muted">
@@ -804,7 +814,7 @@ function RideHistoryCard({
       </div>
 
       <div className="mt-3 flex items-center justify-between border-t border-pika-border pt-3">
-        <span className="text-xs font-semibold text-pika-muted">Classificação</span>
+        <span className="text-xs font-semibold text-pika-muted">{t("rides.rating")}</span>
         <StarRating
           value={row.passengerToDriverStars}
           iconClassName="h-3.5 w-3.5"
@@ -834,6 +844,7 @@ function RideTableRow({
   onDelete?: () => void;
   deleteDisabled: boolean;
 }) {
+  const { t } = useLocale();
   return (
     <tr
       className={cn(
@@ -847,7 +858,7 @@ function RideTableRow({
           checked={selected}
           onChange={onToggleSelect}
           disabled={deleteDisabled}
-          aria-label={`Selecionar corrida #${row.id}`}
+          aria-label={t("rides.selectRide", { id: row.id })}
           className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary disabled:opacity-40"
         />
       </td>
@@ -866,8 +877,8 @@ function RideTableRow({
                 ? "text-amber-700 hover:bg-amber-50"
                 : "text-pika-muted hover:bg-pika-page hover:text-pika-primary",
             )}
-            aria-label={`Ver nota da corrida #${row.id}`}
-            title="Ver nota"
+            aria-label={t("rides.viewNoteAria", { id: row.id })}
+            title={t("rides.viewNote")}
           >
             <FontAwesomeIcon icon={faNoteSticky} className="h-4 w-4" />
           </button>
@@ -876,8 +887,8 @@ function RideTableRow({
             onClick={onViewDetails}
             disabled={deleteDisabled}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary disabled:opacity-40"
-            aria-label={`Ver mais detalhes da corrida #${row.id}`}
-            title="Ver mais detalhes"
+            aria-label={t("rides.viewMoreAria", { id: row.id })}
+            title={t("rides.viewMore")}
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
@@ -887,8 +898,8 @@ function RideTableRow({
               onClick={onEditStatus}
               disabled={deleteDisabled}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-pika-page hover:text-pika-primary disabled:opacity-40"
-              aria-label={`Alterar estado da corrida #${row.id}`}
-              title="Alterar estado"
+              aria-label={t("rides.editStatusAria", { id: row.id })}
+              title={t("rides.editStatus")}
             >
               <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" />
             </button>
@@ -899,8 +910,8 @@ function RideTableRow({
               onClick={onDelete}
               disabled={deleteDisabled}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-pika-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-              aria-label={`Eliminar corrida #${row.id}`}
-              title="Eliminar corrida"
+              aria-label={t("rides.deleteAria", { id: row.id })}
+              title={t("rides.deleteRide")}
             >
               <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
             </button>

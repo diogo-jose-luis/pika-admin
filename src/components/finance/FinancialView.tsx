@@ -23,10 +23,12 @@ import {
   faPercent,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdminDate } from "@/components/providers/AdminDateProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { TransactionList } from "@/components/finance/TransactionList";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import type { FinanceData } from "@/lib/finance";
 import { formatKz } from "@/lib/format-kz";
+import { translateFinanceCategory, translateMonth } from "@/lib/i18n";
 
 const EMPTY_FINANCE: FinanceData = {
   dailyRevenue: 0,
@@ -60,14 +62,15 @@ function ChartMount({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function formatKzCompact(amount: number) {
-  return `Kz ${amount.toLocaleString("pt-AO", {
+function formatKzCompact(amount: number, dateLocale: string) {
+  return `Kz ${amount.toLocaleString(dateLocale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 }
 
 export function FinancialView() {
+  const { t, dateLocale } = useLocale();
   const { selectedIso, dateLabel } = useAdminDate();
   const [data, setData] = useState<FinanceData>(EMPTY_FINANCE);
   const [loading, setLoading] = useState(true);
@@ -87,7 +90,7 @@ export function FinancialView() {
         const json = (await res.json()) as FinanceData & { error?: string };
 
         if (!res.ok) {
-          throw new Error(json.error ?? "Erro ao carregar dados financeiros.");
+          throw new Error(json.error ?? t("finance.loadError"));
         }
 
         setData({
@@ -101,7 +104,7 @@ export function FinancialView() {
         });
       } catch (err) {
         setLoadError(
-          err instanceof Error ? err.message : "Erro ao carregar dados financeiros.",
+          err instanceof Error ? err.message : t("finance.loadError"),
         );
         setData(EMPTY_FINANCE);
       } finally {
@@ -109,7 +112,7 @@ export function FinancialView() {
         else setLoading(false);
       }
     },
-    [selectedIso],
+    [selectedIso, t],
   );
 
   useEffect(() => {
@@ -137,7 +140,7 @@ export function FinancialView() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-pika-muted">Receita Diária</p>
+              <p className="text-sm font-medium text-pika-muted">{t("finance.dailyRevenue")}</p>
               <p className="mt-2 text-2xl font-bold tracking-tight text-pika-ink md:text-3xl">
                 {stat(formatKz(data.dailyRevenue))}
               </p>
@@ -152,11 +155,11 @@ export function FinancialView() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-pika-muted">Receita Semanal</p>
+              <p className="text-sm font-medium text-pika-muted">{t("finance.weeklyRevenue")}</p>
               <p className="mt-2 text-2xl font-bold tracking-tight text-pika-ink md:text-3xl">
-                {stat(formatKzCompact(data.weeklyRevenue))}
+                {stat(formatKzCompact(data.weeklyRevenue, dateLocale))}
               </p>
-              <p className="mt-2 text-xs text-pika-muted">Últimos 7 dias</p>
+              <p className="mt-2 text-xs text-pika-muted">{t("finance.last7Days")}</p>
             </div>
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">
               <FontAwesomeIcon icon={faChartLine} className="h-6 w-6" />
@@ -167,9 +170,9 @@ export function FinancialView() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-pika-muted">Comissão Plataforma</p>
+              <p className="text-sm font-medium text-pika-muted">{t("finance.platformCommission")}</p>
               <p className="mt-2 text-2xl font-bold tracking-tight text-pika-ink md:text-3xl">
-                {stat(formatKzCompact(data.platformCommission))}
+                {stat(formatKzCompact(data.platformCommission, dateLocale))}
               </p>
               <p className="mt-2 text-xs text-pika-muted">{dateLabel}</p>
             </div>
@@ -182,9 +185,9 @@ export function FinancialView() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-pika-muted">Pagamentos Pendentes</p>
+              <p className="text-sm font-medium text-pika-muted">{t("finance.pendingPayments")}</p>
               <p className="mt-2 text-2xl font-bold tracking-tight text-pika-ink md:text-3xl">
-                {stat(formatKzCompact(data.pendingPayments))}
+                {stat(formatKzCompact(data.pendingPayments, dateLocale))}
               </p>
             </div>
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm">
@@ -198,15 +201,18 @@ export function FinancialView() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-base font-semibold text-pika-ink">Receita Mensal</h2>
-              <p className="text-xs text-pika-muted">Últimos 6 meses</p>
+              <h2 className="text-base font-semibold text-pika-ink">{t("finance.monthlyRevenue")}</h2>
+              <p className="text-xs text-pika-muted">{t("finance.last6Months")}</p>
             </div>
           </div>
           <div className="h-72 w-full min-h-[288px] min-w-0">
             <ChartMount>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={data.monthlyRevenue}
+                  data={data.monthlyRevenue.map((row) => ({
+                    ...row,
+                    month: translateMonth(row.month, t),
+                  }))}
                   margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
                   barGap={6}
                   barCategoryGap="18%"
@@ -229,7 +235,7 @@ export function FinancialView() {
                     formatter={(value, name) => {
                       const n = typeof value === "number" ? value : Number(value);
                       const text = Number.isFinite(n)
-                        ? `Kz ${n.toLocaleString("pt-AO")}k`
+                        ? `Kz ${n.toLocaleString(dateLocale)}k`
                         : "";
                       return [text, String(name)];
                     }}
@@ -237,13 +243,13 @@ export function FinancialView() {
                   <Legend />
                   <Bar
                     dataKey="receita"
-                    name="Receita"
+                    name={t("finance.revenue")}
                     fill="#22c55e"
                     radius={[6, 6, 0, 0]}
                   />
                   <Bar
                     dataKey="comissao"
-                    name="Comissão"
+                    name={t("finance.commission")}
                     fill="#2563eb"
                     radius={[6, 6, 0, 0]}
                   />
@@ -255,8 +261,8 @@ export function FinancialView() {
 
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="mb-4">
-            <h2 className="text-base font-semibold text-pika-ink">Receita Por Categoria</h2>
-            <p className="text-xs text-pika-muted">Distribuição atual · {dateLabel}</p>
+            <h2 className="text-base font-semibold text-pika-ink">{t("finance.revenueByCategory")}</h2>
+            <p className="text-xs text-pika-muted">{t("finance.distribution", { date: dateLabel })}</p>
           </div>
           <div className="flex flex-col gap-4">
             <div className="mx-auto h-48 w-full max-w-[220px] sm:h-52">
@@ -264,7 +270,10 @@ export function FinancialView() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={data.categoryData}
+                      data={data.categoryData.map((entry) => ({
+                        ...entry,
+                        name: translateFinanceCategory(entry.name, t),
+                      }))}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
@@ -302,12 +311,12 @@ export function FinancialView() {
                     aria-hidden
                   />
                   <span className="min-w-0 flex-1 truncate text-pika-muted">
-                    {c.name}
+                    {translateFinanceCategory(c.name, t)}
                   </span>
                   <span className="shrink-0 font-semibold text-pika-ink">
                     {loading
                       ? "…"
-                      : `${c.value.toLocaleString("pt-AO", {
+                      : `${c.value.toLocaleString(dateLocale, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}%`}
@@ -322,19 +331,19 @@ export function FinancialView() {
       <section className="rounded-2xl border border-pika-border bg-pika-card shadow-sm">
         <div className="flex flex-col gap-2 border-b border-pika-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-pika-ink">Transações Recentes</h2>
-            <p className="text-xs text-pika-muted">Corridas concluídas</p>
+            <h2 className="text-base font-semibold text-pika-ink">{t("finance.recentTransactions")}</h2>
+            <p className="text-xs text-pika-muted">{t("finance.completedRides")}</p>
           </div>
           <Link
             href="/financeiro/transacoes"
             className="text-sm font-semibold text-pika-primary transition hover:text-pika-primary-dark"
           >
-            Ver todas &gt;
+            {t("finance.viewAll")}
           </Link>
         </div>
         {data.recentTransactions.length === 0 && !loading ? (
           <p className="px-5 py-8 text-center text-sm text-pika-muted">
-            Sem transações para esta data.
+            {t("finance.noTransactions")}
           </p>
         ) : (
           <TransactionList items={data.recentTransactions} />

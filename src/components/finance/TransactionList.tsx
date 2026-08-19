@@ -2,7 +2,9 @@
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import type { FinanceTransaction } from "@/lib/finance";
+import { translateFinanceTransactionLabel } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 
 type TransactionListProps = {
@@ -11,39 +13,42 @@ type TransactionListProps = {
 };
 
 export function TransactionList({ items, className }: TransactionListProps) {
+  const { t } = useLocale();
   return (
     <ul className={cn("divide-y divide-pika-border bg-slate-50/50", className)}>
-      {items.map((t) => (
+      {items.map((item) => (
         <li
-          key={t.id}
+          key={item.id}
           className="flex items-center gap-4 px-5 py-4 transition hover:bg-pika-card/80"
         >
           <div
             className={cn(
               "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white",
-              t.positive ? "bg-emerald-500" : "bg-red-500",
+              item.positive ? "bg-emerald-500" : "bg-red-500",
             )}
           >
             <FontAwesomeIcon
-              icon={t.positive ? faArrowUp : faArrowDown}
+              icon={item.positive ? faArrowUp : faArrowDown}
               className="h-4 w-4"
             />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-pika-ink">{t.label}</p>
-            {t.subtitle ? (
-              <p className="truncate text-sm text-pika-muted">{t.subtitle}</p>
+            <p className="font-semibold text-pika-ink">
+              {translateFinanceTransactionLabel(item.label, t)}
+            </p>
+            {item.subtitle ? (
+              <p className="truncate text-sm text-pika-muted">{item.subtitle}</p>
             ) : null}
-            <p className="text-xs text-pika-muted/90">{t.when}</p>
+            <p className="text-xs text-pika-muted/90">{item.when}</p>
           </div>
           <p
             className={cn(
               "shrink-0 text-sm font-bold tabular-nums",
-              t.positive ? "text-pika-success" : "text-pika-danger",
+              item.positive ? "text-pika-success" : "text-pika-danger",
             )}
           >
-            {t.positive ? "+ " : "- "}
-            {t.amount}
+            {item.positive ? "+ " : "- "}
+            {item.amount}
           </p>
         </li>
       ))}

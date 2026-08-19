@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { useLocale } from "@/components/providers/LocaleProvider";
 
 type RideNoteModalProps = {
   rideId: number;
@@ -11,6 +12,7 @@ type RideNoteModalProps = {
 };
 
 export function RideNoteModal({ rideId, note, onClose }: RideNoteModalProps) {
+  const { t } = useLocale();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -37,17 +39,17 @@ export function RideNoteModal({ rideId, note, onClose }: RideNoteModalProps) {
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 id="ride-note-title" className="text-lg font-bold text-pika-ink">
-              Nota da corrida #{rideId}
+              {t("rides.noteTitle", { id: rideId })}
             </h2>
             <p className="mt-0.5 text-xs text-pika-muted">
-              Informação administrativa ou do sistema
+              {t("rides.noteHint")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-pika-border text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
-            aria-label="Fechar"
+            aria-label={t("common.close")}
           >
             <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
           </button>
@@ -57,7 +59,7 @@ export function RideNoteModal({ rideId, note, onClose }: RideNoteModalProps) {
           {note.trim() ? (
             note
           ) : (
-            <span className="italic text-pika-muted">Sem nota registada.</span>
+            <span className="italic text-pika-muted">{t("rides.noNote")}</span>
           )}
         </p>
       </div>

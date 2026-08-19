@@ -8,6 +8,8 @@ import { LogoutButton } from "@/components/layout/LogoutButton";
 import { useAuth } from "@/context/AuthContext";
 import { nivelLabel } from "@/lib/auth-types";
 import { sidebarNav } from "@/lib/nav";
+import { translateNavLabel } from "@/lib/i18n";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { filterSidebarNav } from "@/lib/permissions";
 import {
   authUserToSessionUser,
@@ -24,6 +26,7 @@ type AdminSidebarProps = {
 
 export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { t } = useLocale();
   const { user: authUser } = useAuth();
   const profile: SessionUser = authUser
     ? authUserToSessionUser(authUser)
@@ -87,12 +90,13 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
         {navItems.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const label = translateNavLabel(item.href, item.label, t);
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? label : undefined}
               className={cn(
                 "flex items-center rounded-xl text-sm font-medium transition",
                 collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
@@ -109,7 +113,7 @@ export function AdminSidebar({ user, onNavigate, collapsed = false }: AdminSideb
                   active ? "text-white" : "text-pika-muted",
                 )}
               />
-              {!collapsed ? <span className="truncate">{item.label}</span> : null}
+              {!collapsed ? <span className="truncate">{label}</span> : null}
             </Link>
           );
         })}

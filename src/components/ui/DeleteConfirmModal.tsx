@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { cn } from "@/lib/cn";
 
 type DeleteConfirmModalProps = {
@@ -22,13 +23,18 @@ export function DeleteConfirmModal({
   open,
   onConfirm,
   onCancel,
-  title = "Eliminar registo?",
-  description = "Tem certeza de que deseja eliminar este registo? Esta ação é irreversível.",
+  title,
+  description,
   entityLabel,
-  confirmLabel = "Eliminar",
-  cancelLabel = "Cancelar",
+  confirmLabel,
+  cancelLabel,
   busy = false,
 }: DeleteConfirmModalProps) {
+  const { t } = useLocale();
+  const resolvedTitle = title ?? t("deleteModal.title");
+  const resolvedDescription = description ?? t("deleteModal.description");
+  const resolvedConfirm = confirmLabel ?? t("deleteModal.confirm");
+  const resolvedCancel = cancelLabel ?? t("common.cancel");
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -64,7 +70,7 @@ export function DeleteConfirmModal({
           id="delete-confirm-title"
           className="mt-5 text-xl font-bold text-pika-ink sm:text-2xl"
         >
-          {title}
+          {resolvedTitle}
         </h2>
 
         {entityLabel ? (
@@ -77,7 +83,7 @@ export function DeleteConfirmModal({
           id="delete-confirm-desc"
           className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-pika-muted"
         >
-          {description}
+          {resolvedDescription}
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -90,7 +96,7 @@ export function DeleteConfirmModal({
               busy && "cursor-not-allowed opacity-60",
             )}
           >
-            {busy ? "A eliminar…" : confirmLabel}
+            {busy ? t("common.deleting") : resolvedConfirm}
           </button>
           <button
             type="button"
@@ -101,7 +107,7 @@ export function DeleteConfirmModal({
               busy && "cursor-not-allowed opacity-60",
             )}
           >
-            {cancelLabel}
+            {resolvedCancel}
           </button>
         </div>
       </div>

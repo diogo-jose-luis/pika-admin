@@ -8,6 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { localeToBcp47, type TranslateFn } from "@/lib/i18n";
 
 export function isoDateLocal(d = new Date()) {
   const y = d.getFullYear();
@@ -16,16 +18,21 @@ export function isoDateLocal(d = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
-export function labelForIso(iso: string): string {
+export function labelForIso(
+  iso: string,
+  t?: TranslateFn,
+  dateLocale = "pt-AO",
+): string {
   const today = isoDateLocal();
-  if (iso === today) return "Hoje";
+  const todayLabel = t ? t("common.today") : "Hoje";
+  if (iso === today) return todayLabel;
   const parts = iso.split("-").map(Number);
   const y = parts[0];
   const mo = parts[1];
   const da = parts[2];
-  if (!y || !mo || !da) return "Hoje";
+  if (!y || !mo || !da) return todayLabel;
   const d = new Date(y, mo - 1, da);
-  return d.toLocaleDateString("pt-AO", {
+  return d.toLocaleDateString(dateLocale, {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -41,6 +48,7 @@ type AdminDateContextValue = {
 const AdminDateContext = createContext<AdminDateContextValue | null>(null);
 
 export function AdminDateProvider({ children }: { children: ReactNode }) {
+  const { t, locale } = useLocale();
   const [selectedIso, setSelectedIsoState] = useState(() => isoDateLocal());
 
   const setSelectedIso = useCallback((iso: string) => {
@@ -51,9 +59,9 @@ export function AdminDateProvider({ children }: { children: ReactNode }) {
     () => ({
       selectedIso,
       setSelectedIso,
-      dateLabel: labelForIso(selectedIso),
+      dateLabel: labelForIso(selectedIso, t, localeToBcp47(locale)),
     }),
-    [selectedIso, setSelectedIso],
+    [selectedIso, setSelectedIso, t, locale],
   );
 
   return (

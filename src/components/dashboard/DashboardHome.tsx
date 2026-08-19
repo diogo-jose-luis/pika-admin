@@ -27,10 +27,16 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdminDate } from "@/components/providers/AdminDateProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { useAuth } from "@/context/AuthContext";
 import { canViewDashboardRevenue } from "@/lib/permissions";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import type { DashboardData } from "@/lib/dashboard";
+import {
+  translateRelativeTime,
+  translateRideStatus,
+  translateWeekday,
+} from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 
 const EMPTY_DASHBOARD: DashboardData = {
@@ -77,6 +83,7 @@ function StatusPill({
 }: {
   status: DashboardData["recentRides"][number]["status"];
 }) {
+  const { t } = useLocale();
   const map = {
     "Em andamento": "bg-blue-50 text-pika-info ring-1 ring-blue-100",
     "Em solicitação": "bg-violet-50 text-violet-700 ring-1 ring-violet-100",
@@ -91,7 +98,7 @@ function StatusPill({
         map[status],
       )}
     >
-      {status}
+      {translateRideStatus(status, t)}
     </span>
   );
 }
@@ -111,6 +118,7 @@ function Avatar({ initials, className }: { initials: string; className?: string 
 
 export function DashboardHome() {
   const { user } = useAuth();
+  const { t, dateLocale } = useLocale();
   const showRevenue = user ? canViewDashboardRevenue(user.nivel) : true;
   const { selectedIso, dateLabel } = useAdminDate();
   const [data, setData] = useState<DashboardData>(EMPTY_DASHBOARD);
@@ -130,7 +138,7 @@ export function DashboardHome() {
       const json = (await res.json()) as DashboardData & { error?: string };
 
       if (!res.ok) {
-        throw new Error(json.error ?? "Erro ao carregar o dashboard.");
+        throw new Error(json.error ?? t("dashboard.loadError"));
       }
 
       setData({
@@ -143,14 +151,14 @@ export function DashboardHome() {
       });
     } catch (err) {
       setLoadError(
-        err instanceof Error ? err.message : "Erro ao carregar o dashboard.",
+        err instanceof Error ? err.message : t("dashboard.loadError"),
       );
       setData(EMPTY_DASHBOARD);
     } finally {
       if (isRefresh) setRefreshing(false);
       else setLoading(false);
     }
-  }, [selectedIso]);
+  }, [selectedIso, t]);
 
   useEffect(() => {
     void loadDashboard();
@@ -158,7 +166,7 @@ export function DashboardHome() {
 
   const stat = (value: string | number) => (loading ? "…" : value);
   const formatStatNumber = (value: number) =>
-    value.toLocaleString("pt-AO", {
+    value.toLocaleString(dateLocale, {
       maximumFractionDigits: 0,
     });
 
@@ -188,7 +196,7 @@ export function DashboardHome() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-white/90">
-                  Receita total ({dateLabel})
+                  {t("dashboard.totalRevenue", { date: dateLabel })}
                 </p>
                 <p className="mt-2 text-3xl font-bold tracking-tight">
                   {stat(data.summary.totalRevenueLabel)}
@@ -204,7 +212,7 @@ export function DashboardHome() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-pika-muted">Total de Corridas ({dateLabel})</p>
+              <p className="text-sm font-medium text-pika-muted">{t("dashboard.totalRides", { date: dateLabel })}</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
                 {stat(formatStatNumber(data.summary.totalRidesToday))}
               </p>
@@ -218,7 +226,7 @@ export function DashboardHome() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-pika-muted">Motoristas Ativos</p>
+              <p className="text-sm font-medium text-pika-muted">{t("dashboard.activeDrivers")}</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
                 {stat(formatStatNumber(data.summary.activeDrivers))}
               </p>
@@ -232,7 +240,7 @@ export function DashboardHome() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-pika-muted">Passageiros Ativos</p>
+              <p className="text-sm font-medium text-pika-muted">{t("dashboard.activePassengers")}</p>
               <p className="mt-2 text-3xl font-bold text-pika-ink">
                 {stat(formatStatNumber(data.summary.activePassengers))}
               </p>
@@ -248,7 +256,7 @@ export function DashboardHome() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-pika-muted">Corridas Concluídas</p>
+              <p className="text-sm font-medium text-pika-muted">{t("dashboard.completedRides")}</p>
               <p className="mt-2 text-2xl font-bold text-pika-ink">
                 {stat(formatStatNumber(data.todayStats.completed))}
               </p>
@@ -262,7 +270,7 @@ export function DashboardHome() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-pika-muted">Corridas Canceladas</p>
+              <p className="text-sm font-medium text-pika-muted">{t("dashboard.cancelledRides")}</p>
               <p className="mt-2 text-2xl font-bold text-pika-ink">
                 {stat(formatStatNumber(data.todayStats.cancelled))}
               </p>
@@ -276,11 +284,11 @@ export function DashboardHome() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-pika-muted">Corridas em Andamento</p>
+              <p className="text-sm font-medium text-pika-muted">{t("dashboard.inProgressRides")}</p>
               <p className="mt-2 text-2xl font-bold text-pika-ink">
                 {stat(formatStatNumber(data.todayStats.inProgress))}
               </p>
-              <p className="mt-2 text-xs text-pika-muted">Em tempo real</p>
+              <p className="mt-2 text-xs text-pika-muted">{t("dashboard.realtime")}</p>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-pika-info">
               <FontAwesomeIcon icon={faClock} className="h-5 w-5" />
@@ -290,11 +298,11 @@ export function DashboardHome() {
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-pika-muted">Corridas em Solicitação</p>
+              <p className="text-sm font-medium text-pika-muted">{t("dashboard.inRequestRides")}</p>
               <p className="mt-2 text-2xl font-bold text-pika-ink">
                 {stat(formatStatNumber(data.todayStats.inRequest))}
               </p>
-              <p className="mt-2 text-xs text-pika-muted">Em tempo real</p>
+              <p className="mt-2 text-xs text-pika-muted">{t("dashboard.realtime")}</p>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-100 text-violet-700">
               <FontAwesomeIcon icon={faBellConcierge} className="h-5 w-5" />
@@ -312,14 +320,17 @@ export function DashboardHome() {
         {showRevenue ? (
           <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
             <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-base font-semibold text-pika-ink">Receita Semanal</h2>
-              <span className="text-xs text-pika-muted">Últimos 7 dias</span>
+              <h2 className="text-base font-semibold text-pika-ink">{t("dashboard.weeklyRevenue")}</h2>
+              <span className="text-xs text-pika-muted">{t("dashboard.last7Days")}</span>
             </div>
             <div className="h-64 w-full min-h-[256px] min-w-0">
               <ChartMount>
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={data.weekRevenue}
+                    data={data.weekRevenue.map((d) => ({
+                      ...d,
+                      day: translateWeekday(d.day, t),
+                    }))}
                     margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
                   >
                     <defs>
@@ -345,9 +356,9 @@ export function DashboardHome() {
                       formatter={(value) => {
                         const n = typeof value === "number" ? value : Number(value);
                         const text = Number.isFinite(n)
-                          ? `Kz ${n.toLocaleString("pt-AO")}`
+                          ? `Kz ${n.toLocaleString(dateLocale)}`
                           : "";
-                        return [text, "Receita"];
+                        return [text, t("dashboard.revenue")];
                       }}
                       labelFormatter={(l) => l}
                       contentStyle={{ borderRadius: 12, borderColor: "#e6eceb" }}
@@ -368,8 +379,8 @@ export function DashboardHome() {
 
         <div className="rounded-2xl border border-pika-border bg-pika-card p-5 shadow-sm md:p-6">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-pika-ink">Corridas Por Horário</h2>
-            <span className="text-xs text-pika-muted">Distribuição · {dateLabel}</span>
+            <h2 className="text-base font-semibold text-pika-ink">{t("dashboard.ridesByHour")}</h2>
+            <span className="text-xs text-pika-muted">{t("dashboard.distribution", { date: dateLabel })}</span>
           </div>
           <div className="h-64 w-full min-h-[256px] min-w-0">
             <ChartMount>
@@ -394,13 +405,13 @@ export function DashboardHome() {
                   <Legend />
                   <Bar
                     dataKey="concluidas"
-                    name="Concluídas"
+                    name={t("dashboard.completed")}
                     fill="#22c55e"
                     radius={[6, 6, 0, 0]}
                   />
                   <Bar
                     dataKey="canceladas"
-                    name="Canceladas"
+                    name={t("dashboard.cancelled")}
                     fill="#ef4444"
                     radius={[6, 6, 0, 0]}
                   />
@@ -414,24 +425,24 @@ export function DashboardHome() {
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <div className="rounded-2xl border border-pika-border bg-pika-card shadow-sm">
           <div className="border-b border-pika-border px-5 py-4">
-            <h2 className="text-base font-semibold text-pika-ink">Corridas Recentes</h2>
+            <h2 className="text-base font-semibold text-pika-ink">{t("dashboard.recentRides")}</h2>
           </div>
           <div className="overflow-x-auto scroll-pika">
             <table className="min-w-[720px] w-full text-left text-sm">
               <thead className="bg-pika-page/80 text-xs font-semibold uppercase tracking-wide text-pika-muted">
                 <tr>
-                  <th className="px-5 py-3">Passageiro / Motorista</th>
-                  <th className="px-5 py-3">Percurso</th>
-                  <th className="px-5 py-3">Estado</th>
-                  <th className="px-5 py-3">Tempo</th>
-                  <th className="px-5 py-3 text-right">Valor</th>
+                  <th className="px-5 py-3">{t("dashboard.passengerDriver")}</th>
+                  <th className="px-5 py-3">{t("dashboard.route")}</th>
+                  <th className="px-5 py-3">{t("dashboard.status")}</th>
+                  <th className="px-5 py-3">{t("dashboard.time")}</th>
+                  <th className="px-5 py-3 text-right">{t("dashboard.value")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-pika-border">
                 {data.recentRides.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-5 py-8 text-center text-pika-muted">
-                      {loading ? "A carregar…" : "Sem corridas recentes."}
+                      {loading ? t("common.loading") : t("dashboard.noRecent")}
                     </td>
                   </tr>
                 ) : (
@@ -472,7 +483,9 @@ export function DashboardHome() {
                       <td className="px-5 py-3">
                         <StatusPill status={r.status} />
                       </td>
-                      <td className="px-5 py-3 text-pika-muted">{r.when}</td>
+                      <td className="px-5 py-3 text-pika-muted">
+                        {translateRelativeTime(r.when, t)}
+                      </td>
                       <td className="px-5 py-3 text-right font-semibold text-pika-ink">
                         {r.value}
                       </td>
@@ -486,11 +499,11 @@ export function DashboardHome() {
 
         <div className="rounded-2xl border border-pika-border bg-pika-card shadow-sm">
           <div className="border-b border-pika-border px-5 py-4">
-            <h2 className="text-base font-semibold text-pika-ink">Top Motoristas</h2>
+            <h2 className="text-base font-semibold text-pika-ink">{t("dashboard.topDrivers")}</h2>
           </div>
           {data.topDrivers.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-pika-muted">
-              {loading ? "A carregar…" : "Sem dados de motoristas."}
+              {loading ? t("common.loading") : t("dashboard.noDrivers")}
             </p>
           ) : (
             <ul className="divide-y divide-pika-border">
@@ -507,7 +520,10 @@ export function DashboardHome() {
                         aria-hidden
                       />
                       <span>
-                        {d.rating > 0 ? d.rating : "—"} · {d.rides} corridas
+                        {t("dashboard.driverRides", {
+                          rating: d.rating > 0 ? d.rating : "—",
+                          rides: d.rides,
+                        })}
                       </span>
                     </p>
                   </div>

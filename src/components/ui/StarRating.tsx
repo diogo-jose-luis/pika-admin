@@ -1,4 +1,7 @@
+"use client";
+
 import { FaIcon } from "@/components/ui/FaIcon";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { cn } from "@/lib/cn";
 
 type StarRatingProps = {
@@ -17,6 +20,7 @@ export function StarRating({
   iconClassName = "h-4 w-4",
   emptyLabel = "—",
 }: StarRatingProps) {
+  const { t } = useLocale();
   if (value == null || value < 1) {
     return (
       <span className={cn("text-xs font-medium text-pika-muted", className)}>
@@ -31,7 +35,7 @@ export function StarRating({
     <span
       className={cn("inline-flex items-center gap-0.5", className)}
       role="img"
-      aria-label={`${full} de ${max} estrelas`}
+      aria-label={t("common.starsAria", { value: full, max })}
     >
       {Array.from({ length: max }, (_, i) => (
         <FaIcon

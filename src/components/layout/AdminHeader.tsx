@@ -12,13 +12,15 @@ import {
   faMoon,
   faSun,
 } from "@fortawesome/free-solid-svg-icons";
-import { titleForPath } from "@/lib/nav";
 import { ANGOLA_PROVINCES } from "@/lib/angola-provinces";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/layout/LogoutButton";
+import { LanguageToggle } from "@/components/layout/LanguageToggle";
 import { SosNotificationsBell } from "@/components/layout/SosNotificationsBell";
 import { useAdminDate } from "@/components/providers/AdminDateProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { pageCopyForPath } from "@/lib/i18n";
 import { initialsFromDisplayName, type SessionUser } from "@/lib/session-user";
 import { cn } from "@/lib/cn";
 
@@ -39,7 +41,8 @@ export function AdminHeader({
   onSidebarToggle,
 }: AdminHeaderProps) {
   const pathname = usePathname();
-  const { title, subtitle } = titleForPath(pathname);
+  const { t } = useLocale();
+  const { title, subtitle } = pageCopyForPath(pathname, t);
   const { theme, toggleTheme, mounted } = useTheme();
   const [province, setProvince] = useState("Luanda");
   const { selectedIso, setSelectedIso, dateLabel } = useAdminDate();
@@ -80,7 +83,7 @@ export function AdminHeader({
           <button
             type="button"
             className={cn(iconBtnClass, "md:hidden")}
-            aria-label="Abrir menu"
+            aria-label={t("common.openMenu")}
             onClick={onMenuClick}
           >
             <FontAwesomeIcon icon={faBars} className="h-5 w-5" />
@@ -89,7 +92,7 @@ export function AdminHeader({
             <button
               type="button"
               className={cn(iconBtnClass, "hidden md:inline-flex")}
-              aria-label={sidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+              aria-label={sidebarCollapsed ? t("common.expandMenu") : t("common.collapseMenu")}
               aria-pressed={sidebarCollapsed}
               onClick={onSidebarToggle}
             >
@@ -116,7 +119,7 @@ export function AdminHeader({
           <select
             value={province}
             onChange={(e) => setProvince(e.target.value)}
-            aria-label="Província"
+            aria-label={t("common.province")}
             className="h-10 min-w-[8.5rem] max-w-[11rem] cursor-pointer appearance-none rounded-xl border border-pika-border bg-pika-card py-2 pl-10 pr-9 text-sm font-medium text-pika-ink shadow-sm outline-none transition hover:bg-pika-page focus:border-pika-primary focus:ring-2 focus:ring-pika-primary/20 sm:max-w-[14rem] md:min-w-[10rem] md:max-w-none"
           >
             {ANGOLA_PROVINCES.map((p) => (
@@ -143,7 +146,7 @@ export function AdminHeader({
           <button
             type="button"
             onClick={openDatePicker}
-            aria-label="Escolher data"
+            aria-label={t("common.pickDate")}
             className="flex h-10 min-w-[7.5rem] items-center gap-2 rounded-xl border border-pika-border bg-pika-card px-3 py-2 pr-9 pl-10 text-sm font-medium text-pika-ink shadow-sm transition hover:bg-pika-page"
           >
             <FontAwesomeIcon
@@ -160,7 +163,7 @@ export function AdminHeader({
         <button
           type="button"
           className="inline-flex h-10 items-center gap-0.5 rounded-xl border border-pika-border bg-pika-page p-1"
-          aria-label={isDark ? "Ativar tema claro" : "Ativar tema escuro"}
+          aria-label={isDark ? t("theme.enableLight") : t("theme.enableDark")}
           aria-pressed={isDark}
           onClick={toggleTheme}
         >
@@ -173,7 +176,7 @@ export function AdminHeader({
             )}
           >
             <FontAwesomeIcon icon={faSun} className="h-4 w-4" />
-            <span className="hidden sm:inline">Claro</span>
+            <span className="hidden sm:inline">{t("theme.light")}</span>
           </span>
           <span
             className={cn(
@@ -184,9 +187,11 @@ export function AdminHeader({
             )}
           >
             <FontAwesomeIcon icon={faMoon} className="h-4 w-4" />
-            <span className="hidden sm:inline">Escuro</span>
+            <span className="hidden sm:inline">{t("theme.dark")}</span>
           </span>
         </button>
+
+        <LanguageToggle />
 
         <SosNotificationsBell />
 
@@ -196,7 +201,7 @@ export function AdminHeader({
             onClick={() => setUserMenuOpen((o) => !o)}
             aria-expanded={userMenuOpen}
             aria-haspopup="menu"
-            aria-label="Menu da conta"
+            aria-label={t("common.accountMenu")}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-pika-border bg-gradient-to-br from-pika-primary to-pika-primary-dark text-xs font-semibold text-white shadow-sm transition hover:opacity-95"
           >
             {initials}

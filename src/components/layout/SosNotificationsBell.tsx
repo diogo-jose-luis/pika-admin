@@ -9,6 +9,8 @@ import {
   faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 import { useSosWatcher } from "@/components/providers/SosWatcherProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { translateRelativeTime, translateSosSeverity } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 
 const iconBtnClass =
@@ -22,6 +24,7 @@ export function SosNotificationsBell() {
     markRead,
     clearNotifications,
   } = useSosWatcher();
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -52,8 +55,8 @@ export function SosNotificationsBell() {
         className={iconBtnClass}
         aria-label={
           unreadCount > 0
-            ? `Notificações SOS (${unreadCount} novas)`
-            : "Notificações SOS"
+            ? t("sos.bellLabelUnread", { count: unreadCount })
+            : t("sos.bellLabel")
         }
         aria-expanded={open}
         aria-haspopup="menu"
@@ -73,7 +76,7 @@ export function SosNotificationsBell() {
           role="menu"
         >
           <div className="flex items-center justify-between gap-2 border-b border-pika-border px-3 py-2.5">
-            <p className="text-sm font-semibold text-pika-ink">Alertas SOS</p>
+            <p className="text-sm font-semibold text-pika-ink">{t("sos.alerts")}</p>
             <div className="flex items-center gap-2">
               {notifications.length > 0 ? (
                 <button
@@ -81,7 +84,7 @@ export function SosNotificationsBell() {
                   onClick={clearNotifications}
                   className="text-xs font-medium text-pika-muted transition hover:text-pika-ink"
                 >
-                  Limpar
+                  {t("sos.clear")}
                 </button>
               ) : null}
               <Link
@@ -89,14 +92,14 @@ export function SosNotificationsBell() {
                 onClick={() => setOpen(false)}
                 className="text-xs font-semibold text-pika-primary transition hover:underline"
               >
-                Ver todos
+                {t("sos.viewAll")}
               </Link>
             </div>
           </div>
 
           {notifications.length === 0 ? (
             <p className="px-3 py-8 text-center text-sm text-pika-muted">
-              Sem alertas SOS novos nesta sessão.
+              {t("sos.noNew")}
             </p>
           ) : (
             <ul className="max-h-80 overflow-y-auto scroll-pika">
@@ -127,14 +130,14 @@ export function SosNotificationsBell() {
                             {n.code}
                           </span>
                           <span className="text-[10px] font-semibold uppercase tracking-wide text-red-600">
-                            {n.severityLabel}
+                            {translateSosSeverity(n.severityLabel, t)}
                           </span>
                         </div>
                         <p className="mt-1 truncate text-sm font-semibold text-pika-ink">
                           {n.titleLine}
                         </p>
                         <p className="mt-0.5 text-xs text-pika-muted">
-                          {n.timeAgoLabel}
+                          {translateRelativeTime(n.timeAgoLabel, t)}
                         </p>
                         {n.mapsUrl ? (
                           <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-pika-primary">
@@ -142,7 +145,7 @@ export function SosNotificationsBell() {
                               icon={faLocationDot}
                               className="h-3 w-3"
                             />
-                            Localização disponível
+                            {t("sos.locationAvailable")}
                           </span>
                         ) : null}
                       </div>

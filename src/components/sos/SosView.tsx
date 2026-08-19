@@ -13,12 +13,20 @@ import {
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { useSosWatcher } from "@/components/providers/SosWatcherProvider";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { useAuth } from "@/context/AuthContext";
 import { canDeleteSos } from "@/lib/permissions";
 import type { SosAlertRow } from "@/lib/sos-alerts";
+import {
+  translateRelativeTime,
+  translateSosRideRef,
+  translateSosSeverity,
+  translateSosTracking,
+} from "@/lib/i18n";
 
 export function SosView() {
   const { user } = useAuth();
+  const { t } = useLocale();
   const { dismissNotification } = useSosWatcher();
   const canRemove = user ? canDeleteSos(user.nivel) : false;
 
@@ -42,20 +50,20 @@ export function SosView() {
       };
 
       if (!res.ok) {
-        throw new Error(data.error ?? "Erro ao carregar alertas SOS.");
+        throw new Error(data.error ?? t("sos.loadError"));
       }
 
       setAlerts(data.alerts ?? []);
     } catch (err) {
       setLoadError(
-        err instanceof Error ? err.message : "Erro ao carregar alertas SOS.",
+        err instanceof Error ? err.message : t("sos.loadError"),
       );
       setAlerts([]);
     } finally {
       if (isRefresh) setRefreshing(false);
       else setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadAlerts();
@@ -76,7 +84,7 @@ export function SosView() {
       const data = (await res.json()) as { error?: string };
 
       if (!res.ok) {
-        throw new Error(data.error ?? "Não foi possível remover o alerta SOS.");
+        throw new Error(data.error ?? t("sos.deleteError"));
       }
 
       const removedId = deleteTarget.id;
@@ -87,12 +95,12 @@ export function SosView() {
       setLoadError(
         err instanceof Error
           ? err.message
-          : "Não foi possível remover o alerta SOS.",
+          : t("sos.deleteError"),
       );
     } finally {
       setDeleteBusy(false);
     }
-  }, [deleteTarget, deleteBusy, canRemove, dismissNotification]);
+  }, [deleteTarget, deleteBusy, canRemove, dismissNotification, t]);
 
   return (
     <div className="space-y-4">
@@ -120,7 +128,7 @@ export function SosView() {
         </div>
       ) : alerts.length === 0 && !loadError ? (
         <p className="py-12 text-center text-sm text-pika-muted">
-          Nenhum alerta SOS registado.
+          {t("sos.empty")}
         </p>
       ) : (
         <div className="mx-auto max-w-3xl space-y-4">
@@ -141,14 +149,14 @@ export function SosView() {
         onCancel={() => {
           if (!deleteBusy) setDeleteTarget(null);
         }}
-        title="Remover alerta SOS?"
+        title={t("sos.deleteTitle")}
         entityLabel={
           deleteTarget
             ? `${deleteTarget.code} · ${deleteTarget.titleLine}`
             : undefined
         }
-        description="Tem certeza de que deseja remover este alerta SOS? Esta ação é irreversível."
-        confirmLabel="Remover SOS"
+        description={t("sos.deleteDesc")}
+        confirmLabel={t("sos.confirmRemove")}
         busy={deleteBusy}
       />
     </div>
@@ -164,6 +172,7 @@ function SosAlertCard({
   canRemove: boolean;
   onRemove: () => void;
 }) {
+  const { t } = useLocale();
   const phoneDigits = alert.phone.replace(/\D/g, "");
   const canCall = phoneDigits.length > 0;
 
@@ -177,7 +186,7 @@ function SosAlertCard({
               {alert.code}
             </span>
             <span className="inline-flex rounded-md border-2 border-red-600 bg-white px-2.5 py-1 text-xs font-bold text-red-600">
-              {alert.severityLabel}
+              {translateSosSeverity(alert.severityLabel, t)}
             </span>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
@@ -187,24 +196,24 @@ function SosAlertCard({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-pika-ink px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pika-ink/90"
               >
                 <FontAwesomeIcon icon={faPhone} className="h-4 w-4" />
-                Contactar
+                {t("sos.contact")}
               </a>
             ) : (
               <button
                 type="button"
                 disabled
                 className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-pika-page px-4 py-2.5 text-sm font-semibold text-pika-muted"
-                title="Telefone indisponível"
+                title={t("sos.phoneUnavailable")}
               >
                 <FontAwesomeIcon icon={faPhone} className="h-4 w-4" />
-                Contactar
+                {t("sos.contact")}
               </button>
             )}
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
             >
-              Acionar 111
+              {t("sos.call111")}
             </button>
             {canRemove ? (
               <button
@@ -213,7 +222,7 @@ function SosAlertCard({
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
               >
                 <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-                Remover SOS
+                {t("sos.confirmRemove")}
               </button>
             ) : null}
           </div>
@@ -223,7 +232,9 @@ function SosAlertCard({
           <p className="text-base font-bold text-pika-ink md:text-lg">
             {alert.titleLine}
           </p>
-          <p className="mt-1 text-sm text-pika-muted">{alert.rideRef}</p>
+          <p className="mt-1 text-sm text-pika-muted">
+            {translateSosRideRef(alert.rideRef, t)}
+          </p>
         </div>
 
         <div className="flex flex-col gap-3 text-sm">
@@ -234,7 +245,7 @@ function SosAlertCard({
                 className="mt-0.5 h-2 w-2 shrink-0 text-red-600"
               />
               <span className="leading-snug">
-                <span className="font-medium text-pika-muted">Origem: </span>
+                <span className="font-medium text-pika-muted">{t("common.origin")}: </span>
                 {alert.origin}
               </span>
             </span>
@@ -244,7 +255,7 @@ function SosAlertCard({
                 className="mt-0.5 h-3 w-3 shrink-0 text-red-600"
               />
               <span className="leading-snug">
-                <span className="font-medium text-pika-muted">Destino: </span>
+                <span className="font-medium text-pika-muted">{t("common.destination")}: </span>
                 {alert.destination}
               </span>
             </span>
@@ -256,7 +267,7 @@ function SosAlertCard({
                 />
                 <span className="leading-snug">
                   <span className="font-medium text-pika-muted">
-                    Coordenadas:{" "}
+                    {t("common.coordinates")}:{" "}
                   </span>
                   {alert.mapsUrl ? (
                     <a
@@ -279,7 +290,7 @@ function SosAlertCard({
           <div className="flex flex-col gap-2 text-pika-muted sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
             <span className="inline-flex items-center gap-2">
               <FontAwesomeIcon icon={faClock} className="h-4 w-4 shrink-0" />
-              {alert.timeAgoLabel}
+              {translateRelativeTime(alert.timeAgoLabel, t)}
             </span>
             <span className="inline-flex items-center gap-2">
               <FontAwesomeIcon
@@ -287,7 +298,7 @@ function SosAlertCard({
                 className="h-2 w-2 shrink-0 text-red-600"
               />
               <span className="font-medium text-red-600">
-                {alert.trackingStatusLabel}
+                {translateSosTracking(alert.trackingStatusLabel, t)}
               </span>
             </span>
             {alert.mapsUrl ? (
@@ -301,7 +312,7 @@ function SosAlertCard({
                   icon={faMapLocationDot}
                   className="h-4 w-4 shrink-0"
                 />
-                Ver no Google Maps
+                {t("sos.maps")}
               </a>
             ) : null}
           </div>

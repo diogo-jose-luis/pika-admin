@@ -5,12 +5,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { TransactionList } from "@/components/finance/TransactionList";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import {
   defaultTransactionDateRange,
   type FinanceTransaction,
 } from "@/lib/finance";
 
 export function TransactionsView() {
+  const { t } = useLocale();
   const defaults = defaultTransactionDateRange();
   const [dateFrom, setDateFrom] = useState(defaults.from);
   const [dateTo, setDateTo] = useState(defaults.to);
@@ -36,13 +38,13 @@ export function TransactionsView() {
         };
 
         if (!res.ok) {
-          throw new Error(json.error ?? "Erro ao carregar transações.");
+          throw new Error(json.error ?? t("finance.txLoadError"));
         }
 
         setTransactions(json.transactions ?? []);
       } catch (err) {
         setLoadError(
-          err instanceof Error ? err.message : "Erro ao carregar transações.",
+          err instanceof Error ? err.message : t("finance.txLoadError"),
         );
         setTransactions([]);
       } finally {
@@ -50,7 +52,7 @@ export function TransactionsView() {
         else setLoading(false);
       }
     },
-    [dateFrom, dateTo],
+    [dateFrom, dateTo, t],
   );
 
   useEffect(() => {
@@ -63,17 +65,17 @@ export function TransactionsView() {
         <div className="flex flex-col gap-4 border-b border-pika-border px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-base font-semibold text-pika-ink">
-              Transações Recentes
+              {t("finance.recentTransactions")}
             </h2>
             <p className="text-xs text-pika-muted">
-              Corridas concluídas e comissões associadas (valores do Firestore)
+              {t("finance.txHint")}
             </p>
           </div>
 
           <div className="flex flex-wrap items-end gap-2 sm:gap-3">
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-                De
+                {t("common.from")}
               </span>
               <input
                 type="date"
@@ -82,12 +84,12 @@ export function TransactionsView() {
                 onChange={(e) => setDateFrom(e.target.value)}
                 disabled={loading && !refreshing}
                 className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2 disabled:opacity-50"
-                aria-label="Data inicial"
+                aria-label={t("common.dateFrom")}
               />
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-                Até
+                {t("common.to")}
               </span>
               <input
                 type="date"
@@ -96,7 +98,7 @@ export function TransactionsView() {
                 onChange={(e) => setDateTo(e.target.value)}
                 disabled={loading && !refreshing}
                 className="rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm font-medium text-pika-ink outline-none ring-pika-primary/25 focus:border-pika-primary focus:ring-2 disabled:opacity-50"
-                aria-label="Data final"
+                aria-label={t("common.dateTo")}
               />
             </label>
             <RefreshDataButton
@@ -119,16 +121,16 @@ export function TransactionsView() {
         {loading ? (
           <div className="flex items-center justify-center gap-2 px-5 py-16 text-pika-muted">
             <FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin" />
-            <span className="text-sm font-medium">A carregar transações…</span>
+            <span className="text-sm font-medium">{t("finance.txLoading")}</span>
           </div>
         ) : transactions.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-pika-muted">
-            Nenhuma transação encontrada para o período seleccionado.
+            {t("finance.txEmpty")}
           </p>
         ) : (
           <>
             <p className="border-b border-pika-border bg-pika-page/50 px-5 py-2 text-xs text-pika-muted">
-              {transactions.length} movimentação(ões) • mais recentes primeiro
+              {t("finance.txCount", { count: transactions.length })}
             </p>
             <TransactionList items={transactions} />
           </>

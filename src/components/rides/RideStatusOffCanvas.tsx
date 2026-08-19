@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import type { RideRow } from "@/lib/ride-history";
 import { cn } from "@/lib/cn";
 
@@ -19,6 +20,7 @@ export function RideStatusOffCanvas({
   onClose,
   onSaved,
 }: RideStatusOffCanvasProps) {
+  const { t } = useLocale();
   const initialEstado: RideEstadoUpdate =
     ride.estado === 2 ? 2 : 1;
   const [estado, setEstado] = useState<RideEstadoUpdate>(initialEstado);
@@ -52,18 +54,18 @@ export function RideStatusOffCanvas({
       const data = (await res.json()) as { row?: RideRow; error?: string };
 
       if (!res.ok) {
-        throw new Error(data.error ?? "Não foi possível atualizar a corrida.");
+        throw new Error(data.error ?? t("rides.updateError"));
       }
 
       if (!data.row) {
-        throw new Error("Resposta inválida do servidor.");
+        throw new Error(t("rides.invalidResponse"));
       }
 
       onSaved(data.row);
       onClose();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Erro ao atualizar a corrida.",
+        err instanceof Error ? err.message : t("rides.updateGenericError"),
       );
     } finally {
       setBusy(false);
@@ -91,7 +93,7 @@ export function RideStatusOffCanvas({
               id="ride-status-offcanvas-title"
               className="text-lg font-bold text-pika-ink"
             >
-              Alterar estado #{ride.id}
+              {t("rides.statusTitle", { id: ride.id })}
             </h2>
             <p className="mt-0.5 text-xs text-pika-muted">
               {ride.passenger} · {ride.driver}
@@ -102,7 +104,7 @@ export function RideStatusOffCanvas({
             onClick={onClose}
             disabled={busy}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-pika-border text-pika-muted transition hover:bg-pika-page hover:text-pika-ink disabled:opacity-50"
-            aria-label="Fechar"
+            aria-label={t("common.close")}
           >
             <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
           </button>
@@ -111,20 +113,20 @@ export function RideStatusOffCanvas({
         <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
           <fieldset>
             <legend className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-              Estado da corrida
+              {t("rides.rideStatus")}
             </legend>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <EstadoOption
-                label="Concluída"
-                description="Estado 1"
+                label={t("rideStatus.completed")}
+                description={t("rides.estado1")}
                 selected={estado === 1}
                 onSelect={() => setEstado(1)}
                 disabled={busy}
                 tone="success"
               />
               <EstadoOption
-                label="Cancelada"
-                description="Estado 2"
+                label={t("rideStatus.cancelled")}
+                description={t("rides.estado2")}
                 selected={estado === 2}
                 onSelect={() => setEstado(2)}
                 disabled={busy}
@@ -135,14 +137,14 @@ export function RideStatusOffCanvas({
 
           <label className="block">
             <span className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
-              Nota
+              {t("common.note")}
             </span>
             <textarea
               value={nota}
               onChange={(e) => setNota(e.target.value)}
               disabled={busy}
               rows={6}
-              placeholder="Descreva o motivo da alteração ou informação relevante…"
+              placeholder={t("rides.notePlaceholder")}
               className="mt-2 w-full resize-y rounded-xl border border-pika-border bg-pika-card px-3 py-2.5 text-sm text-pika-ink outline-none ring-pika-primary/25 transition placeholder:text-pika-muted/80 focus:border-pika-primary focus:ring-2 disabled:opacity-60"
             />
           </label>
@@ -161,7 +163,7 @@ export function RideStatusOffCanvas({
             disabled={busy}
             className="rounded-xl border border-pika-border bg-pika-card px-4 py-2.5 text-sm font-semibold text-pika-muted transition hover:text-pika-ink disabled:opacity-50"
           >
-            Cancelar
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -169,7 +171,7 @@ export function RideStatusOffCanvas({
             disabled={busy}
             className="rounded-xl bg-pika-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? "A guardar…" : "Guardar alterações"}
+            {busy ? t("common.saving") : t("rides.saveChanges")}
           </button>
         </div>
       </aside>
