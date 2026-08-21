@@ -156,11 +156,37 @@ function formatDurationLabel(value: unknown): string {
   return `${Math.round(n)} min`;
 }
 
+/** Fuso de Angola (UTC+1, sem horário de verão) — o mesmo da app. */
+const ANGOLA_TIME_ZONE = "Africa/Luanda";
+
+function angolaDateParts(
+  date: Date,
+  options: Intl.DateTimeFormatOptions,
+): Record<string, string> {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: ANGOLA_TIME_ZONE,
+    hourCycle: "h23",
+    ...options,
+  }).formatToParts(date);
+
+  const map: Record<string, string> = {};
+  for (const part of parts) {
+    if (part.type !== "literal") map[part.type] = part.value;
+  }
+  return map;
+}
+
+function angolaHourMinute(date: Date): string {
+  const parts = angolaDateParts(date, { hour: "2-digit", minute: "2-digit" });
+  const hour = (parts.hour === "24" ? "00" : parts.hour ?? "00").padStart(2, "0");
+  const minute = (parts.minute ?? "00").padStart(2, "0");
+  return `${hour}:${minute}`;
+}
+
 export function formatRideTimeOfDay(value: unknown): string {
   const ms = parseRideDateToMs(value);
   if (ms == null) return "";
-  const date = new Date(ms);
-  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  return angolaHourMinute(new Date(ms));
 }
 
 /** Duração entre dois timestamps em horas e/ou minutos (ex.: "1h 12 min", "45 min"). */
@@ -214,10 +240,6 @@ export function resolveRideStatus(
   return base;
 }
 
-function pad2(n: number) {
-  return n.toString().padStart(2, "0");
-}
-
 export function parseRideDateToMs(value: unknown): number | null {
   if (value == null) return null;
 
@@ -264,7 +286,18 @@ export function formatRideDate(value: unknown): string {
   if (ms == null) return "";
 
   const date = new Date(ms);
-  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  const parts = angolaDateParts(date, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const day = (parts.day ?? "").padStart(2, "0");
+  const month = (parts.month ?? "").padStart(2, "0");
+  const year = parts.year ?? "";
+  if (!day || !month || !year) return "";
+  return `${day}/${month}/${year} ${angolaHourMinute(date)}`;
 }
 
 export function rideMatchesDateRange(
