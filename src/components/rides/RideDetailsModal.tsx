@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBan,
+  faCalendarDays,
   faCar,
   faCircle,
   faClock,
@@ -124,6 +125,12 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
               {t("rides.detailsTitle", { id: ride.id })}
             </h2>
             <p className="mt-1 text-sm text-pika-muted">{ride.dateLabel || "—"}</p>
+            {ride.scheduled && ride.scheduledDateLabel ? (
+              <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-sky-800">
+                <FontAwesomeIcon icon={faCalendarDays} className="h-3.5 w-3.5" />
+                {t("rides.scheduledFor", { date: ride.scheduledDateLabel })}
+              </p>
+            ) : null}
           </div>
           <button
             type="button"
@@ -148,6 +155,12 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
               <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
               {t("rides.closedBySystem")}
+            </span>
+          ) : null}
+          {ride.scheduled ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 ring-1 ring-sky-200">
+              <FontAwesomeIcon icon={faCalendarDays} className="h-3 w-3" />
+              {t("rides.scheduled")}
             </span>
           ) : null}
           <span className="text-sm font-semibold text-pika-ink">{ride.valueLabel}</span>

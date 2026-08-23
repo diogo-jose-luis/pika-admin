@@ -29,6 +29,10 @@ export type RideRow = {
   note: string;
   /** Corrida encerrada automaticamente pelo sistema. */
   closedBySystem: boolean;
+  /** Corrida marcada para uma data/hora futura (`agendada`). */
+  scheduled: boolean;
+  /** Data e hora do agendamento (`dataAgendada`), formato dd/mm/aaaa HH:mm. */
+  scheduledDateLabel: string;
   /** Valor bruto de `estado` no Firestore (0/1/2/3). */
   estado: number | null;
   vehicleModel: string;
@@ -96,6 +100,10 @@ export type CorridaFakeDoc = {
   fechada_pelo_sistema?: boolean | string | number;
   /** Alias tipográfico legado (fechado vs fechada). */
   fechado_pelo_sistema?: boolean | string | number;
+  /** True quando a corrida foi agendada para mais tarde. */
+  agendada?: boolean | string | number;
+  /** Data e hora escolhidas para o agendamento. */
+  dataAgendada?: { _seconds: number; _nanoseconds: number } | string | null;
   viaturaMarcaModelo?: string;
   viaturaMatricula?: string;
   viatura_cor?: string;
@@ -209,6 +217,10 @@ export function formatDurationFromRange(
 }
 
 export function isClosedBySystem(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+export function isScheduledRide(value: unknown): boolean {
   return value === true || value === "true" || value === 1 || value === "1";
 }
 
@@ -350,6 +362,8 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
     row.passengerToDriverStars != null ? String(row.passengerToDriverStars) : "",
     row.driverToPassengerStars != null ? String(row.driverToPassengerStars) : "",
     row.closedBySystem ? "sistema" : "",
+    row.scheduled ? "agendada agendado scheduled" : "",
+    row.scheduledDateLabel,
   ]
     .join(" ")
     .toLowerCase();
@@ -393,6 +407,7 @@ export function mapCorridaFakeToRideRow(
     formatDurationFromRange(data.hora_minuto_inicio, data.hora_minuto_fim) ||
     readRouteTextLabel(data.duracaoText) ||
     formatDurationLabel(data.duracao);
+  const scheduled = isScheduledRide(data.agendada);
 
   return {
     docId,
@@ -411,6 +426,8 @@ export function mapCorridaFakeToRideRow(
     closedBySystem: isClosedBySystem(
       data.fechada_pelo_sistema ?? data.fechado_pelo_sistema,
     ),
+    scheduled,
+    scheduledDateLabel: scheduled ? formatRideDate(data.dataAgendada) : "",
     estado: parseEstadoNumber(data.estado),
     vehicleModel: readVehicleField(data.viaturaMarcaModelo),
     vehiclePlate: readVehicleField(data.viaturaMatricula),

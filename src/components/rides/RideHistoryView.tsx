@@ -17,6 +17,7 @@ import {
   faClock,
   faDownload,
   faCar,
+  faCalendarDays,
   faEye,
   faIdCard,
   faList,
@@ -81,6 +82,27 @@ function SystemClosedBadge() {
     <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
       <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
       {t("rides.closedBySystem")}
+    </span>
+  );
+}
+
+function ScheduledBadge() {
+  const { t } = useLocale();
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 ring-1 ring-sky-200">
+      <FontAwesomeIcon icon={faCalendarDays} className="h-3 w-3" />
+      {t("rides.scheduled")}
+    </span>
+  );
+}
+
+function ScheduledAtLabel({ dateLabel }: { dateLabel: string }) {
+  const { t } = useLocale();
+  if (!dateLabel) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-800">
+      <FontAwesomeIcon icon={faCalendarDays} className="h-3 w-3" />
+      {t("rides.scheduledFor", { date: dateLabel })}
     </span>
   );
 }
@@ -412,7 +434,7 @@ export function RideHistoryView() {
 
       {viewMode === "table" ? (
       <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-        <table className="min-w-[1400px] w-full border-collapse text-left text-sm">
+        <table className="min-w-[1540px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
               <th className="w-10 px-3 py-3">
@@ -437,6 +459,7 @@ export function RideHistoryView() {
               <th className="min-w-[180px] px-4 py-3">{t("rides.vehicle")}</th>
               <th className="whitespace-nowrap px-4 py-3">{t("rides.rating")}</th>
               <th className="whitespace-nowrap px-4 py-3">{t("rides.status")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.scheduled")}</th>
               <th className="whitespace-nowrap px-4 py-3">{t("rides.date")}</th>
             </tr>
           </thead>
@@ -444,7 +467,7 @@ export function RideHistoryView() {
             {loading
               ? Array.from({ length: 6 }, (_, i) => (
                   <tr key={`sk-${i}`} className="border-b border-pika-border">
-                    {Array.from({ length: 14 }, (_, j) => (
+                    {Array.from({ length: 15 }, (_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full max-w-[8rem] animate-pulse rounded bg-pika-page" />
                       </td>
@@ -701,6 +724,11 @@ function RideHistoryCard({
           <div>
             <p className="font-bold text-pika-ink">#{row.id}</p>
             <p className="text-xs text-pika-muted">{row.dateLabel}</p>
+            {row.scheduled && row.scheduledDateLabel ? (
+              <p className="mt-1">
+                <ScheduledAtLabel dateLabel={row.scheduledDateLabel} />
+              </p>
+            ) : null}
           </div>
         </label>
         <div className="flex items-center gap-1">
@@ -756,6 +784,7 @@ function RideHistoryCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <StatusPill status={row.status} />
+        {row.scheduled ? <ScheduledBadge /> : null}
         {row.closedBySystem ? <SystemClosedBadge /> : null}
         <span className="text-sm font-semibold text-pika-ink">{row.valueLabel}</span>
         <span className="text-sm text-pika-muted">
@@ -998,6 +1027,20 @@ function RideTableRow({
           <StatusPill status={row.status} />
           {row.closedBySystem ? <SystemClosedBadge /> : null}
         </div>
+      </td>
+      <td className="whitespace-nowrap px-4 py-3">
+        {row.scheduled ? (
+          <div className="flex flex-col items-start gap-1.5">
+            <ScheduledBadge />
+            {row.scheduledDateLabel ? (
+              <span className="text-xs font-medium text-sky-800">
+                {row.scheduledDateLabel}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <span className="text-pika-muted">—</span>
+        )}
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">{row.dateLabel}</td>
     </tr>
