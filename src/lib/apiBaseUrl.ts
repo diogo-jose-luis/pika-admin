@@ -2,7 +2,7 @@
 export const API_PROXY_PATH = "/api/api-proxy";
 
 /** Produção (Vercel) — autenticação e gestão de utilizadores admin. */
-export const PRODUCTION_API_BASE_URL = "https://api-pika.equalizador.ao/api";
+export const PRODUCTION_API_BASE_URL = "https://api-pika.hope-system.app/api";
 
 /** Desenvolvimento local — `php artisan serve`. */
 export const DEVELOPMENT_API_BASE_URL = "http://127.0.0.1:8000/api";
