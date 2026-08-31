@@ -2,7 +2,10 @@
 
 import { useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCircleCheck,
+  faTriangleExclamation,
+} from "@fortawesome/free-solid-svg-icons";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import { cn } from "@/lib/cn";
 
@@ -17,6 +20,8 @@ type DeleteConfirmModalProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   busy?: boolean;
+  busyLabel?: string;
+  variant?: "danger" | "success";
 };
 
 export function DeleteConfirmModal({
@@ -29,12 +34,16 @@ export function DeleteConfirmModal({
   confirmLabel,
   cancelLabel,
   busy = false,
+  busyLabel,
+  variant = "danger",
 }: DeleteConfirmModalProps) {
   const { t } = useLocale();
   const resolvedTitle = title ?? t("deleteModal.title");
   const resolvedDescription = description ?? t("deleteModal.description");
   const resolvedConfirm = confirmLabel ?? t("deleteModal.confirm");
   const resolvedCancel = cancelLabel ?? t("common.cancel");
+  const resolvedBusy = busyLabel ?? t("common.deleting");
+  const isSuccess = variant === "success";
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -62,8 +71,18 @@ export function DeleteConfirmModal({
         className="w-full max-w-md rounded-2xl bg-pika-card px-6 py-8 text-center shadow-xl sm:px-8"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600 ring-1 ring-red-100">
-          <FontAwesomeIcon icon={faTriangleExclamation} className="h-6 w-6" />
+        <div
+          className={cn(
+            "mx-auto flex h-14 w-14 items-center justify-center rounded-full ring-1",
+            isSuccess
+              ? "bg-emerald-50 text-emerald-600 ring-emerald-100"
+              : "bg-red-50 text-red-600 ring-red-100",
+          )}
+        >
+          <FontAwesomeIcon
+            icon={isSuccess ? faCircleCheck : faTriangleExclamation}
+            className="h-6 w-6"
+          />
         </div>
 
         <h2
@@ -92,11 +111,14 @@ export function DeleteConfirmModal({
             onClick={onConfirm}
             disabled={busy}
             className={cn(
-              "min-w-[8rem] flex-1 rounded-xl bg-red-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-red-600 sm:flex-none",
+              "min-w-[8rem] flex-1 rounded-xl px-6 py-3 text-sm font-semibold text-white transition sm:flex-none",
+              isSuccess
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-red-500 hover:bg-red-600",
               busy && "cursor-not-allowed opacity-60",
             )}
           >
-            {busy ? t("common.deleting") : resolvedConfirm}
+            {busy ? resolvedBusy : resolvedConfirm}
           </button>
           <button
             type="button"

@@ -23,6 +23,7 @@ export const sidebarNav: NavItem[] = [
     icon: "shield",
     iconOverlay: "check",
   },
+  { label: "Alteração de Dados", href: "/alterar-dados", icon: "pencil-square" },
   { label: "SOS", href: "/sos", icon: "exclamation-triangle" },
   { label: "Configurações", href: "/configuracoes", icon: "cog" },
 ];
@@ -64,6 +65,10 @@ const headerOverrides: Record<string, { title: string; subtitle: string }> = {
   "/validacao-motoristas": {
     title: "Validação de Motoristas",
     subtitle: "Acompanhe todas as corridas",
+  },
+  "/alterar-dados": {
+    title: "Alteração de Dados",
+    subtitle: "Aprove ou rejeite pedidos de atualização de perfil",
   },
   "/sos": {
     title: "SOS",

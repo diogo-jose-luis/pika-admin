@@ -194,6 +194,7 @@ const NAV_HREF_KEYS: Record<string, string> = {
   "/relatorios": "nav.reports",
   "/modelo-viaturas": "nav.vehicleModels",
   "/validacao-motoristas": "nav.driverValidation",
+  "/alterar-dados": "nav.dataChanges",
   "/sos": "nav.sos",
   "/configuracoes": "nav.settings",
 };
@@ -245,6 +246,10 @@ const PAGE_COPY: Record<string, PageCopy> = {
   "/validacao-motoristas": {
     titleKey: "pages.driverValidationTitle",
     subtitleKey: "pages.driverValidationSubtitle",
+  },
+  "/alterar-dados": {
+    titleKey: "pages.dataChangesTitle",
+    subtitleKey: "pages.dataChangesSubtitle",
   },
   "/sos": {
     titleKey: "pages.sosTitle",

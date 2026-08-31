@@ -28,6 +28,7 @@ const ADMIN_PATHS = new Set([
   "/relatorios",
   "/modelo-viaturas",
   "/validacao-motoristas",
+  "/alterar-dados",
   "/sos",
   "/configuracoes",
 ]);
