@@ -410,11 +410,14 @@ export function PaymentsView() {
         ) : null}
 
         <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-          <table className="min-w-[960px] w-full border-collapse text-left text-sm">
+          <table className="min-w-[1120px] w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
                 <th className="whitespace-nowrap px-4 py-3">
                   {t("payments.reference")}
+                </th>
+                <th className="min-w-[220px] px-4 py-3">
+                  {t("payments.description")}
                 </th>
                 <th className="whitespace-nowrap px-4 py-3">
                   {t("payments.providerRef")}
@@ -440,7 +443,7 @@ export function PaymentsView() {
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <tr key={`sk-${i}`} className="border-b border-pika-border">
-                      <td colSpan={7} className="px-4 py-4">
+                      <td colSpan={8} className="px-4 py-4">
                         <div className="h-10 animate-pulse rounded-lg bg-pika-page" />
                       </td>
                     </tr>
@@ -455,15 +458,13 @@ export function PaymentsView() {
                           idx % 2 === 1 ? "bg-pika-page/40" : "bg-pika-card",
                         )}
                       >
-                        <td className="px-4 py-3">
-                          <p className="font-mono text-[13px] font-semibold text-pika-ink">
-                            {reference}
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-[13px] font-semibold text-pika-ink">
+                          {reference}
+                        </td>
+                        <td className="max-w-[280px] px-4 py-3 text-pika-ink">
+                          <p className="truncate" title={row.description ?? undefined}>
+                            {row.description?.trim() ? row.description : "—"}
                           </p>
-                          {row.description ? (
-                            <p className="mt-0.5 truncate text-xs text-pika-muted">
-                              {row.description}
-                            </p>
-                          ) : null}
                         </td>
                         <td className="px-4 py-3 font-mono text-[13px] text-pika-ink">
                           {row.providerTransactionId ?? row.referenceNumber ?? "—"}
