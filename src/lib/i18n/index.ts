@@ -62,6 +62,20 @@ export function translateRideStatus(status: RideStatus, t: TranslateFn): string 
   return t(RIDE_STATUS_KEYS[status]);
 }
 
+const APPYPAY_STATUS_KEYS: Record<string, string> = {
+  Requested: "payments.statusRequested",
+  Pending: "payments.statusPending",
+  Success: "payments.statusSuccess",
+  Failed: "payments.statusFailed",
+  Cancelled: "payments.statusCancelled",
+  Expired: "payments.statusExpired",
+};
+
+export function translateAppyPayStatus(status: string, t: TranslateFn): string {
+  const key = APPYPAY_STATUS_KEYS[status];
+  return key ? t(key) : status;
+}
+
 const WEEKDAY_KEYS: Record<string, string> = {
   Dom: "weekday.sun",
   Seg: "weekday.mon",
@@ -190,6 +204,7 @@ const NAV_HREF_KEYS: Record<string, string> = {
   "/motoristas": "nav.drivers",
   "/passageiros": "nav.passengers",
   "/financeiro": "nav.finance",
+  "/pagamentos": "nav.payments",
   "/mapa-ao-vivo": "nav.liveMap",
   "/relatorios": "nav.reports",
   "/modelo-viaturas": "nav.vehicleModels",
@@ -234,6 +249,10 @@ const PAGE_COPY: Record<string, PageCopy> = {
   "/financeiro/transacoes": {
     titleKey: "pages.transactionsTitle",
     subtitleKey: "pages.transactionsSubtitle",
+  },
+  "/pagamentos": {
+    titleKey: "pages.paymentsTitle",
+    subtitleKey: "pages.paymentsSubtitle",
   },
   "/motoristas": {
     titleKey: "pages.driversTitle",

@@ -17,7 +17,11 @@ const OPERADOR_PATHS = new Set([
   "/sos",
 ]);
 
-const FINANCEIRO_PATHS = new Set(["/financeiro", "/financeiro/transacoes"]);
+const FINANCEIRO_PATHS = new Set([
+  "/financeiro",
+  "/financeiro/transacoes",
+  "/pagamentos",
+]);
 
 const ADMIN_PATHS = new Set([
   "/dashboard",
@@ -30,6 +34,7 @@ const ADMIN_PATHS = new Set([
   "/validacao-motoristas",
   "/alterar-dados",
   "/sos",
+  "/pagamentos",
   "/configuracoes",
 ]);
 
@@ -110,6 +115,7 @@ export function fallbackRouteForNivel(nivel: number): string {
     "/dashboard",
     "/mapa-ao-vivo",
     "/financeiro",
+    "/pagamentos",
     "/historico-corridas",
     "/motoristas",
     "/sos",
