@@ -17,7 +17,7 @@ import { OffCanvas } from "@/components/ui/OffCanvas";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/components/providers/LocaleProvider";
-import { extractApiErrorMessage } from "@/lib/api-error";
+import { extractApiErrorMessage, isBotChallengeError } from "@/lib/api-error";
 import {
   APPYPAY_STATUSES,
   chargeDisplayReference,
@@ -196,6 +196,9 @@ export function PaymentsView() {
         if (dateTo) params.to = dateTo;
 
         const { data } = await http.get("/appypay/charges", { params });
+        if (typeof data === "string") {
+          throw new Error(data);
+        }
         const parsed = parseAppyPayChargesResponse(data);
 
         setItems(parsed.items);
@@ -213,9 +216,11 @@ export function PaymentsView() {
             ? (err as { response?: { status?: number } }).response?.status
             : undefined;
         setLoadError(
-          status === 404
-            ? t("payments.endpointMissing")
-            : extractApiErrorMessage(err, t("payments.loadError")),
+          isBotChallengeError(err)
+            ? t("payments.botBlocked")
+            : status === 404
+              ? t("payments.endpointMissing")
+              : extractApiErrorMessage(err, t("payments.loadError")),
         );
         setItems([]);
         setSummary(null);

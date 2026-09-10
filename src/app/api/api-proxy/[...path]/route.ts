@@ -1,4 +1,11 @@
 import { resolveApiBaseUrl } from "@/lib/apiBaseUrl";
+import {
+  isBotChallengeText,
+  looksLikeHtmlDocument,
+  sanitizeApiErrorText,
+  UPSTREAM_BOT_CHALLENGE_CODE,
+  UPSTREAM_BOT_CHALLENGE_MESSAGE,
+} from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 
 const FORWARD_HEADERS = [
@@ -8,8 +15,30 @@ const FORWARD_HEADERS = [
   "accept-language",
 ];
 
+const PROXY_USER_AGENT = "PikaAdmin/1.0 (api-proxy)";
+
 function publicUpstreamPath(targetUrl: URL): string {
   return `${targetUrl.origin}${targetUrl.pathname}`;
+}
+
+function botChallengeResponse(
+  upstreamStatus: number,
+  upstreamPath: string,
+): NextResponse {
+  return NextResponse.json(
+    {
+      message: UPSTREAM_BOT_CHALLENGE_MESSAGE,
+      code: UPSTREAM_BOT_CHALLENGE_CODE,
+      upstream_status: upstreamStatus,
+      upstream_url: upstreamPath,
+    },
+    { status: 502 },
+  );
+}
+
+function isUpstreamBotChallenge(text: string, location: string | null): boolean {
+  if (location && /lsrecap|recaptcha/i.test(location)) return true;
+  return isBotChallengeText(text);
 }
 
 async function proxyRequest(
@@ -32,6 +61,8 @@ async function proxyRequest(
   if (!headers.has("accept")) {
     headers.set("accept", "application/json");
   }
+  headers.set("user-agent", PROXY_USER_AGENT);
+  headers.set("x-requested-with", "XMLHttpRequest");
 
   const init: RequestInit = {
     method: request.method,
@@ -66,10 +97,33 @@ async function proxyRequest(
 
   const responseBody = await upstream.arrayBuffer();
   const upstreamPath = publicUpstreamPath(targetUrl);
+  const upstreamType = upstream.headers.get("content-type");
+  const location = upstream.headers.get("location");
+  const rawText = new TextDecoder().decode(responseBody).trim();
+
+  if (isUpstreamBotChallenge(rawText, location)) {
+    console.error("[api-proxy] upstream bot challenge", {
+      status: upstream.status,
+      url: targetUrl.toString(),
+      location,
+      contentType: upstreamType,
+    });
+    return botChallengeResponse(upstream.status, upstreamPath);
+  }
+
+  if (looksLikeHtmlDocument(rawText, upstreamType)) {
+    return NextResponse.json(
+      {
+        message: sanitizeApiErrorText(rawText),
+        upstream_status: upstream.status,
+        upstream_url: upstreamPath,
+      },
+      { status: 502 },
+    );
+  }
 
   if (upstream.ok) {
     const responseHeaders = new Headers();
-    const upstreamType = upstream.headers.get("content-type");
     if (upstreamType) responseHeaders.set("content-type", upstreamType);
     return new NextResponse(responseBody, {
       status: upstream.status,
@@ -77,14 +131,13 @@ async function proxyRequest(
     });
   }
 
-  const rawText = new TextDecoder().decode(responseBody).trim();
   let upstreamPayload: unknown = null;
 
   if (rawText) {
     try {
       upstreamPayload = JSON.parse(rawText);
     } catch {
-      upstreamPayload = { message: rawText.slice(0, 2000) };
+      upstreamPayload = { message: sanitizeApiErrorText(rawText) };
     }
   }
 
@@ -94,13 +147,13 @@ async function proxyRequest(
     upstreamPayload !== null &&
     "message" in upstreamPayload &&
     typeof (upstreamPayload as { message: unknown }).message === "string"
-      ? (upstreamPayload as { message: string }).message
+      ? sanitizeApiErrorText((upstreamPayload as { message: string }).message)
       : null;
 
   let message = upstreamMessage;
 
   if (!message && rawText) {
-    message = rawText.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 500);
+    message = sanitizeApiErrorText(rawText).slice(0, 500);
   }
 
   if (!message) {

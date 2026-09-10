@@ -307,6 +307,8 @@ export const messages = {
     },
     payments: {
       loadError: "Não foi possível carregar os pagamentos.",
+      botBlocked:
+        "A API bloqueou o pedido com uma verificação anti-bot (LiteSpeed/reCAPTCHA). O painel não consegue completar esse desafio. Peça para isentar as rotas /api/* (incluindo /api/appypay/charges) no anti-bot da LiteSpeed.",
       endpointMissing:
         "A API ainda não disponibiliza a listagem de pagamentos (GET /appypay/charges). Adicione o endpoint e volte a actualizar.",
       searchPlaceholder: "Pesquisar por referência, telefone ou charge ID…",
@@ -657,6 +659,8 @@ export const messages = {
     },
     payments: {
       loadError: "Failed to load payments.",
+      botBlocked:
+        "The API blocked the request with a bot check (LiteSpeed/reCAPTCHA). The admin panel cannot complete that challenge. Ask to exclude /api/* routes (including /api/appypay/charges) from LiteSpeed bot protection.",
       endpointMissing:
         "The API does not yet expose the payments list (GET /appypay/charges). Add the endpoint and refresh.",
       searchPlaceholder: "Search by reference, phone or charge ID…",
