@@ -151,6 +151,19 @@ export function parseAppyPayCharge(raw: unknown): AppyPayCharge | null {
   };
 }
 
+export function chargeLookupKeys(charge: AppyPayCharge): string[] {
+  const keys = [
+    charge.merchantTransactionId,
+    charge.providerTransactionId,
+    charge.referenceNumber,
+    charge.chargeId,
+    charge.id != null ? String(charge.id) : null,
+  ]
+    .map((value) => value?.trim() ?? "")
+    .filter(Boolean);
+  return [...new Set(keys)];
+}
+
 export function chargeDisplayReference(charge: AppyPayCharge): string {
   return (
     charge.merchantTransactionId ??

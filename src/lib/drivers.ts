@@ -7,6 +7,7 @@ import {
   mapUserEstadoToLabel,
 } from "@/lib/users-shared";
 import { normalizeUserOnline, onlineStatusLabel } from "@/lib/users-online";
+import { resolveFirestoreImageUrl } from "@/lib/validacao-motorista";
 
 export type DriverStatus = "Ativo" | "Inativo";
 
@@ -35,6 +36,7 @@ export type DriverCard = {
   rides: number;
   earningsKz: string;
   avatarClass: string;
+  photoUrl: string | null;
   iban: string;
   vehicleModel: string;
   vehiclePlate: string;
@@ -63,7 +65,7 @@ export type UserDoc = {
   bilhete_numero?: string;
   bilhete?: string;
   carta_conducao?: string;
-  photo_url?: string;
+  photo_url?: unknown;
   isDriver?: boolean;
   motorista_aprovado?: boolean;
   documento_veiculo_aprovado?: boolean;
@@ -187,6 +189,7 @@ export function mapUserToDriverCard(
     rides: stats.completedCount,
     earningsKz: formatEarningsDisplay(earningsTotal),
     avatarClass: avatarClassForId(docId),
+    photoUrl: resolveFirestoreImageUrl(data.photo_url),
     iban: data.IBAN?.trim() || "—",
     vehicleModel: model,
     vehiclePlate: plate,

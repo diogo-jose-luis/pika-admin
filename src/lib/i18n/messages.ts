@@ -347,6 +347,12 @@ export const messages = {
       notPaidFlag: "Não confirmado",
       finalFlag: "Final",
       openFlag: "Em curso",
+      ride: "Corrida",
+      rideLoading: "A carregar dados da corrida…",
+      rideNotFound:
+        "Não foi encontrada uma corrida com esta referência de pagamento.",
+      pickup: "Recolha",
+      schedule: "Horário",
     },
     deleteModal: {
       title: "Eliminar registo?",
@@ -699,6 +705,11 @@ export const messages = {
       notPaidFlag: "Not confirmed",
       finalFlag: "Final",
       openFlag: "In progress",
+      ride: "Ride",
+      rideLoading: "Loading ride details…",
+      rideNotFound: "No ride was found for this payment reference.",
+      pickup: "Pickup",
+      schedule: "Schedule",
     },
     deleteModal: {
       title: "Delete record?",

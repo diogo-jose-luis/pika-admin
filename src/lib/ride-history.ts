@@ -109,6 +109,8 @@ export type CorridaFakeDoc = {
   viatura_cor?: string;
   localizacao_atual_lat?: number;
   localizacao_atual_lng?: number;
+  /** Referência do pagamento Multicaixa Express. */
+  referencia_pagamento?: unknown;
 };
 
 const ESTADO_TO_STATUS: Record<number, RideStatus> = {
@@ -442,5 +444,39 @@ export function mapCorridaFakeToRideRow(
     ),
     driverToPassengerComment: readComment(data.comentario_driver_passageiro),
     cancelledBy: resolveCancelledBy(data),
+  };
+}
+
+export type PaymentRideDetails = {
+  docId: string;
+  driver: string;
+  passenger: string;
+  origin: string;
+  destination: string;
+  dateLabel: string;
+  startTimeLabel: string;
+  endTimeLabel: string;
+  scheduled: boolean;
+  scheduledDateLabel: string;
+  status: RideStatus;
+};
+
+export function mapCorridaFakeToPaymentRide(
+  docId: string,
+  data: CorridaFakeDoc,
+): PaymentRideDetails {
+  const row = mapCorridaFakeToRideRow(docId, data, 0);
+  return {
+    docId: row.docId,
+    driver: row.driver,
+    passenger: row.passenger,
+    origin: row.origin,
+    destination: row.destination,
+    dateLabel: row.dateLabel,
+    startTimeLabel: row.startTimeLabel,
+    endTimeLabel: row.endTimeLabel,
+    scheduled: row.scheduled,
+    scheduledDateLabel: row.scheduledDateLabel,
+    status: row.status,
   };
 }

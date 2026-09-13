@@ -12,6 +12,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect } from "react";
 import type { PassengerRow } from "@/lib/passengers";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { cn } from "@/lib/cn";
 
 type PassengerDetailsModalProps = {
@@ -67,14 +68,11 @@ export function PassengerDetailsModal({
         </div>
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div
-            className={cn(
-              "flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold sm:h-24 sm:w-24",
-              passenger.avatarClass,
-            )}
-          >
-            {passenger.initials}
-          </div>
+          <UserAvatar
+            photoUrl={passenger.photoUrl}
+            name={passenger.name}
+            className="h-20 w-20 sm:h-24 sm:w-24"
+          />
           <div>
             <p className="text-2xl font-bold text-pika-ink sm:text-3xl">{passenger.name}</p>
             <p className="mt-1 text-sm font-medium text-pika-muted">

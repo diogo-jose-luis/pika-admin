@@ -5,6 +5,7 @@ import { DriverDetailsModal } from "@/components/drivers/DriverDetailsModal";
 import { PushNotificationOffCanvas } from "@/components/notifications/PushNotificationOffCanvas";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuth } from "@/context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -643,14 +644,11 @@ function DriverCard({
       </label>
       <div className="flex items-start justify-between gap-3 pl-7">
         <div className="flex min-w-0 flex-1 gap-3">
-          <div
-            className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-              driver.avatarClass,
-            )}
-          >
-            {driver.initials}
-          </div>
+          <UserAvatar
+            photoUrl={driver.photoUrl}
+            name={driver.name}
+            className="h-12 w-12"
+          />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
               <h3 className="truncate text-base font-bold text-pika-ink">

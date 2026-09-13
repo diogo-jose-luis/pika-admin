@@ -5,6 +5,7 @@ import { PassengerDetailsModal } from "@/components/passengers/PassengerDetailsM
 import { PushNotificationOffCanvas } from "@/components/notifications/PushNotificationOffCanvas";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuth } from "@/context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -719,14 +720,11 @@ function PassengerCard({
             aria-label={`Selecionar ${row.name}`}
             className="h-4 w-4 shrink-0 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
           />
-          <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-              row.avatarClass,
-            )}
-          >
-            {row.initials}
-          </div>
+          <UserAvatar
+            photoUrl={row.photoUrl}
+            name={row.name}
+            className="h-10 w-10"
+          />
           <div className="min-w-0">
             <p className="truncate font-bold text-pika-ink">{row.name}</p>
             <p className="truncate text-xs text-pika-muted">{row.passengerId}</p>
@@ -867,14 +865,11 @@ function PassengerTableRow({
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-              row.avatarClass,
-            )}
-          >
-            {row.initials}
-          </div>
+          <UserAvatar
+            photoUrl={row.photoUrl}
+            name={row.name}
+            className="h-10 w-10"
+          />
           <div className="min-w-0">
             <p className="truncate font-bold text-pika-ink">{row.name}</p>
             <p className="truncate text-xs font-medium text-pika-muted">

@@ -1,7 +1,10 @@
 import { refToDocId } from "@/lib/firestore-ref";
 import { formatRideDate } from "@/lib/ride-history";
 import { toDate } from "@/lib/users-shared";
-import { resolveFirestoreImageUrl } from "@/lib/validacao-motorista";
+import {
+  firestoreImageStorageValue,
+  resolveFirestoreImageUrl,
+} from "@/lib/validacao-motorista";
 
 export const ALTERAR_DADOS_COLLECTION = "alterarDados";
 
@@ -41,6 +44,7 @@ export type AlterarDadosDoc = {
   bilhete?: string;
   livrete?: string;
   bilhete_numero?: string;
+  fotografia?: unknown;
   mostrar_transito_mapa?: boolean;
   mostrar_minha_localizacao?: boolean;
 };
@@ -80,6 +84,7 @@ export type AlterarDadosDetail = AlterarDadosRow & {
     nomeEmpresa: string;
     sobre: string;
     bilheteNumero: string;
+    photoUrl: string | null;
   } | null;
 };
 
@@ -96,6 +101,7 @@ export type UserProfileSnippet = {
   nome_empresa?: string;
   sobre?: string;
   bilhete_numero?: string;
+  photo_url?: unknown;
   uid?: string;
 };
 
@@ -163,6 +169,8 @@ export function userUpdateFromAlterarDados(
   setIfString(payload, doc.bilhete, "bilhete");
   setIfString(payload, doc.livrete, "livrete");
   setIfString(payload, doc.bilhete_numero, "bilhete_numero");
+  const fotografia = firestoreImageStorageValue(doc.fotografia);
+  if (fotografia) payload.photo_url = fotografia;
   setIfBool(payload, doc.mostrar_transito_mapa, "mostrar_transito_mapa");
   setIfBool(payload, doc.mostrar_minha_localizacao, "mostrar_minha_localizacao");
   return payload;
@@ -212,6 +220,11 @@ export function mapAlterarDadosDetail(
     mostrarMinhaLocalizacao: readBool(data.mostrar_minha_localizacao),
     images: [
       {
+        key: "fotografia",
+        label: "Fotografia",
+        url: resolveFirestoreImageUrl(data.fotografia),
+      },
+      {
         key: "carta_conducao",
         label: "Carta de condução",
         url: resolveFirestoreImageUrl(data.carta_conducao),
@@ -245,6 +258,7 @@ export function mapAlterarDadosDetail(
           nomeEmpresa: user.data.nome_empresa?.trim() || "—",
           sobre: user.data.sobre?.trim() || "—",
           bilheteNumero: user.data.bilhete_numero?.trim() || "—",
+          photoUrl: resolveFirestoreImageUrl(user.data.photo_url),
         }
       : null,
   };

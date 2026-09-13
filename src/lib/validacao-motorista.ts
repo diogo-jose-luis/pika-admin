@@ -96,9 +96,29 @@ export type ValidacaoMotoristaDetail = {
 
 const FIREBASE_STORAGE_BUCKET = "pika-a83e1.appspot.com";
 
+function readImageRaw(value: unknown, depth = 0): string | null {
+  if (depth > 3) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const obj = value as Record<string, unknown>;
+  return (
+    readImageRaw(obj.url, depth + 1) ??
+    readImageRaw(obj.downloadURL, depth + 1) ??
+    readImageRaw(obj.path, depth + 1) ??
+    readImageRaw(obj.photo_url, depth + 1)
+  );
+}
+
+/** Valor em bruto (URL ou path) para gravar em campos de imagem do Firestore. */
+export function firestoreImageStorageValue(value: unknown): string | null {
+  return readImageRaw(value);
+}
+
 export function resolveFirestoreImageUrl(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
+  const trimmed = readImageRaw(value);
   if (!trimmed) return null;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   const encodedPath = encodeURIComponent(trimmed);

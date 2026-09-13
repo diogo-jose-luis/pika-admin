@@ -14,7 +14,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, type ReactNode } from "react";
 import type { DriverCard } from "@/lib/drivers";
-import { cn } from "@/lib/cn";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type DriverDetailsModalProps = {
   driver: DriverCard;
@@ -91,14 +91,11 @@ export function DriverDetailsModal({ driver, onClose }: DriverDetailsModalProps)
         </div>
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div
-            className={cn(
-              "flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold sm:h-24 sm:w-24",
-              driver.avatarClass,
-            )}
-          >
-            {driver.initials}
-          </div>
+          <UserAvatar
+            photoUrl={driver.photoUrl}
+            name={driver.name}
+            className="h-20 w-20 sm:h-24 sm:w-24"
+          />
           <div>
             <p className="text-2xl font-bold text-pika-ink sm:text-3xl">{driver.name}</p>
             <p className="mt-1 text-sm font-medium text-pika-muted">{driver.id}</p>

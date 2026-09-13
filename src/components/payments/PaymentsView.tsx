@@ -11,7 +11,9 @@ import {
   faCopy,
   faCreditCard,
   faEye,
+  faLocationDot,
   faMagnifyingGlass,
+  faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { OffCanvas } from "@/components/ui/OffCanvas";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
@@ -21,6 +23,7 @@ import { extractApiErrorMessage, isBotChallengeError } from "@/lib/api-error";
 import {
   APPYPAY_STATUSES,
   chargeDisplayReference,
+  chargeLookupKeys,
   chargeMatchesSearch,
   computeChargesSummary,
   parseAppyPayChargesResponse,
@@ -29,8 +32,11 @@ import {
 } from "@/lib/appypay-charges";
 import { cn } from "@/lib/cn";
 import { formatKz } from "@/lib/format-kz";
-import { translateAppyPayStatus, type TranslateFn } from "@/lib/i18n";
-import { formatRideDate } from "@/lib/ride-history";
+import { translateAppyPayStatus, translateRideStatus, type TranslateFn } from "@/lib/i18n";
+import {
+  formatRideDate,
+  type PaymentRideDetails,
+} from "@/lib/ride-history";
 
 const PAGE_SIZE = 20;
 
@@ -149,6 +155,116 @@ function DetailRow({
   );
 }
 
+function RideSchedule({ ride }: { ride: PaymentRideDetails }) {
+  const times =
+    ride.startTimeLabel || ride.endTimeLabel
+      ? `${ride.startTimeLabel || "—"} – ${ride.endTimeLabel || "—"}`
+      : "";
+  if (ride.scheduled && ride.scheduledDateLabel) {
+    return (
+      <>
+        {ride.scheduledDateLabel}
+        {times ? ` · ${times}` : ""}
+      </>
+    );
+  }
+  if (ride.dateLabel && times) return <>{ride.dateLabel} · {times}</>;
+  return <>{ride.dateLabel || times || "—"}</>;
+}
+
+function PaymentRideSection({
+  ride,
+  loading,
+  error,
+  t,
+}: {
+  ride: PaymentRideDetails | null;
+  loading: boolean;
+  error: string | null;
+  t: TranslateFn;
+}) {
+  return (
+    <section className="mb-3 rounded-xl border border-pika-border bg-pika-page/70 p-4">
+      <h3 className="text-sm font-bold text-pika-ink">{t("payments.ride")}</h3>
+      {loading ? (
+        <p className="mt-2 text-sm text-pika-muted">{t("payments.rideLoading")}</p>
+      ) : error ? (
+        <p className="mt-2 text-sm text-red-700">{error}</p>
+      ) : !ride ? (
+        <p className="mt-2 text-sm text-pika-muted">{t("payments.rideNotFound")}</p>
+      ) : (
+        <dl className="mt-3 space-y-3">
+          <div className="flex items-start gap-2.5">
+            <FontAwesomeIcon
+              icon={faUser}
+              className="mt-0.5 h-4 w-4 shrink-0 text-pika-primary"
+            />
+            <div className="min-w-0">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                {t("common.driver")}
+              </dt>
+              <dd className="mt-0.5 text-sm font-medium text-pika-ink">
+                {ride.driver}
+              </dd>
+            </div>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <FontAwesomeIcon
+              icon={faUser}
+              className="mt-0.5 h-4 w-4 shrink-0 text-pika-primary"
+            />
+            <div className="min-w-0">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                {t("common.passenger")}
+              </dt>
+              <dd className="mt-0.5 text-sm font-medium text-pika-ink">
+                {ride.passenger}
+              </dd>
+            </div>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <FontAwesomeIcon
+              icon={faLocationDot}
+              className="mt-0.5 h-4 w-4 shrink-0 text-pika-primary"
+            />
+            <div className="min-w-0">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                {t("payments.pickup")}
+              </dt>
+              <dd className="mt-0.5 text-sm font-medium text-pika-ink">
+                {ride.origin}
+              </dd>
+              <dt className="mt-2 text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                {t("common.destination")}
+              </dt>
+              <dd className="mt-0.5 text-sm font-medium text-pika-ink">
+                {ride.destination}
+              </dd>
+            </div>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <FontAwesomeIcon
+              icon={faClock}
+              className="mt-0.5 h-4 w-4 shrink-0 text-pika-primary"
+            />
+            <div className="min-w-0">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                {t("payments.schedule")}
+              </dt>
+              <dd className="mt-0.5 text-sm font-medium text-pika-ink">
+                <RideSchedule ride={ride} />
+              </dd>
+              <p className="mt-1 text-xs text-pika-muted">
+                {translateRideStatus(ride.status, t)}
+              </p>
+            </div>
+          </div>
+        </dl>
+      )}
+    </section>
+  );
+}
+
 export function PaymentsView() {
   const { http } = useAuth();
   const { t } = useLocale();
@@ -167,6 +283,9 @@ export function PaymentsView() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<AppyPayCharge | null>(null);
+  const [ride, setRide] = useState<PaymentRideDetails | null>(null);
+  const [rideLoading, setRideLoading] = useState(false);
+  const [rideError, setRideError] = useState<string | null>(null);
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -177,6 +296,59 @@ export function PaymentsView() {
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, statusFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (!selected) {
+      setRide(null);
+      setRideError(null);
+      setRideLoading(false);
+      return;
+    }
+
+    const refs = chargeLookupKeys(selected);
+    if (refs.length === 0) {
+      setRide(null);
+      setRideError(null);
+      setRideLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setRideLoading(true);
+    setRideError(null);
+    setRide(null);
+
+    const params = new URLSearchParams();
+    for (const ref of refs) params.append("ref", ref);
+
+    void fetch(`/api/pagamentos/corrida?${params.toString()}`, {
+      cache: "no-store",
+    })
+      .then(async (res) => {
+        const data = (await res.json()) as {
+          ride?: PaymentRideDetails | null;
+          error?: string;
+        };
+        if (!res.ok) {
+          throw new Error(data.error ?? t("payments.rideNotFound"));
+        }
+        if (!cancelled) setRide(data.ride ?? null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setRide(null);
+        setRideError(
+          err instanceof Error ? err.message : t("payments.rideNotFound"),
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setRideLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selected, t]);
 
   const loadPayments = useCallback(
     async (isRefresh = false) => {
@@ -581,6 +753,7 @@ export function PaymentsView() {
         onClose={() => setSelected(null)}
         title={t("payments.details")}
         subtitle={selected ? chargeDisplayReference(selected) : undefined}
+        wide
       >
         {selected ? (
           <div className="px-5 py-2">
@@ -600,6 +773,12 @@ export function PaymentsView() {
                 {selected.final ? t("payments.finalFlag") : t("payments.openFlag")}
               </span>
             </div>
+            <PaymentRideSection
+              ride={ride}
+              loading={rideLoading}
+              error={rideError}
+              t={t}
+            />
             <DetailRow
               label={t("payments.reference")}
               value={selected.merchantTransactionId}

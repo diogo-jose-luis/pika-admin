@@ -6,6 +6,7 @@ import {
   mapUserEstadoToLabel,
   toDate,
 } from "@/lib/users-shared";
+import { resolveFirestoreImageUrl } from "@/lib/validacao-motorista";
 
 export type PassengerStatus = "Ativo" | "Inativo";
 
@@ -17,6 +18,7 @@ export type PassengerRow = {
   name: string;
   initials: string;
   avatarClass: string;
+  photoUrl: string | null;
   email: string;
   phone: string;
   rides: number;
@@ -42,6 +44,7 @@ export type PassengerUserDoc = {
   created_time?: unknown;
   estado?: number;
   isDriver?: boolean;
+  photo_url?: unknown;
 };
 
 export type PassengerRideStats = {
@@ -72,6 +75,7 @@ export function mapUserToPassengerRow(
     name,
     initials: initialsFromName(name),
     avatarClass: avatarClassForId(docId),
+    photoUrl: resolveFirestoreImageUrl(data.photo_url),
     email: data.email?.trim() || "—",
     phone: data.phone_number?.trim() || "—",
     rides: stats.completedCount,
