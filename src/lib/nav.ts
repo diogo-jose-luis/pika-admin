@@ -15,6 +15,7 @@ export const sidebarNav: NavItem[] = [
   { label: "Passageiros", href: "/passageiros", icon: "male" },
   { label: "Financeiro", href: "/financeiro", icon: "money" },
   { label: "Pagamentos", href: "/pagamentos", icon: "credit-card" },
+  { label: "Reembolsos", href: "/reembolsos", icon: "exchange" },
   { label: "Mapa ao vivo", href: "/mapa-ao-vivo", icon: "map" },
   { label: "Relatórios", href: "/relatorios", icon: "file-text" },
   { label: "Modelo de Viaturas", href: "/modelo-viaturas", icon: "automobile" },
@@ -57,6 +58,10 @@ const headerOverrides: Record<string, { title: string; subtitle: string }> = {
   "/pagamentos": {
     title: "Pagamentos",
     subtitle: "Multicaixa Express via AppyPay",
+  },
+  "/reembolsos": {
+    title: "Reembolsos",
+    subtitle: "Ganhos de corrida a reembolsar aos motoristas",
   },
   "/motoristas": {
     title: "Gestão de Motoristas",

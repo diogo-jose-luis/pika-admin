@@ -94,55 +94,22 @@ function RatingBlock({
   );
 }
 
-export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
+export function RideDetailsBody({ ride }: { ride: RideRow }) {
   const { t } = useLocale();
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
-      role="presentation"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="ride-details-title"
-        className="max-h-[min(92vh,800px)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-pika-card p-6 shadow-xl sm:p-8"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="mb-6 flex items-start justify-between gap-3">
-          <div>
-            <h2 id="ride-details-title" className="text-xl font-bold text-pika-ink">
-              {t("rides.detailsTitle", { id: ride.id })}
-            </h2>
-            <p className="mt-1 text-sm text-pika-muted">{ride.dateLabel || "—"}</p>
-            {ride.scheduled && ride.scheduledDateLabel ? (
-              <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-sky-800">
-                <FontAwesomeIcon icon={faCalendarDays} className="h-3.5 w-3.5" />
-                {t("rides.scheduledFor", { date: ride.scheduledDateLabel })}
-              </p>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-pika-border text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
-            aria-label={t("common.close")}
-          >
-            <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
-          </button>
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm text-pika-muted">{ride.dateLabel || "—"}</p>
+        {ride.scheduled && ride.scheduledDateLabel ? (
+          <p className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-800">
+            <FontAwesomeIcon icon={faCalendarDays} className="h-3.5 w-3.5" />
+            {t("rides.scheduledFor", { date: ride.scheduledDateLabel })}
+          </p>
+        ) : null}
+      </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span
             className={cn(
               "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
@@ -175,7 +142,7 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
         </div>
 
         {ride.startTimeLabel || ride.endTimeLabel || ride.durationLabel ? (
-          <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-pika-border bg-pika-page/60 px-4 py-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-pika-border bg-pika-page/60 px-4 py-3 text-sm">
             <span className="inline-flex items-center gap-2 text-pika-ink">
               <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5 text-pika-primary" />
               <span>
@@ -196,7 +163,7 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
         ) : null}
 
         {ride.note ? (
-          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50/80 p-4">
+          <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
               {t("common.note")}
             </p>
@@ -207,7 +174,7 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
         ) : null}
 
         {ride.status === "Cancelada" && ride.cancelledBy ? (
-          <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
               <FontAwesomeIcon icon={faBan} className="h-4 w-4" />
             </span>
@@ -293,7 +260,7 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
           </div>
         </DetailField>
 
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           <RatingBlock
             title={t("rides.passengerRating")}
             subtitle={t("rides.passengerRatingHint")}
@@ -307,6 +274,51 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
             comment={ride.driverToPassengerComment}
           />
         </div>
+    </div>
+  );
+}
+
+export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
+  const { t } = useLocale();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ride-details-title"
+        className="max-h-[min(92vh,800px)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-pika-card p-6 shadow-xl sm:p-8"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-6 flex items-start justify-between gap-3">
+          <div>
+            <h2 id="ride-details-title" className="text-xl font-bold text-pika-ink">
+              {t("rides.detailsTitle", { id: ride.id })}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-pika-border text-pika-muted transition hover:bg-pika-page hover:text-pika-ink"
+            aria-label={t("common.close")}
+          >
+            <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+          </button>
+        </div>
+        <RideDetailsBody ride={ride} />
       </div>
     </div>
   );

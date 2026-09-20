@@ -205,6 +205,7 @@ const NAV_HREF_KEYS: Record<string, string> = {
   "/passageiros": "nav.passengers",
   "/financeiro": "nav.finance",
   "/pagamentos": "nav.payments",
+  "/reembolsos": "nav.refunds",
   "/mapa-ao-vivo": "nav.liveMap",
   "/relatorios": "nav.reports",
   "/modelo-viaturas": "nav.vehicleModels",
@@ -253,6 +254,10 @@ const PAGE_COPY: Record<string, PageCopy> = {
   "/pagamentos": {
     titleKey: "pages.paymentsTitle",
     subtitleKey: "pages.paymentsSubtitle",
+  },
+  "/reembolsos": {
+    titleKey: "pages.refundsTitle",
+    subtitleKey: "pages.refundsSubtitle",
   },
   "/motoristas": {
     titleKey: "pages.driversTitle",

@@ -21,6 +21,7 @@ const FINANCEIRO_PATHS = new Set([
   "/financeiro",
   "/financeiro/transacoes",
   "/pagamentos",
+  "/reembolsos",
 ]);
 
 const ADMIN_PATHS = new Set([
@@ -35,6 +36,7 @@ const ADMIN_PATHS = new Set([
   "/alterar-dados",
   "/sos",
   "/pagamentos",
+  "/reembolsos",
   "/configuracoes",
 ]);
 
@@ -116,6 +118,7 @@ export function fallbackRouteForNivel(nivel: number): string {
     "/mapa-ao-vivo",
     "/financeiro",
     "/pagamentos",
+    "/reembolsos",
     "/historico-corridas",
     "/motoristas",
     "/sos",
