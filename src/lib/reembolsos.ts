@@ -16,7 +16,7 @@ import {
 } from "@/lib/ride-history";
 
 export const REFUND_TIPO_ENTRADA = 1;
-export const REFUND_SALDO_TIPO_CORRIDA = 2;
+export const REFUND_SALDO_TIPO_CORRIDA = 1;
 
 export type RefundRow = {
   id: string;
