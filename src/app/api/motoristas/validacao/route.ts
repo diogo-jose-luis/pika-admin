@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import { getFirestore } from "@/lib/firebase-admin";
+import { sendUserPushNotifications } from "@/lib/push-notifications";
 import { normalizeUserValidacao } from "@/lib/users-validacao";
 
 export const dynamic = "force-dynamic";
 
 const BATCH_LIMIT = 450;
+
+const AUTHORIZE_PUSH = {
+  title: "Motorista autorizado",
+  body: "A sua conta de motorista foi autorizada. Já pode aceitar corridas.",
+} as const;
+
+const DEAUTHORIZE_PUSH = {
+  title: "Autorização removida",
+  body: "A sua autorização de motorista foi removida. Não poderá aceitar corridas até nova autorização.",
+} as const;
 
 function parseAuthorized(body: {
   authorized?: unknown;
@@ -55,10 +66,20 @@ export async function PATCH(request: Request) {
       await batch.commit();
     }
 
+    const push = authorized ? AUTHORIZE_PUSH : DEAUTHORIZE_PUSH;
+    const { processed: notified } = await sendUserPushNotifications(
+      ids.map((userId) => ({
+        userId,
+        title: push.title,
+        body: push.body,
+      })),
+    );
+
     return NextResponse.json({
       updated: ids.length,
       authorized,
       validacao: authorized ? 1 : 0,
+      notified,
     });
   } catch (error) {
     console.error("[motoristas validacao PATCH]", error);
