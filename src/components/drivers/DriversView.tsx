@@ -23,6 +23,8 @@ import {
   faStar,
   faUserCheck,
   faUserMinus,
+  faUserShield,
+  faUserSlash,
   faUserTag,
 } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -64,6 +66,21 @@ function DriverOnlineBadge({ online }: { online: boolean }) {
       )}
     >
       {online ? "Online" : "Offline"}
+    </span>
+  );
+}
+
+function DriverAuthorizedBadge({ authorized }: { authorized: boolean }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2.5 py-1 text-xs font-semibold",
+        authorized
+          ? "bg-violet-50 text-violet-700 ring-1 ring-violet-100"
+          : "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
+      )}
+    >
+      {authorized ? "Autorizado" : "Não autorizado"}
     </span>
   );
 }
@@ -112,9 +129,16 @@ export function DriversView() {
         throw new Error(data.error ?? "Erro ao carregar motoristas.");
       }
 
-      setDrivers(data.drivers ?? []);
+      const nextDrivers = data.drivers ?? [];
+      setDrivers(nextDrivers);
       setSummary(data.summary ?? EMPTY_SUMMARY);
       setSelectedIds(new Set());
+      setDetailDriver((current) => {
+        if (!current) return current;
+        return (
+          nextDrivers.find((d) => d.userDocId === current.userDocId) ?? current
+        );
+      });
     } catch (err) {
       setLoadError(
         err instanceof Error ? err.message : "Erro ao carregar motoristas.",
@@ -220,6 +244,42 @@ export function DriversView() {
         err instanceof Error
           ? err.message
           : "Não foi possível atualizar a disponibilidade online.",
+      );
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const applyBulkAuthorization = async (authorized: boolean) => {
+    if (selectedIds.size === 0) return;
+    setBulkSaving(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/motoristas/validacao", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: [...selectedIds],
+          authorized,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(
+          data.error ??
+            (authorized
+              ? "Não foi possível autorizar os motoristas."
+              : "Não foi possível desautorizar os motoristas."),
+        );
+      }
+      await loadDrivers(true);
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : authorized
+            ? "Não foi possível autorizar os motoristas."
+            : "Não foi possível desautorizar os motoristas.",
       );
     } finally {
       setBulkSaving(false);
@@ -500,6 +560,24 @@ export function DriversView() {
             </button>
             <button
               type="button"
+              onClick={() => void applyBulkAuthorization(true)}
+              disabled={bulkSaving}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
+              {bulkSaving ? "A aplicar…" : "Autorizar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void applyBulkAuthorization(false)}
+              disabled={bulkSaving}
+              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-pika-card px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FontAwesomeIcon icon={faUserSlash} className="h-3.5 w-3.5" />
+              {bulkSaving ? "A aplicar…" : "Desautorizar"}
+            </button>
+            <button
+              type="button"
               onClick={() => void applyBulkToPassenger()}
               disabled={bulkSaving}
               className="inline-flex items-center gap-2 rounded-xl border border-pika-primary bg-pika-card px-4 py-2 text-sm font-semibold text-pika-primary shadow-sm transition hover:bg-pika-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
@@ -668,6 +746,7 @@ function DriverCard({
         <div ref={menuRef} className="relative flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           <DriverStatusBadge status={driver.status} />
           <DriverOnlineBadge online={driver.online} />
+          <DriverAuthorizedBadge authorized={driver.authorized} />
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}

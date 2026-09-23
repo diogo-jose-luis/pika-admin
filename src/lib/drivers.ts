@@ -7,6 +7,10 @@ import {
   mapUserEstadoToLabel,
 } from "@/lib/users-shared";
 import { normalizeUserOnline, onlineStatusLabel } from "@/lib/users-online";
+import {
+  authorizationStatusLabel,
+  isUserAuthorized,
+} from "@/lib/users-validacao";
 import { resolveFirestoreImageUrl } from "@/lib/validacao-motorista";
 
 export type DriverStatus = "Ativo" | "Inativo";
@@ -24,6 +28,8 @@ export type DriverCard = {
   initials: string;
   verified: boolean;
   status: DriverStatus;
+  authorized: boolean;
+  authorizedLabel: "Autorizado" | "Não autorizado";
   online: boolean;
   onlineLabel: "Online" | "Offline";
   lastLocationLabel: string;
@@ -67,6 +73,7 @@ export type UserDoc = {
   carta_conducao?: string;
   photo_url?: unknown;
   isDriver?: boolean;
+  validacao?: number | boolean | string;
   motorista_aprovado?: boolean;
   documento_veiculo_aprovado?: boolean;
   documento_motorista_aprovado?: boolean;
@@ -166,6 +173,7 @@ export function mapUserToDriverCard(
     "—";
   const plate = vehicle?.matricula?.trim() || "—";
   const online = normalizeUserOnline(data.online);
+  const authorized = isUserAuthorized(data.validacao);
   const location = formatDriverLastLocation(
     data.localizacao_atual_lat,
     data.localizacao_atual_lng,
@@ -178,6 +186,8 @@ export function mapUserToDriverCard(
     initials: initialsFromName(name),
     verified,
     status: mapUserEstadoToLabel(data.estado),
+    authorized,
+    authorizedLabel: authorizationStatusLabel(authorized),
     online,
     onlineLabel: onlineStatusLabel(online),
     lastLocationLabel: location.label,
@@ -237,6 +247,7 @@ export function driverMatchesSearch(driver: DriverCard, query: string): boolean 
     String(driver.rides),
     driver.earningsKz,
     driver.status,
+    driver.authorizedLabel,
     driver.onlineLabel,
     driver.lastLocationLabel,
     driver.iban,

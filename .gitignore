@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+.static-export-park/
 
 # production
 /build

@@ -12,7 +12,11 @@ import React, {
 import axios, { AxiosError } from "axios";
 import type { AuthUser } from "@/lib/auth-types";
 import { parseAuthUser, unwrapApiData } from "@/lib/auth-types";
-import { API_PROXY_PATH, resolveApiBaseUrl } from "@/lib/apiBaseUrl";
+import {
+  IS_STATIC_EXPORT,
+  resolveApiBaseUrl,
+  resolveBrowserApiBaseUrl,
+} from "@/lib/apiBaseUrl";
 
 interface AuthType {
   user: AuthUser | null;
@@ -33,6 +37,7 @@ const STORAGE_USER = "user";
 async function persistSession(token: string, user: AuthUser) {
   localStorage.setItem(STORAGE_TOKEN, token);
   localStorage.setItem(STORAGE_USER, JSON.stringify(user));
+  if (IS_STATIC_EXPORT) return;
   await fetch("/api/auth/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -47,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isLoggingOutRef = useRef(false);
 
   const api_base_url = resolveApiBaseUrl();
-  const api_url = API_PROXY_PATH;
+  const api_url = resolveBrowserApiBaseUrl();
 
   useEffect(() => {
     const storedToken = localStorage.getItem(STORAGE_TOKEN);
@@ -97,7 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const currentToken = token;
     localStorage.removeItem(STORAGE_TOKEN);
     localStorage.removeItem(STORAGE_USER);
-    void fetch("/api/auth/session", { method: "DELETE" });
+    if (!IS_STATIC_EXPORT) {
+      void fetch("/api/auth/session", { method: "DELETE" });
+    }
     if (currentToken) {
       void http.post("/logout").catch(() => undefined);
     }

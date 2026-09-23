@@ -1,0 +1,29 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Preserve Authorization when PHP runs as CGI/LiteSpeed.
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Proxy Laravel (API online) — usado se o frontend chamar /api/api-proxy/*
+  RewriteRule ^api/api-proxy(?:/(.*))?$ api-proxy.php?proxy_path=$1 [QSA,L]
+
+  # Bookmarks antigos: /validacao-motoristas/:id → página estática com query
+  RewriteCond %{REQUEST_URI} !^/validacao-motoristas/revisao
+  RewriteRule ^validacao-motoristas/([^/]+)/?$ /validacao-motoristas/revisao?id=$1 [R=302,L]
+
+  # /dashboard → dashboard.html (export Next sem trailingSlash)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+)$ $1.html [L]
+
+  # /dashboard/ → dashboard.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  RewriteRule ^(.+)/$ $1.html [L]
+</IfModule>
+
+DirectoryIndex index.html

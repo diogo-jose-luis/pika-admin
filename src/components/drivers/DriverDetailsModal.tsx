@@ -10,11 +10,13 @@ import {
   faLocationDot,
   faPhone,
   faStar,
+  faUserShield,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, type ReactNode } from "react";
 import type { DriverCard } from "@/lib/drivers";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { cn } from "@/lib/cn";
 
 type DriverDetailsModalProps = {
   driver: DriverCard;
@@ -99,10 +101,23 @@ export function DriverDetailsModal({ driver, onClose }: DriverDetailsModalProps)
           <div>
             <p className="text-2xl font-bold text-pika-ink sm:text-3xl">{driver.name}</p>
             <p className="mt-1 text-sm font-medium text-pika-muted">{driver.id}</p>
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-pika-ink">
-              <FontAwesomeIcon icon={faStar} className="h-4 w-4 text-amber-500" />
-              <span className="font-semibold">{driver.rating}</span>
-              <span className="text-pika-muted">Avaliação</span>
+            <p className="mt-2 flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                  driver.authorized
+                    ? "bg-violet-50 text-violet-700 ring-1 ring-violet-100"
+                    : "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
+                )}
+              >
+                <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
+                {driver.authorizedLabel}
+              </span>
+              <span className="flex items-center gap-1.5 text-sm text-pika-ink">
+                <FontAwesomeIcon icon={faStar} className="h-4 w-4 text-amber-500" />
+                <span className="font-semibold">{driver.rating}</span>
+                <span className="text-pika-muted">Avaliação</span>
+              </span>
             </p>
           </div>
         </div>
@@ -112,6 +127,11 @@ export function DriverDetailsModal({ driver, onClose }: DriverDetailsModalProps)
             <InfoRow icon={faEnvelope} label="Email" value={driver.email} />
             <InfoRow icon={faPhone} label="Telefone" value={driver.phone} />
             <InfoRow icon={faBuildingColumns} label="IBAN" value={driver.iban} />
+            <InfoRow
+              icon={faUserShield}
+              label="Autorização"
+              value={driver.authorizedLabel}
+            />
             <InfoRow
               icon={faGaugeHigh}
               label="Disponibilidade"
