@@ -711,39 +711,20 @@ function DriverCard({
         selected ? "border-pika-primary ring-2 ring-pika-primary/20" : "border-pika-border",
       )}
     >
-      <label className="absolute left-3 top-3 z-10 flex cursor-pointer items-center">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onToggleSelect}
-          aria-label={`Selecionar ${driver.name}`}
-          className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
-        />
-      </label>
-      <div className="flex items-start justify-between gap-3 pl-7">
-        <div className="flex min-w-0 flex-1 gap-3">
-          <UserAvatar
-            photoUrl={driver.photoUrl}
-            name={driver.name}
-            className="h-12 w-12"
+      <div className="flex items-start justify-between gap-2">
+        <label className="mt-1.5 flex cursor-pointer items-center">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            aria-label={`Selecionar ${driver.name}`}
+            className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
           />
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="truncate text-base font-bold text-pika-ink">
-                {driver.name}
-              </h3>
-              {driver.verified ? (
-                <FontAwesomeIcon
-                  icon={faCircleCheck}
-                  className="h-4 w-4 shrink-0 text-emerald-500"
-                  title="Verificado"
-                />
-              ) : null}
-            </div>
-            <p className="mt-0.5 text-xs font-medium text-pika-muted">{driver.id}</p>
-          </div>
-        </div>
-        <div ref={menuRef} className="relative flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        </label>
+        <div
+          ref={menuRef}
+          className="relative flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1.5"
+        >
           <DriverStatusBadge status={driver.status} />
           <DriverOnlineBadge online={driver.online} />
           <DriverAuthorizedBadge authorized={driver.authorized} />
@@ -789,7 +770,32 @@ function DriverCard({
         </div>
       </div>
 
-      <ul className="mt-4 space-y-2.5 pl-7 text-sm text-pika-ink">
+      <div className="mt-3 flex min-w-0 items-start gap-3">
+        <UserAvatar
+          photoUrl={driver.photoUrl}
+          name={driver.name}
+          className="h-12 w-12"
+        />
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h3 className="truncate text-base font-bold text-pika-ink">
+              {driver.name}
+            </h3>
+            {driver.verified ? (
+              <FontAwesomeIcon
+                icon={faCircleCheck}
+                className="h-4 w-4 shrink-0 text-emerald-500"
+                title="Verificado"
+              />
+            ) : null}
+          </div>
+          <p className="mt-0.5 truncate text-xs font-medium text-pika-muted">
+            {driver.id}
+          </p>
+        </div>
+      </div>
+
+      <ul className="mt-4 space-y-2.5 text-sm text-pika-ink">
         <li className="flex items-start gap-2.5 text-pika-muted">
           <FontAwesomeIcon
             icon={faEnvelope}
