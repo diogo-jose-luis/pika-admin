@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBell,
+  faCreditCard,
   faDollarSign,
   faFloppyDisk,
   faListCheck,
@@ -13,6 +14,7 @@ import {
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import { AdminUsersTab } from "@/components/settings/AdminUsersTab";
+import { PaymentApisTab } from "@/components/settings/PaymentApisTab";
 import { PriceSimulatorCard } from "@/components/settings/PriceSimulatorCard";
 import { PricesCategoriesTab } from "@/components/settings/PricesCategoriesTab";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +31,7 @@ const TABS: { id: TabId; label: string; icon: IconDefinition }[] = [
   { id: "notifications", label: "Notificações", icon: faBell },
   { id: "rules", label: "Regras do Sistema", icon: faShieldHalved },
   { id: "prices", label: "Preços e Categorias", icon: faListCheck },
+  { id: "paymentApis", label: "API de Pagamentos", icon: faCreditCard },
 ];
 
 function SettingsSwitch({
@@ -189,6 +192,7 @@ export function SettingsView() {
         />
       ) : null}
       {tab === "prices" ? <PricesCategoriesTab /> : null}
+      {tab === "paymentApis" ? <PaymentApisTab /> : null}
     </div>
   );
 }

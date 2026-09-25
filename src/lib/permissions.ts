@@ -6,7 +6,13 @@ import {
 } from "@/lib/auth-types";
 import type { NavItem } from "@/lib/nav";
 
-export type SettingsTabId = "fees" | "users" | "notifications" | "rules" | "prices";
+export type SettingsTabId =
+  | "fees"
+  | "users"
+  | "notifications"
+  | "rules"
+  | "prices"
+  | "paymentApis";
 
 const OPERADOR_PATHS = new Set([
   "/dashboard",
