@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$upstreamBase = 'https://api-pika.hope-system.app/api/';
+$upstreamBase = 'https://api-pika.altrad-prezioso.ao/api/';
 $path = isset($_GET['proxy_path']) ? (string) $_GET['proxy_path'] : '';
 $path = str_replace('\\', '/', $path);
 $path = ltrim($path, '/');
