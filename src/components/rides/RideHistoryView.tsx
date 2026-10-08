@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RideDetailsModal } from "@/components/rides/RideDetailsModal";
 import { RideNoteModal } from "@/components/rides/RideNoteModal";
 import { RideStatusOffCanvas } from "@/components/rides/RideStatusOffCanvas";
+import { RideTrackingOffCanvas } from "@/components/rides/RideTrackingOffCanvas";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { StarRating } from "@/components/ui/StarRating";
@@ -23,6 +24,7 @@ import {
   faList,
   faLocationDot,
   faMagnifyingGlass,
+  faMapLocationDot,
   faNoteSticky,
   faPalette,
   faPenToSquare,
@@ -32,6 +34,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { canManageAdminUsers } from "@/lib/permissions";
 import {
+  isInProgressEstado,
   rideMatchesDateRange,
   rideMatchesSearch,
   type RideRow,
@@ -161,6 +164,7 @@ export function RideHistoryView() {
   const [detailRide, setDetailRide] = useState<RideRow | null>(null);
   const [noteRide, setNoteRide] = useState<RideRow | null>(null);
   const [editRide, setEditRide] = useState<RideRow | null>(null);
+  const [trackRide, setTrackRide] = useState<RideRow | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -482,6 +486,11 @@ export function RideHistoryView() {
                     onToggleSelect={() => toggleRowSelection(row.docId)}
                     onViewDetails={() => setDetailRide(row)}
                     onViewNote={() => setNoteRide(row)}
+                    onTrack={
+                      isInProgressEstado(row.estado)
+                        ? () => setTrackRide(row)
+                        : undefined
+                    }
                     onEditStatus={
                       isSuperAdmin ? () => setEditRide(row) : undefined
                     }
@@ -513,6 +522,11 @@ export function RideHistoryView() {
                 onToggleSelect={() => toggleRowSelection(row.docId)}
                 onViewDetails={() => setDetailRide(row)}
                 onViewNote={() => setNoteRide(row)}
+                onTrack={
+                  isInProgressEstado(row.estado)
+                    ? () => setTrackRide(row)
+                    : undefined
+                }
                 onEditStatus={
                   isSuperAdmin ? () => setEditRide(row) : undefined
                 }
@@ -612,6 +626,13 @@ export function RideHistoryView() {
         />
       ) : null}
 
+      {trackRide ? (
+        <RideTrackingOffCanvas
+          ride={trackRide}
+          onClose={() => setTrackRide(null)}
+        />
+      ) : null}
+
       {editRide && isSuperAdmin ? (
         <RideStatusOffCanvas
           ride={editRide}
@@ -684,12 +705,38 @@ function ViewModeToggle({
   );
 }
 
+function TrackRideButton({
+  rideId,
+  onClick,
+}: {
+  rideId: number;
+  onClick: () => void;
+}) {
+  const { t } = useLocale();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 transition hover:bg-blue-50"
+      aria-label={t("rides.trackAria", { id: rideId })}
+      title={t("rides.track")}
+    >
+      <FontAwesomeIcon icon={faMapLocationDot} className="h-4 w-4" />
+      <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+      </span>
+    </button>
+  );
+}
+
 function RideHistoryCard({
   row,
   selected,
   onToggleSelect,
   onViewDetails,
   onViewNote,
+  onTrack,
   onEditStatus,
   onDelete,
   deleteDisabled,
@@ -699,6 +746,7 @@ function RideHistoryCard({
   onToggleSelect: () => void;
   onViewDetails: () => void;
   onViewNote: () => void;
+  onTrack?: () => void;
   onEditStatus?: () => void;
   onDelete?: () => void;
   deleteDisabled: boolean;
@@ -756,6 +804,7 @@ function RideHistoryCard({
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
+          {onTrack ? <TrackRideButton rideId={row.id} onClick={onTrack} /> : null}
           {onEditStatus ? (
             <button
               type="button"
@@ -860,6 +909,7 @@ function RideTableRow({
   onToggleSelect,
   onViewDetails,
   onViewNote,
+  onTrack,
   onEditStatus,
   onDelete,
   deleteDisabled,
@@ -869,6 +919,7 @@ function RideTableRow({
   onToggleSelect: () => void;
   onViewDetails: () => void;
   onViewNote: () => void;
+  onTrack?: () => void;
   onEditStatus?: () => void;
   onDelete?: () => void;
   deleteDisabled: boolean;
@@ -921,6 +972,7 @@ function RideTableRow({
           >
             <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
           </button>
+          {onTrack ? <TrackRideButton rideId={row.id} onClick={onTrack} /> : null}
           {onEditStatus ? (
             <button
               type="button"
