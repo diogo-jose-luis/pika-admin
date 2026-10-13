@@ -12,7 +12,8 @@ export type SettingsTabId =
   | "notifications"
   | "rules"
   | "prices"
-  | "paymentApis";
+  | "paymentApis"
+  | "calls";
 
 const OPERADOR_PATHS = new Set([
   "/dashboard",

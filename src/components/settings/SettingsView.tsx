@@ -8,12 +8,14 @@ import {
   faDollarSign,
   faFloppyDisk,
   faListCheck,
+  faPhone,
   faShieldHalved,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import { AdminUsersTab } from "@/components/settings/AdminUsersTab";
+import { CallDefinitionTab } from "@/components/settings/CallDefinitionTab";
 import { PaymentApisTab } from "@/components/settings/PaymentApisTab";
 import { PriceSimulatorCard } from "@/components/settings/PriceSimulatorCard";
 import { PricesCategoriesTab } from "@/components/settings/PricesCategoriesTab";
@@ -32,6 +34,7 @@ const TABS: { id: TabId; label: string; icon: IconDefinition }[] = [
   { id: "rules", label: "Regras do Sistema", icon: faShieldHalved },
   { id: "prices", label: "Preços e Categorias", icon: faListCheck },
   { id: "paymentApis", label: "API de Pagamentos", icon: faCreditCard },
+  { id: "calls", label: "Definição de Chamadas", icon: faPhone },
 ];
 
 function SettingsSwitch({
@@ -193,6 +196,7 @@ export function SettingsView() {
       ) : null}
       {tab === "prices" ? <PricesCategoriesTab /> : null}
       {tab === "paymentApis" ? <PaymentApisTab /> : null}
+      {tab === "calls" ? <CallDefinitionTab /> : null}
     </div>
   );
 }
