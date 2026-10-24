@@ -15,6 +15,12 @@ import {
   faMagnifyingGlass,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  DEFAULT_TABLE_PAGE_SIZE,
+  PageSizeSelect,
+  RecordExportControls,
+  type ExportField,
+} from "@/components/export/RecordExportControls";
 import { OffCanvas } from "@/components/ui/OffCanvas";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { useAuth } from "@/context/AuthContext";
@@ -38,7 +44,54 @@ import {
   type PaymentRideDetails,
 } from "@/lib/ride-history";
 
-const PAGE_SIZE = 20;
+function paymentKey(row: AppyPayCharge): string {
+  if (row.chargeId) return `c:${row.chargeId}`;
+  if (row.merchantTransactionId) return `m:${row.merchantTransactionId}`;
+  if (row.id != null) return `i:${row.id}`;
+  return `r:${row.createdAt ?? ""}:${row.amount}:${row.phoneNumber ?? ""}`;
+}
+
+function paymentExportValue(
+  row: AppyPayCharge,
+  key: string,
+  t: TranslateFn,
+): string {
+  const dash = "—";
+  switch (key) {
+    case "reference":
+      return chargeDisplayReference(row);
+    case "description":
+      return row.description?.trim() || dash;
+    case "providerRef":
+      return row.providerTransactionId ?? row.referenceNumber ?? dash;
+    case "amount":
+      return `${formatKz(row.amount)} ${row.currency}`.trim();
+    case "currency":
+      return row.currency || dash;
+    case "phone":
+      return row.phoneNumber ?? dash;
+    case "status":
+      return translateAppyPayStatus(row.status, t);
+    case "createdAt":
+      return formatRideDate(row.createdAt) || row.createdAt || dash;
+    case "paidAt":
+      return formatRideDate(row.paidAt) || row.paidAt || dash;
+    case "method":
+      return row.paymentMethod ?? dash;
+    case "source":
+      return row.source ?? dash;
+    case "chargeId":
+      return row.chargeId ?? dash;
+    case "message":
+      return row.statusMessage ?? dash;
+    case "paid":
+      return row.paid ? t("payments.paidFlag") : t("payments.notPaidFlag");
+    case "final":
+      return row.final ? t("payments.finalFlag") : t("payments.openFlag");
+    default:
+      return dash;
+  }
+}
 
 function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) {
@@ -272,6 +325,8 @@ export function PaymentsView() {
   const [summary, setSummary] = useState<AppyPayChargesSummary | null>(null);
   const [paginated, setPaginated] = useState(false);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_TABLE_PAGE_SIZE);
+  const [listPerPage, setListPerPage] = useState(DEFAULT_TABLE_PAGE_SIZE);
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
@@ -282,6 +337,7 @@ export function PaymentsView() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Map<string, AppyPayCharge>>(new Map());
   const [selected, setSelected] = useState<AppyPayCharge | null>(null);
   const [ride, setRide] = useState<PaymentRideDetails | null>(null);
   const [rideLoading, setRideLoading] = useState(false);
@@ -295,6 +351,10 @@ export function PaymentsView() {
 
   useEffect(() => {
     setPage(1);
+  }, [debouncedSearch, statusFilter, dateFrom, dateTo, pageSize]);
+
+  useEffect(() => {
+    setPicked(new Map());
   }, [debouncedSearch, statusFilter, dateFrom, dateTo]);
 
   useEffect(() => {
@@ -360,7 +420,7 @@ export function PaymentsView() {
       try {
         const params: Record<string, string | number> = {
           page,
-          per_page: PAGE_SIZE,
+          per_page: pageSize,
         };
         if (debouncedSearch.trim()) params.q = debouncedSearch.trim();
         if (statusFilter !== "all") params.status = statusFilter;
@@ -375,6 +435,7 @@ export function PaymentsView() {
 
         setItems(parsed.items);
         setPaginated(parsed.paginated);
+        setListPerPage(parsed.paginated ? parsed.perPage : pageSize);
         setLastPage(parsed.paginated ? parsed.lastPage : 1);
         setTotal(parsed.total);
         setSummary(parsed.summary);
@@ -404,7 +465,7 @@ export function PaymentsView() {
         else setLoading(false);
       }
     },
-    [debouncedSearch, dateFrom, dateTo, http, page, statusFilter, t],
+    [debouncedSearch, dateFrom, dateTo, http, page, pageSize, statusFilter, t],
   );
 
   useEffect(() => {
@@ -424,19 +485,71 @@ export function PaymentsView() {
 
   const clientPageItems = useMemo(() => {
     if (paginated) return visibleItems;
-    const start = (page - 1) * PAGE_SIZE;
-    return visibleItems.slice(start, start + PAGE_SIZE);
-  }, [page, paginated, visibleItems]);
+    const start = (page - 1) * pageSize;
+    return visibleItems.slice(start, start + pageSize);
+  }, [page, pageSize, paginated, visibleItems]);
 
   const clientLastPage = paginated
     ? lastPage
-    : Math.max(1, Math.ceil(visibleItems.length / PAGE_SIZE));
+    : Math.max(1, Math.ceil(visibleItems.length / pageSize));
   const clientTotal = paginated ? total : visibleItems.length;
   const displaySummary = summary ?? computeChargesSummary(paginated ? items : visibleItems);
   const summaryFromPageOnly = paginated && !summary;
   const pages = pageNumbers(page, clientLastPage);
-  const showingFrom = clientTotal === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const showingTo = Math.min(page * PAGE_SIZE, clientTotal);
+  const rangeSize = paginated ? listPerPage : pageSize;
+  const showingFrom = clientTotal === 0 ? 0 : (page - 1) * rangeSize + 1;
+  const showingTo =
+    clientTotal === 0
+      ? 0
+      : paginated
+        ? Math.min((page - 1) * rangeSize + clientPageItems.length, clientTotal)
+        : Math.min(page * pageSize, clientTotal);
+  const pageKeys = clientPageItems.map(paymentKey);
+  const allPageSelected =
+    pageKeys.length > 0 && pageKeys.every((key) => picked.has(key));
+
+  const paymentFields = useMemo<ExportField[]>(
+    () => [
+      { key: "reference", label: t("payments.reference") },
+      { key: "description", label: t("payments.description") },
+      { key: "providerRef", label: t("payments.providerRef") },
+      { key: "amount", label: t("payments.amount") },
+      { key: "phone", label: t("payments.phone") },
+      { key: "status", label: t("payments.status") },
+      { key: "createdAt", label: t("payments.createdAt") },
+      { key: "paidAt", label: t("payments.paidAt"), defaultSelected: false },
+      { key: "method", label: t("payments.method"), defaultSelected: false },
+      { key: "source", label: t("payments.source"), defaultSelected: false },
+      { key: "chargeId", label: t("payments.chargeId"), defaultSelected: false },
+      { key: "message", label: t("payments.message"), defaultSelected: false },
+      { key: "paid", label: t("payments.paidFlag"), defaultSelected: false },
+      { key: "final", label: t("payments.finalFlag"), defaultSelected: false },
+      { key: "currency", label: t("payments.currency"), defaultSelected: false },
+    ],
+    [t],
+  );
+
+  const togglePicked = (row: AppyPayCharge) => {
+    const key = paymentKey(row);
+    setPicked((prev) => {
+      const next = new Map(prev);
+      if (next.has(key)) next.delete(key);
+      else next.set(key, row);
+      return next;
+    });
+  };
+
+  const toggleSelectAllPage = () => {
+    setPicked((prev) => {
+      const next = new Map(prev);
+      if (allPageSelected) {
+        for (const key of pageKeys) next.delete(key);
+      } else {
+        for (const row of clientPageItems) next.set(paymentKey(row), row);
+      }
+      return next;
+    });
+  };
 
   const stat = (value: string) => (loading ? "…" : value);
 
@@ -567,6 +680,17 @@ export function PaymentsView() {
                 aria-label={t("common.dateTo")}
               />
             </label>
+            <RecordExportControls
+              title={t("nav.payments")}
+              fileBase="pika-pagamentos"
+              fields={paymentFields}
+              selectedCount={picked.size}
+              buildRows={(keys) =>
+                [...picked.values()].map((row) =>
+                  keys.map((key) => paymentExportValue(row, key, t)),
+                )
+              }
+            />
             <RefreshDataButton
               loading={refreshing}
               onClick={() => void loadPayments(true)}
@@ -586,10 +710,35 @@ export function PaymentsView() {
           </p>
         ) : null}
 
+        {picked.size > 0 ? (
+          <div className="mb-4 flex flex-col gap-3 rounded-xl border border-pika-primary/30 bg-pika-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-pika-ink">
+              {t("payments.selectedCount", { count: picked.size })}
+            </p>
+            <button
+              type="button"
+              onClick={() => setPicked(new Map())}
+              className="inline-flex items-center justify-center rounded-xl border border-pika-border bg-pika-card px-4 py-2 text-sm font-semibold text-pika-muted transition hover:text-pika-ink"
+            >
+              {t("payments.clearSelection")}
+            </button>
+          </div>
+        ) : null}
+
         <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-          <table className="min-w-[1120px] w-full border-collapse text-left text-sm">
+          <table className="min-w-[1160px] w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
+                <th className="w-10 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allPageSelected}
+                    onChange={toggleSelectAllPage}
+                    disabled={loading || clientPageItems.length === 0}
+                    aria-label={t("payments.selectAllPage")}
+                    className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary disabled:opacity-40"
+                  />
+                </th>
                 <th className="whitespace-nowrap px-4 py-3">
                   {t("payments.reference")}
                 </th>
@@ -620,21 +769,31 @@ export function PaymentsView() {
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <tr key={`sk-${i}`} className="border-b border-pika-border">
-                      <td colSpan={8} className="px-4 py-4">
+                      <td colSpan={9} className="px-4 py-4">
                         <div className="h-10 animate-pulse rounded-lg bg-pika-page" />
                       </td>
                     </tr>
                   ))
                 : clientPageItems.map((row, idx) => {
                     const reference = chargeDisplayReference(row);
+                    const key = paymentKey(row);
                     return (
                       <tr
-                        key={row.chargeId ?? row.merchantTransactionId ?? `${row.id}-${idx}`}
+                        key={key}
                         className={cn(
                           "border-b border-pika-border",
                           idx % 2 === 1 ? "bg-pika-page/40" : "bg-pika-card",
                         )}
                       >
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            checked={picked.has(key)}
+                            onChange={() => togglePicked(row)}
+                            aria-label={t("payments.selectRow", { ref: reference })}
+                            className="h-4 w-4 rounded border-pika-border text-pika-primary focus:ring-pika-primary"
+                          />
+                        </td>
                         <td className="whitespace-nowrap px-4 py-3 font-mono text-[13px] font-semibold text-pika-ink">
                           {reference}
                         </td>
@@ -685,13 +844,16 @@ export function PaymentsView() {
         ) : null}
 
         <div className="mt-4 flex flex-col gap-3 border-t border-pika-border pt-4 text-sm text-pika-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            {t("payments.showing", {
-              from: showingFrom,
-              to: showingTo,
-              total: clientTotal.toLocaleString("pt-AO"),
-            })}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p>
+              {t("payments.showing", {
+                from: showingFrom,
+                to: showingTo,
+                total: clientTotal.toLocaleString("pt-AO"),
+              })}
+            </p>
+            <PageSizeSelect value={pageSize} onChange={setPageSize} />
+          </div>
           <div className="flex flex-wrap items-center gap-1">
             <button
               type="button"

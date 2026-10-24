@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pdfkit"],
   outputFileTracingIncludes: {
     "/api/relatorios/export": ["./node_modules/pdfkit/js/data/**/*"],
+    "/api/export/tabela": ["./node_modules/pdfkit/js/data/**/*"],
   },
   ...(isStaticExport
     ? {

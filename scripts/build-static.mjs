@@ -12,7 +12,7 @@ const parkedItems = [
   { from: join(root, "middleware.ts"), name: "middleware.ts" },
 ];
 
-const productionApi = "https://api-pika.altrad-prezioso.ao/api";
+const productionApi = "https://hosting.pika.ao/api";
 
 function run(command, args, extraEnv) {
   return new Promise((resolve, reject) => {

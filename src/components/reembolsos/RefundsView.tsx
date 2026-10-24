@@ -15,11 +15,18 @@ import {
   faUser,
   faWallet,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  DEFAULT_TABLE_PAGE_SIZE,
+  PageSizeSelect,
+  RecordExportControls,
+  type ExportField,
+} from "@/components/export/RecordExportControls";
 import { RefundDriverOffCanvas } from "@/components/reembolsos/RefundDriverOffCanvas";
 import { RefundRideOffCanvas } from "@/components/reembolsos/RefundRideOffCanvas";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useLocale } from "@/components/providers/LocaleProvider";
+import type { TranslateFn } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 import { formatKz } from "@/lib/format-kz";
 import {
@@ -31,7 +38,6 @@ import {
   type RefundsSummary,
 } from "@/lib/reembolsos";
 
-const PAGE_SIZE = 20;
 const EMPTY_SUMMARY: RefundsSummary = {
   total: 0,
   reimbursed: 0,
@@ -62,6 +68,52 @@ type DetailTarget =
   | { kind: "ride"; row: RefundRow }
   | { kind: "driver"; row: RefundRow }
   | null;
+
+function refundExportValue(row: RefundRow, key: string, t: TranslateFn): string {
+  const dash = "—";
+  switch (key) {
+    case "date":
+      return row.criadoEmLabel || dash;
+    case "driver":
+      return row.motoristaNome || dash;
+    case "amount":
+      return row.montanteLabel || dash;
+    case "rideTotal":
+      return row.totalDaCorridaLabel || dash;
+    case "method":
+      return row.metodo == null
+        ? dash
+        : t("refunds.methodValue", { value: row.metodo });
+    case "reference":
+      return row.referencia || dash;
+    case "paymentRef":
+      return row.referenciaPagamento || dash;
+    case "description":
+      return row.descricao || dash;
+    case "status":
+      return row.jaRecebido ? t("refunds.statusYes") : t("refunds.statusNo");
+    case "driverPhone":
+      return row.driver?.phone || dash;
+    case "driverEmail":
+      return row.driver?.email || dash;
+    case "passenger":
+      return row.ride?.passenger || dash;
+    case "origin":
+      return row.ride?.origin || dash;
+    case "destination":
+      return row.ride?.destination || dash;
+    case "rideValue":
+      return row.ride?.valueLabel || dash;
+    case "ridesCount":
+      return row.driver ? row.driver.totalRides.toLocaleString("pt-AO") : dash;
+    case "vehicle":
+      return row.driver?.vehicle || dash;
+    case "plate":
+      return row.driver?.vehiclePlate || dash;
+    default:
+      return dash;
+  }
+}
 
 function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) {
@@ -105,6 +157,7 @@ export function RefundsView() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filters, setFilters] = useState<RefundColumnFilters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_TABLE_PAGE_SIZE);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkSaving, setBulkSaving] = useState(false);
@@ -157,21 +210,50 @@ export function RefundsView() {
   const drivers = useMemo(() => uniqueRefundDrivers(rows), [rows]);
   const methods = useMemo(() => uniqueRefundMethods(rows), [rows]);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
 
   useEffect(() => {
     setPage(1);
-  }, [filters]);
+  }, [filters, pageSize]);
 
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
 
-  const startIdx = (page - 1) * PAGE_SIZE;
-  const pageRows = filtered.slice(startIdx, startIdx + PAGE_SIZE);
+  const startIdx = (page - 1) * pageSize;
+  const pageRows = filtered.slice(startIdx, startIdx + pageSize);
   const showingFrom = filtered.length === 0 ? 0 : startIdx + 1;
   const showingTo = startIdx + pageRows.length;
   const pages = pageNumbers(page, pageCount);
+
+  const selectedRows = useMemo(
+    () => rows.filter((row) => selectedIds.has(row.id)),
+    [rows, selectedIds],
+  );
+
+  const refundFields = useMemo<ExportField[]>(
+    () => [
+      { key: "date", label: t("refunds.date") },
+      { key: "driver", label: t("refunds.driver") },
+      { key: "amount", label: t("refunds.amount") },
+      { key: "rideTotal", label: t("refunds.rideTotal") },
+      { key: "method", label: t("refunds.method") },
+      { key: "reference", label: t("refunds.reference") },
+      { key: "paymentRef", label: t("refunds.paymentRef") },
+      { key: "description", label: t("refunds.description") },
+      { key: "status", label: t("refunds.status") },
+      { key: "driverPhone", label: t("refunds.driverPhone"), defaultSelected: false },
+      { key: "driverEmail", label: t("refunds.driverEmail"), defaultSelected: false },
+      { key: "passenger", label: t("common.passenger"), defaultSelected: false },
+      { key: "origin", label: t("common.origin"), defaultSelected: false },
+      { key: "destination", label: t("common.destination"), defaultSelected: false },
+      { key: "rideValue", label: t("refunds.rideValue"), defaultSelected: false },
+      { key: "ridesCount", label: t("refunds.ridesCount"), defaultSelected: false },
+      { key: "vehicle", label: t("refunds.vehicle"), defaultSelected: false },
+      { key: "plate", label: t("refunds.plate"), defaultSelected: false },
+    ],
+    [t],
+  );
 
   const pageIds = pageRows.map((row) => row.id);
   const allPageSelected =
@@ -276,6 +358,17 @@ export function RefundsView() {
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            <RecordExportControls
+              title={t("nav.refunds")}
+              fileBase="pika-reembolsos"
+              fields={refundFields}
+              selectedCount={selectedIds.size}
+              buildRows={(keys) =>
+                selectedRows.map((row) =>
+                  keys.map((key) => refundExportValue(row, key, t)),
+                )
+              }
+            />
             <RefreshDataButton
               loading={refreshing}
               onClick={() => void loadRefunds(true)}
@@ -580,13 +673,16 @@ export function RefundsView() {
         ) : null}
 
         <div className="mt-4 flex flex-col gap-3 border-t border-pika-border pt-4 text-sm text-pika-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            {t("refunds.showing", {
-              from: showingFrom,
-              to: showingTo,
-              total: filtered.length,
-            })}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p>
+              {t("refunds.showing", {
+                from: showingFrom,
+                to: showingTo,
+                total: filtered.length,
+              })}
+            </p>
+            <PageSizeSelect value={pageSize} onChange={setPageSize} />
+          </div>
           <div className="flex flex-wrap items-center gap-1">
             <button
               type="button"
