@@ -3,6 +3,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCloudArrowUp,
+  faPalette,
   faPen,
   faPlus,
   faTrash,
@@ -10,6 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
+import { VehicleColorImagesOffCanvas } from "@/components/vehicle-models/VehicleColorImagesOffCanvas";
 import { FaIcon } from "@/components/ui/FaIcon";
 import { RefreshDataButton } from "@/components/ui/RefreshDataButton";
 import { cn } from "@/lib/cn";
@@ -103,15 +105,26 @@ function formToInput(form: FormState): ModeloViaturaInput | null {
 
 function ModelRowActions({
   model,
+  onColors,
   onEdit,
   onDelete,
 }: {
   model: VehicleModelRecord;
+  onColors: (m: VehicleModelRecord) => void;
   onEdit: (m: VehicleModelRecord) => void;
   onDelete: (m: VehicleModelRecord) => void;
 }) {
   return (
     <div className="flex shrink-0 items-center justify-end gap-1">
+      <button
+        type="button"
+        onClick={() => onColors(model)}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-pika-border bg-pika-page text-pika-primary transition hover:bg-pika-card"
+        aria-label={`Cores e imagens de ${model.brand} ${model.model}`}
+        title="Cores e imagens"
+      >
+        <FontAwesomeIcon icon={faPalette} className="h-3.5 w-3.5" />
+      </button>
       <button
         type="button"
         onClick={() => onEdit(model)}
@@ -145,6 +158,7 @@ export function VehicleModelsView() {
   const [modalMode, setModalMode] = useState<ModalMode>("add");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VehicleModelRecord | null>(null);
+  const [colorTarget, setColorTarget] = useState<VehicleModelRecord | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
@@ -556,6 +570,7 @@ export function VehicleModelsView() {
                   <td className="px-4 py-3">
                     <ModelRowActions
                       model={m}
+                      onColors={setColorTarget}
                       onEdit={openEdit}
                       onDelete={setDeleteTarget}
                     />
@@ -617,6 +632,7 @@ export function VehicleModelsView() {
                     {renderAvailabilityCell(m)}
                     <ModelRowActions
                       model={m}
+                      onColors={setColorTarget}
                       onEdit={openEdit}
                       onDelete={setDeleteTarget}
                     />
@@ -816,9 +832,14 @@ export function VehicleModelsView() {
         title="Eliminar modelo de viatura?"
         description={
           deleteTarget
-            ? `Tem certeza de que deseja eliminar ${deleteTarget.brand} ${deleteTarget.model}? Esta ação é irreversível.`
+            ? `Tem certeza de que deseja eliminar ${deleteTarget.brand} ${deleteTarget.model}? As cores e imagens associadas também serão removidas. Esta ação é irreversível.`
             : undefined
         }
+      />
+
+      <VehicleColorImagesOffCanvas
+        model={colorTarget}
+        onClose={() => setColorTarget(null)}
       />
     </div>
   );

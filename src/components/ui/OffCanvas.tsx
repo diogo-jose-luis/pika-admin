@@ -13,6 +13,8 @@ type OffCanvasProps = {
   children: React.ReactNode;
   footer?: React.ReactNode;
   wide?: boolean;
+  /** Painel mais largo, para mosaicos de imagens. */
+  xl?: boolean;
   busy?: boolean;
 };
 
@@ -24,6 +26,7 @@ export function OffCanvas({
   children,
   footer,
   wide = false,
+  xl = false,
   busy = false,
 }: OffCanvasProps) {
   useEffect(() => {
@@ -56,7 +59,7 @@ export function OffCanvas({
         aria-label={title}
         className={cn(
           "flex h-full w-full flex-col bg-pika-card shadow-xl",
-          wide ? "max-w-xl sm:max-w-2xl" : "max-w-md",
+          xl ? "max-w-3xl" : wide ? "max-w-xl sm:max-w-2xl" : "max-w-md",
         )}
         onMouseDown={(e) => e.stopPropagation()}
       >

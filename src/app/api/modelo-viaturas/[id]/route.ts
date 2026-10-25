@@ -98,7 +98,19 @@ export async function DELETE(_request: Request, context: RouteContext) {
       );
     }
 
-    await ref.delete();
+    const colorsSnap = await db
+      .collection("viatura_cor_imagem")
+      .where("modelo_viatura", "==", ref)
+      .get();
+
+    if (colorsSnap.empty) {
+      await ref.delete();
+    } else {
+      const batch = db.batch();
+      colorsSnap.docs.forEach((doc) => batch.delete(doc.ref));
+      batch.delete(ref);
+      await batch.commit();
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
