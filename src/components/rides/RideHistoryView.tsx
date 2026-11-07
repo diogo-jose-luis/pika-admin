@@ -31,6 +31,7 @@ import {
   faRobot,
   faTableCells,
   faTrash,
+  faUpRightFromSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { canManageAdminUsers } from "@/lib/permissions";
 import {
@@ -41,6 +42,7 @@ import {
   type RideStatus,
 } from "@/lib/ride-history";
 import { translateRideStatus } from "@/lib/i18n";
+import { publicRidePath } from "@/lib/public-ride";
 import { cn } from "@/lib/cn";
 
 const PAGE_SIZE = 12;
@@ -890,6 +892,19 @@ function RideHistoryCard({
           {row.vehiclePlate} · {row.vehicleColor}
         </p>
       </div>
+
+      {isInProgressEstado(row.estado) ? (
+        <a
+          href={publicRidePath(row.docId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={t("rides.publicPassengerLinkHint")}
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-pika-primary/40 bg-pika-primary/5 px-3 py-2 text-xs font-semibold text-pika-primary transition hover:bg-pika-primary hover:text-white"
+        >
+          <FontAwesomeIcon icon={faUpRightFromSquare} className="h-3.5 w-3.5" />
+          {t("rides.publicPassengerLink")}
+        </a>
+      ) : null}
 
       <div className="mt-3 flex items-center justify-between border-t border-pika-border pt-3">
         <span className="text-xs font-semibold text-pika-muted">{t("rides.rating")}</span>

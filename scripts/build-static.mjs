@@ -9,7 +9,8 @@ const parkDir = join(root, ".static-export-park");
 const parkedItems = [
   { from: join(root, "src", "app", "api"), name: "api" },
   { from: join(root, "src", "app", "actions"), name: "actions" },
-  { from: join(root, "middleware.ts"), name: "middleware.ts" },
+  { from: join(root, "src", "app", "corrida"), name: "corrida" },
+  { from: join(root, "src", "middleware.ts"), name: "middleware.ts" },
 ];
 
 const productionApi = "https://hosting.pika.ao/api";

@@ -15,8 +15,17 @@ function homeForRequest(request: NextRequest): string {
   return defaultRouteForNivel(user.nivel);
 }
 
+function isPublicRideShare(pathname: string): boolean {
+  return pathname === "/corrida" || pathname.startsWith("/corrida/");
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isPublicRideShare(pathname)) {
+    return NextResponse.next();
+  }
+
   const authed = request.cookies.get(SESSION_COOKIE)?.value === "1";
   const home = homeForRequest(request);
 

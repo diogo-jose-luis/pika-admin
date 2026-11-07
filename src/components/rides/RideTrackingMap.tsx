@@ -7,6 +7,7 @@ import {
   Polyline,
   TileLayer,
   Tooltip,
+  ZoomControl,
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
@@ -21,9 +22,25 @@ const CAR_SIZE = 44;
 /** Abaixo desta distância (graus) não se recalcula o rumo — evita giros com ruído do GPS. */
 const MIN_HEADING_DELTA = 0.00002;
 
+type FitPadding = {
+  topLeft: [number, number];
+  bottomRight: [number, number];
+};
+
 type RideTrackingMapProps = {
   tracking: RideTracking;
   follow: boolean;
+  /** Canto dos botões de zoom. O modal do histórico mantém o canto superior esquerdo. */
+  zoomControlPosition?: L.ControlPosition;
+  /** Margem ao enquadrar a rota, para não ficar por baixo de um painel sobreposto. */
+  fitPadding?: FitPadding;
+  /**
+   * Desloca o motorista em relação ao centro ao seguir a corrida.
+   * `x` positivo empurra o marcador para a direita; `y` positivo, para baixo.
+   */
+  followOffsetX?: number;
+  followOffsetY?: number;
+  className?: string;
 };
 
 function pinIcon(color: string, glyph: string) {
@@ -117,12 +134,25 @@ function DriverMarker({
 function MapViewport({
   tracking,
   follow,
+  fitPadding,
+  followOffsetX = 0,
+  followOffsetY = 0,
 }: {
   tracking: RideTracking;
   follow: boolean;
+  fitPadding?: FitPadding;
+  followOffsetX?: number;
+  followOffsetY?: number;
 }) {
   const map = useMap();
   const fittedRef = useRef(false);
+  const fitPaddingRef = useRef(fitPadding);
+  const followOffsetRef = useRef({ x: followOffsetX, y: followOffsetY });
+
+  useEffect(() => {
+    fitPaddingRef.current = fitPadding;
+    followOffsetRef.current = { x: followOffsetX, y: followOffsetY };
+  }, [fitPadding, followOffsetX, followOffsetY]);
 
   useEffect(() => {
     if (fittedRef.current) return;
@@ -136,8 +166,20 @@ function MapViewport({
       .map((p) => [p.lat, p.lng]);
 
     if (points.length === 0) return;
+    const pad = fitPaddingRef.current;
     if (points.length === 1) map.setView(points[0]!, 15);
-    else map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 16 });
+    else {
+      map.fitBounds(
+        L.latLngBounds(points),
+        pad
+          ? {
+              paddingTopLeft: pad.topLeft,
+              paddingBottomRight: pad.bottomRight,
+              maxZoom: 16,
+            }
+          : { padding: [40, 40], maxZoom: 16 },
+      );
+    }
     fittedRef.current = true;
   }, [map, tracking]);
 
@@ -146,13 +188,30 @@ function MapViewport({
 
   useEffect(() => {
     if (!follow || driverLat == null || driverLng == null) return;
-    map.panTo([driverLat, driverLng], { animate: true, duration: 1 });
+    const { x, y } = followOffsetRef.current;
+    if (!x && !y) {
+      map.panTo([driverLat, driverLng], { animate: true, duration: 1 });
+      return;
+    }
+    const zoom = map.getZoom();
+    const projected = map.project([driverLat, driverLng], zoom);
+    projected.x -= x;
+    projected.y -= y;
+    map.panTo(map.unproject(projected, zoom), { animate: true, duration: 1 });
   }, [map, follow, driverLat, driverLng]);
 
   return null;
 }
 
-export function RideTrackingMap({ tracking, follow }: RideTrackingMapProps) {
+export function RideTrackingMap({
+  tracking,
+  follow,
+  zoomControlPosition = "topleft",
+  fitPadding,
+  followOffsetX = 0,
+  followOffsetY = 0,
+  className,
+}: RideTrackingMapProps) {
   const originIcon = useMemo(() => pinIcon("#0d9488", "📍"), []);
   const destinationIcon = useMemo(() => pinIcon("#ef4444", "🏁"), []);
 
@@ -166,16 +225,24 @@ export function RideTrackingMap({ tracking, follow }: RideTrackingMapProps) {
     <MapContainer
       center={[LUANDA_CENTER.lat, LUANDA_CENTER.lng]}
       zoom={DEFAULT_MAP_ZOOM}
-      className="h-full w-full z-0"
+      className={`z-0 h-full w-full ${className ?? ""}`}
       scrollWheelZoom
+      zoomControl={false}
     >
+      <ZoomControl position={zoomControlPosition} />
       <TileLayer
         attribution="&copy; Google Maps"
         url={GOOGLE_TILES_URL}
         subdomains={GOOGLE_SUBDOMAINS}
         maxZoom={20}
       />
-      <MapViewport tracking={tracking} follow={follow} />
+      <MapViewport
+        tracking={tracking}
+        follow={follow}
+        fitPadding={fitPadding}
+        followOffsetX={followOffsetX}
+        followOffsetY={followOffsetY}
+      />
 
       {tracking.route.length >= 2 ? (
         <>
