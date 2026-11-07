@@ -1,7 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { PublicRideLivePage } from "@/components/rides/PublicRideLivePage";
 
 type PageProps = { params: Promise<{ id: string }> };
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f96100",
+};
 
 export const metadata: Metadata = {
   title: "Pika · Corrida ao vivo",

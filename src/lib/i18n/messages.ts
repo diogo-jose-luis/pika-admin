@@ -282,6 +282,8 @@ export const messages = {
       notFoundHint: "Confirme o link ou peça um novo ao passageiro.",
       pickup: "Recolha",
       dropoff: "Destino",
+      moreDetails: "Ver detalhes",
+      lessDetails: "Ocultar detalhes",
     },
     sos: {
       loadError: "Erro ao carregar alertas SOS.",
@@ -759,6 +761,8 @@ export const messages = {
       notFoundHint: "Check the link or ask the passenger for a new one.",
       pickup: "Pickup",
       dropoff: "Drop-off",
+      moreDetails: "View details",
+      lessDetails: "Hide details",
     },
     sos: {
       loadError: "Failed to load SOS alerts.",

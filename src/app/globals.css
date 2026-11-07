@@ -91,6 +91,14 @@ html.dark .scroll-pika::-webkit-scrollbar-thumb {
 
 .pika-public-ride {
   color-scheme: light;
+  height: 100vh;
+  height: 100dvh;
+}
+
+@media (max-width: 767px) {
+  .pika-public-map .leaflet-top.leaflet-right {
+    margin-top: calc(env(safe-area-inset-top, 0px) + 0.35rem);
+  }
 }
 
 /* Página pública: a atribuição do mapa não tapa as lojas no canto inferior direito. */

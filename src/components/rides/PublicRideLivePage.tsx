@@ -39,6 +39,7 @@ export function PublicRideLivePage({ rideId }: PublicRideLivePageProps) {
   const [now, setNow] = useState(() => Date.now());
   const [follow, setFollow] = useState(true);
   const [layout, setLayout] = useState<LayoutMode | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const fetchTracking = useCallback(async (): Promise<boolean> => {
     try {
@@ -113,10 +114,10 @@ export function PublicRideLivePage({ rideId }: PublicRideLivePageProps) {
             fitPadding={
               layout === "desktop"
                 ? { topLeft: [430, 88], bottomRight: [48, 48] }
-                : { topLeft: [24, 78], bottomRight: [24, 300] }
+                : { topLeft: [16, 96], bottomRight: [16, 300] }
             }
             followOffsetX={layout === "desktop" ? 190 : 0}
-            followOffsetY={layout === "mobile" ? -130 : 0}
+            followOffsetY={layout === "mobile" ? -150 : 0}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-[#636e72]">
@@ -127,11 +128,11 @@ export function PublicRideLivePage({ rideId }: PublicRideLivePageProps) {
         )}
       </div>
 
-      <div className="pointer-events-none absolute left-1/2 top-3 z-[1100] -translate-x-1/2 md:left-[calc(50%+8.5rem)] md:top-4">
+      <div className="pointer-events-none absolute left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[1100] md:left-[calc(50%+8.5rem)] md:top-4">
         <img
           src="/logo.png"
           alt="Pika"
-          className="h-11 w-auto rounded-2xl bg-white px-3 py-1.5 shadow-lg md:h-14"
+          className="h-9 w-auto max-w-[42vw] rounded-2xl bg-white px-2.5 py-1 shadow-lg md:h-14 md:max-w-none md:px-3 md:py-1.5"
         />
       </div>
 
@@ -140,53 +141,78 @@ export function PublicRideLivePage({ rideId }: PublicRideLivePageProps) {
           type="button"
           onClick={() => setFollow((value) => !value)}
           aria-pressed={follow}
+          aria-label={t("rides.trackingFollow")}
           className={cn(
-            "absolute right-3 top-[5.25rem] z-[1100] inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold shadow-lg transition",
+            "absolute right-3 top-[calc(env(safe-area-inset-top)+6.5rem)] z-[1100] inline-flex h-11 w-11 items-center justify-center gap-1.5 rounded-full text-xs font-semibold shadow-lg transition sm:w-auto sm:px-3 md:top-[5.25rem]",
             follow
               ? "bg-[#f96100] text-white"
               : "bg-white text-[#636e72] ring-1 ring-black/5 hover:text-[#2d3436]",
           )}
         >
-          <FontAwesomeIcon icon={faCrosshairs} className="h-3 w-3" />
-          {t("rides.trackingFollow")}
+          <FontAwesomeIcon icon={faCrosshairs} className="h-3.5 w-3.5" />
+          <span className="max-sm:sr-only">{t("rides.trackingFollow")}</span>
         </button>
       ) : null}
 
       {tracking && !tracking.driverLocation ? (
-        <div className="pointer-events-none absolute inset-x-0 top-20 z-[1100] flex justify-center px-4 md:top-6">
-          <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-[#2d3436] shadow-md">
+        <div className="pointer-events-none absolute left-3 right-16 top-[calc(env(safe-area-inset-top)+4.25rem)] z-[1100] flex justify-center md:inset-x-0 md:top-6 md:right-0">
+          <span className="max-w-xs rounded-full bg-white/95 px-3 py-1.5 text-center text-xs font-semibold text-[#2d3436] shadow-md">
             {t("rides.trackingNoLocation")}
           </span>
         </div>
       ) : null}
 
-      <div className="absolute inset-x-0 bottom-0 z-[1100] flex max-h-[52vh] flex-col gap-2 overflow-y-auto p-3 md:bottom-auto md:left-4 md:top-4 md:max-h-[calc(100dvh-2rem)] md:w-[22rem] md:p-0">
-        <div className="order-2 md:order-1">
-          <DownloadCard />
-        </div>
-        <div className="order-1 md:order-2">
-          {tracking ? (
-            <RideCard tracking={tracking} ended={ended} secondsAgo={secondsAgo} />
-          ) : missing ? (
-            <section className="rounded-2xl bg-white p-4 shadow-xl ring-1 ring-black/5">
-              <h1 className="text-lg font-bold text-[#2d3436]">{t("publicRide.notFoundTitle")}</h1>
-              <p className="mt-1 text-sm text-[#636e72]">{t("publicRide.notFoundHint")}</p>
-            </section>
-          ) : (
-            <section className="rounded-2xl bg-white p-4 shadow-xl ring-1 ring-black/5">
-              <p className="flex items-center gap-2 text-sm font-medium text-[#636e72]">
-                <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin text-[#f96100]" />
-                {error ?? t("rides.trackingLoading")}
-              </p>
-            </section>
-          )}
+      <div
+        className={cn(
+          "absolute inset-x-0 bottom-0 z-[1100] flex flex-col overscroll-contain rounded-t-3xl bg-white shadow-[0_-10px_30px_rgba(0,0,0,.18)] md:bottom-auto md:left-4 md:top-4 md:max-h-[calc(100dvh-2rem)] md:w-[22rem] md:gap-2 md:overflow-y-auto md:rounded-none md:bg-transparent md:p-0 md:shadow-none",
+          detailsOpen
+            ? "max-h-[min(78dvh,720px)] overflow-y-auto"
+            : "max-h-[46dvh] overflow-y-auto",
+        )}
+      >
+        <button
+          type="button"
+          className="sticky top-0 z-10 flex h-7 w-full shrink-0 flex-col items-center justify-center bg-white md:hidden"
+          onClick={() => setDetailsOpen((open) => !open)}
+          aria-expanded={detailsOpen}
+          aria-label={detailsOpen ? t("publicRide.lessDetails") : t("publicRide.moreDetails")}
+        >
+          <span className="h-1.5 w-10 rounded-full bg-[#d5dee3]" />
+        </button>
+        <div className="flex flex-col gap-3 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:contents">
+          <div className={cn("order-2 md:order-1", !detailsOpen && "max-md:hidden")}>
+            <DownloadCard />
+          </div>
+          <div className="order-1 md:order-2">
+            {tracking ? (
+              <RideCard
+                tracking={tracking}
+                ended={ended}
+                secondsAgo={secondsAgo}
+                detailsOpen={detailsOpen}
+                onToggleDetails={() => setDetailsOpen((open) => !open)}
+              />
+            ) : missing ? (
+              <section className="pb-2 md:rounded-2xl md:bg-white md:p-4 md:shadow-xl md:ring-1 md:ring-black/5">
+                <h1 className="text-lg font-bold text-[#2d3436]">{t("publicRide.notFoundTitle")}</h1>
+                <p className="mt-1 text-sm text-[#636e72]">{t("publicRide.notFoundHint")}</p>
+              </section>
+            ) : (
+              <section className="pb-2 md:rounded-2xl md:bg-white md:p-4 md:shadow-xl md:ring-1 md:ring-black/5">
+                <p className="flex items-center gap-2 text-sm font-medium text-[#636e72]">
+                  <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin text-[#f96100]" />
+                  {error ?? t("rides.trackingLoading")}
+                </p>
+              </section>
+            )}
+          </div>
         </div>
       </div>
 
       {error && tracking ? (
         <p
           role="alert"
-          className="absolute left-1/2 top-20 z-[1100] -translate-x-1/2 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 shadow-md"
+          className="absolute left-3 right-16 top-[calc(env(safe-area-inset-top)+4.25rem)] z-[1100] w-fit max-w-[16rem] rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 shadow-md md:left-1/2 md:right-auto md:top-20 md:-translate-x-1/2"
         >
           {error}
         </p>
@@ -200,7 +226,7 @@ export function PublicRideLivePage({ rideId }: PublicRideLivePageProps) {
 function DownloadCard() {
   const { t } = useLocale();
   return (
-    <section className="rounded-2xl bg-white p-3.5 shadow-xl ring-1 ring-black/5">
+    <section className="border-t border-[#e6eceb] pt-3 md:rounded-2xl md:border-0 md:bg-white md:p-3.5 md:pt-3.5 md:shadow-xl md:ring-1 md:ring-black/5">
       <div className="flex items-center gap-3">
         <img src="/logo.png" alt="" className="h-10 w-auto shrink-0" />
         <div className="min-w-0 flex-1">
@@ -211,9 +237,9 @@ function DownloadCard() {
           Pika
         </span>
       </div>
-      <div className="mt-3 space-y-2 md:hidden">
-        <StoreGroup label={t("publicRide.passengerApp")} app={PIKA_APPS.passenger} />
-        <StoreGroup label={t("publicRide.driverApp")} app={PIKA_APPS.driver} />
+      <div className="mt-3 space-y-3 md:hidden">
+        <StoreGroup label={t("publicRide.passengerApp")} app={PIKA_APPS.passenger} stacked />
+        <StoreGroup label={t("publicRide.driverApp")} app={PIKA_APPS.driver} stacked />
       </div>
     </section>
   );
@@ -223,10 +249,14 @@ function RideCard({
   tracking,
   ended,
   secondsAgo,
+  detailsOpen,
+  onToggleDetails,
 }: {
   tracking: RideTracking;
   ended: boolean;
   secondsAgo: number | null;
+  detailsOpen: boolean;
+  onToggleDetails: () => void;
 }) {
   const { t } = useLocale();
   const phase = tracking.driverAtDestination
@@ -246,10 +276,10 @@ function RideCard({
     .join(" ");
 
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-xl ring-1 ring-black/5">
-      <div className="flex items-center justify-between gap-2">
+    <section className="md:rounded-2xl md:bg-white md:p-4 md:shadow-xl md:ring-1 md:ring-black/5">
+      <div className="flex items-start justify-between gap-2">
         {ended ? (
-          <span className="inline-flex items-center rounded-full bg-[#f4f7f6] px-2.5 py-1 text-[11px] font-semibold text-[#636e72] ring-1 ring-[#e6eceb]">
+          <span className="inline-flex max-w-[68%] items-center rounded-full bg-[#f4f7f6] px-2.5 py-1 text-[11px] font-semibold leading-tight text-[#636e72] ring-1 ring-[#e6eceb]">
             {t("rides.trackingEnded", { status: translateRideStatus(tracking.status, t) })}
           </span>
         ) : (
@@ -262,18 +292,18 @@ function RideCard({
           </span>
         )}
         {secondsAgo != null ? (
-          <span className="text-[11px] text-[#636e72]">
+          <span className="shrink-0 text-[11px] text-[#636e72]">
             {t("rides.trackingUpdatedAgo", { seconds: secondsAgo })}
           </span>
         ) : null}
       </div>
 
-      <h1 className="mt-3 text-xl font-bold tracking-tight text-[#2d3436]">{title}</h1>
-      {!ended ? <p className="mt-0.5 text-sm font-medium text-[#f96100]">{phase}</p> : null}
+      <h1 className="mt-2 text-lg font-bold tracking-tight text-[#2d3436] md:mt-3 md:text-xl">{title}</h1>
+      {!ended ? <p className="mt-0.5 text-sm font-medium leading-snug text-[#f96100]">{phase}</p> : null}
 
       <div className="mt-3 border-t border-[#e6eceb] pt-3">
-        <p className="text-sm font-semibold text-[#2d3436]">{vehicle || "—"}</p>
-        <p className="text-xs font-medium uppercase tracking-wide text-[#636e72]">
+        <p className="break-words text-sm font-semibold text-[#2d3436]">{vehicle || "—"}</p>
+        <p className="break-all text-xs font-medium uppercase tracking-wide text-[#636e72]">
           {tracking.vehiclePlate}
         </p>
       </div>
@@ -293,39 +323,50 @@ function RideCard({
         />
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-[#e6eceb] pt-3">
-        <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#636e72]">
-            {t("common.driver")}
-          </dt>
-          <dd className="mt-0.5 text-sm font-semibold text-[#2d3436]">{tracking.driver}</dd>
-          {tracking.driverPhone ? (
-            <a
-              href={`tel:${tracking.driverPhone.replace(/\s+/g, "")}`}
-              aria-label={t("publicRide.callDriver")}
-              className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#f96100] hover:underline"
-            >
-              <FontAwesomeIcon icon={faPhone} className="h-3 w-3" />
-              {tracking.driverPhone}
-            </a>
-          ) : null}
-        </div>
-        <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#636e72]">
-            {t("common.passenger")}
-          </dt>
-          <dd className="mt-0.5 text-sm font-semibold text-[#2d3436]">{tracking.passenger}</dd>
-        </div>
-      </dl>
+      <div className={cn(!detailsOpen && "max-md:hidden")}>
+        <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-[#e6eceb] pt-3">
+          <div className="min-w-0">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#636e72]">
+              {t("common.driver")}
+            </dt>
+            <dd className="mt-0.5 break-words text-sm font-semibold text-[#2d3436]">{tracking.driver}</dd>
+            {tracking.driverPhone ? (
+              <a
+                href={`tel:${tracking.driverPhone.replace(/\s+/g, "")}`}
+                aria-label={t("publicRide.callDriver")}
+                className="mt-1 inline-flex min-h-11 items-center gap-1.5 break-all text-sm font-semibold text-[#f96100] hover:underline"
+              >
+                <FontAwesomeIcon icon={faPhone} className="h-3.5 w-3.5 shrink-0" />
+                {tracking.driverPhone}
+              </a>
+            ) : null}
+          </div>
+          <div className="min-w-0">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#636e72]">
+              {t("common.passenger")}
+            </dt>
+            <dd className="mt-0.5 break-words text-sm font-semibold text-[#2d3436]">{tracking.passenger}</dd>
+          </div>
+        </dl>
 
-      <div className="mt-3 flex flex-wrap gap-2 border-t border-[#e6eceb] pt-3 text-xs font-semibold text-[#2d3436]">
-        <span className="rounded-full bg-[#f4f7f6] px-2.5 py-1">
-          {t("rides.trackingEta")}: {tracking.etaLabel || "—"}
-        </span>
-        <span className="rounded-full bg-[#f4f7f6] px-2.5 py-1">
-          {tracking.distanceLabel || "—"}
-        </span>
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-[#e6eceb] pt-3 text-xs font-semibold text-[#2d3436]">
+          <span className="rounded-full bg-[#f4f7f6] px-2.5 py-1">
+            {t("rides.trackingEta")}: {tracking.etaLabel || "—"}
+          </span>
+          <span className="rounded-full bg-[#f4f7f6] px-2.5 py-1">
+            {tracking.distanceLabel || "—"}
+          </span>
+        </div>
       </div>
+
+      <button
+        type="button"
+        onClick={onToggleDetails}
+        aria-expanded={detailsOpen}
+        className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#f4f7f6] text-sm font-semibold text-[#f96100] md:hidden"
+      >
+        {detailsOpen ? t("publicRide.lessDetails") : t("publicRide.moreDetails")}
+      </button>
     </section>
   );
 }
@@ -346,7 +387,7 @@ function PlaceRow({
       <FontAwesomeIcon icon={icon} className={cn("mt-1 shrink-0", iconClass)} />
       <div className="min-w-0">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-[#636e72]">{label}</p>
-        <p className="text-sm font-medium leading-snug text-[#2d3436]">{value}</p>
+        <p className="line-clamp-2 break-words text-sm font-medium leading-snug text-[#2d3436]">{value}</p>
       </div>
     </div>
   );
@@ -365,18 +406,25 @@ function StoreDock() {
 function StoreGroup({
   label,
   app,
+  stacked = false,
 }: {
   label: string;
   app: { appStore: string; playStore: string };
+  stacked?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-start gap-1.5 md:items-end">
-      <p className="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#2d3436] shadow-sm">
+    <div className={cn("flex flex-col gap-1.5", stacked ? "items-stretch" : "items-start md:items-end")}>
+      <p
+        className={cn(
+          "text-[10px] font-bold uppercase tracking-wide text-[#2d3436]",
+          stacked ? "" : "rounded-full bg-white/95 px-2 py-0.5 shadow-sm",
+        )}
+      >
         {label}
       </p>
-      <div className="flex flex-wrap gap-1.5">
-        <StoreBadge store="apple" href={app.appStore} label={label} />
-        <StoreBadge store="google" href={app.playStore} label={label} />
+      <div className={cn("gap-1.5", stacked ? "grid grid-cols-2" : "flex flex-wrap")}>
+        <StoreBadge store="apple" href={app.appStore} label={label} fill={stacked} />
+        <StoreBadge store="google" href={app.playStore} label={label} fill={stacked} />
       </div>
     </div>
   );
@@ -386,10 +434,12 @@ function StoreBadge({
   store,
   href,
   label,
+  fill = false,
 }: {
   store: "apple" | "google";
   href: string;
   label: string;
+  fill?: boolean;
 }) {
   const storeName = store === "apple" ? "App Store" : "Google Play";
   return (
@@ -398,10 +448,13 @@ function StoreBadge({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${label} — ${storeName}`}
-      className="inline-flex h-10 min-w-[9.25rem] items-center gap-2 rounded-lg bg-black px-2.5 text-white shadow-md transition hover:bg-neutral-800"
+      className={cn(
+        "inline-flex h-11 min-w-0 items-center gap-2 rounded-lg bg-black px-2.5 text-white shadow-md transition hover:bg-neutral-800",
+        fill ? "w-full" : "min-w-[9.25rem]",
+      )}
     >
       {store === "apple" ? <AppleMark /> : <PlayMark />}
-      <span className="flex flex-col leading-none">
+        <span className="flex min-w-0 flex-col leading-none">
         <span className="text-[8px] font-medium uppercase tracking-wide text-white/80">
           {store === "apple" ? "Download on the" : "Get it on"}
         </span>
