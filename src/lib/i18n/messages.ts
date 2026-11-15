@@ -178,7 +178,7 @@ export const messages = {
       deleteError: "Não foi possível eliminar as corridas.",
       deleteGenericError: "Erro ao eliminar as corridas.",
       searchPlaceholder:
-        "Buscar por ID, passageiro, motorista, trajeto, viatura, valor, status, data...",
+        "Buscar por ID, passageiro, motorista, trajeto, viatura, valor, pagamento, status, data...",
       export: "Exportar",
       selectedCount: "{count} corrida(s) selecionada(s)",
       deleteSelected: "Eliminar selecionadas",
@@ -268,6 +268,14 @@ export const messages = {
       publicPassengerLink: "Link do passageiro (temporário)",
       publicPassengerLinkHint:
         "Abre a página pública que o passageiro partilha no WhatsApp.",
+      paymentMethod: "Método de pagamento",
+      paymentStatus: "Pagamento",
+      paymentPaid: "Pago",
+      paymentUnpaid: "Não pago",
+      payCash: "Dinheiro",
+      payMulticaixa: "Multicaixa Express",
+      payWallet: "Carteira Pika",
+      payBai: "BAI Paga",
     },
     publicRide: {
       downloadTitle: "Descarregue a app",
@@ -660,7 +668,7 @@ export const messages = {
       deleteError: "Could not delete the rides.",
       deleteGenericError: "Failed to delete the rides.",
       searchPlaceholder:
-        "Search by ID, passenger, driver, route, vehicle, amount, status, date...",
+        "Search by ID, passenger, driver, route, vehicle, amount, payment, status, date...",
       export: "Export",
       selectedCount: "{count} ride(s) selected",
       deleteSelected: "Delete selected",
@@ -747,6 +755,14 @@ export const messages = {
       publicPassengerLink: "Passenger link (temporary)",
       publicPassengerLinkHint:
         "Opens the public page the passenger shares on WhatsApp.",
+      paymentMethod: "Payment method",
+      paymentStatus: "Payment",
+      paymentPaid: "Paid",
+      paymentUnpaid: "Unpaid",
+      payCash: "Cash",
+      payMulticaixa: "Multicaixa Express",
+      payWallet: "Pika Wallet",
+      payBai: "BAI Paga",
     },
     publicRide: {
       downloadTitle: "Download the app",

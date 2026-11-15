@@ -50,6 +50,12 @@ export type RideRow = {
   driverToPassengerComment: string;
   /** Quem cancelou a corrida (resolvido a partir de `cancelada_por`). */
   cancelledBy: RideCancelledBy | null;
+  /** `metodo_pagamento_id`: 1 dinheiro, 2 Multicaixa, 3 carteira, 4 BAI Paga. */
+  paymentMethodId: number | null;
+  /** Nome guardado no documento, usado quando o id não é conhecido. */
+  paymentMethodName: string;
+  /** `pagamento_status`: true pago, false não pago, null sem registo. */
+  paymentPaid: boolean | null;
 };
 
 export type RideCancelledBy = {
@@ -111,6 +117,11 @@ export type CorridaFakeDoc = {
   localizacao_atual_lng?: number;
   /** Referência do pagamento Multicaixa Express. */
   referencia_pagamento?: unknown;
+  /** 1 dinheiro, 2 Multicaixa Express, 3 Carteira Pika, 4 BAI Paga. */
+  metodo_pagamento_id?: number | string;
+  metodo_pagamento_nome?: string;
+  /** Confirmação do pagamento (a API do fornecedor actualiza o Multicaixa). */
+  pagamento_status?: boolean | string | number;
 };
 
 const ESTADO_TO_STATUS: Record<number, RideStatus> = {
@@ -224,6 +235,39 @@ export function isClosedBySystem(value: unknown): boolean {
 
 export function isScheduledRide(value: unknown): boolean {
   return value === true || value === "true" || value === 1 || value === "1";
+}
+
+const PAYMENT_METHOD_KEYS: Record<number, string> = {
+  1: "rides.payCash",
+  2: "rides.payMulticaixa",
+  3: "rides.payWallet",
+  4: "rides.payBai",
+};
+
+const PAYMENT_METHOD_SEARCH: Record<number, string> = {
+  1: "dinheiro cash",
+  2: "multicaixa express",
+  3: "carteira pika wallet",
+  4: "bai paga",
+};
+
+export function ridePaymentMethodKey(id: number | null): string | null {
+  if (id == null) return null;
+  return PAYMENT_METHOD_KEYS[id] ?? null;
+}
+
+function parsePaymentMethodId(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
+/** true = pago, false = não pago, null = campo ausente. */
+export function parsePaymentPaid(value: unknown): boolean | null {
+  if (value === true || value === "true" || value === 1 || value === "1") return true;
+  if (value === false || value === "false" || value === 0 || value === "0") return false;
+  return null;
 }
 
 function parseEstadoNumber(value: unknown): number | null {
@@ -366,6 +410,15 @@ export function rideMatchesSearch(row: RideRow, query: string): boolean {
     row.closedBySystem ? "sistema" : "",
     row.scheduled ? "agendada agendado scheduled" : "",
     row.scheduledDateLabel,
+    row.paymentMethodName,
+    row.paymentMethodId != null
+      ? (PAYMENT_METHOD_SEARCH[row.paymentMethodId] ?? "")
+      : "",
+    row.paymentPaid == null
+      ? ""
+      : row.paymentPaid
+        ? "pago paid"
+        : "não pago nao pago unpaid",
   ]
     .join(" ")
     .toLowerCase();
@@ -444,6 +497,9 @@ export function mapCorridaFakeToRideRow(
     ),
     driverToPassengerComment: readComment(data.comentario_driver_passageiro),
     cancelledBy: resolveCancelledBy(data),
+    paymentMethodId: parsePaymentMethodId(data.metodo_pagamento_id),
+    paymentMethodName: readComment(data.metodo_pagamento_nome),
+    paymentPaid: parsePaymentPaid(data.pagamento_status),
   };
 }
 

@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RideDetailsModal } from "@/components/rides/RideDetailsModal";
 import { RideNoteModal } from "@/components/rides/RideNoteModal";
+import {
+  PaymentMethodBadge,
+  PaymentStatusPill,
+} from "@/components/rides/RidePaymentMeta";
 import { RideStatusOffCanvas } from "@/components/rides/RideStatusOffCanvas";
 import { RideTrackingOffCanvas } from "@/components/rides/RideTrackingOffCanvas";
 import { DeleteConfirmModal } from "@/components/ui/DeleteConfirmModal";
@@ -31,7 +35,6 @@ import {
   faRobot,
   faTableCells,
   faTrash,
-  faUpRightFromSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { canManageAdminUsers } from "@/lib/permissions";
 import {
@@ -42,7 +45,6 @@ import {
   type RideStatus,
 } from "@/lib/ride-history";
 import { translateRideStatus } from "@/lib/i18n";
-import { publicRidePath } from "@/lib/public-ride";
 import { cn } from "@/lib/cn";
 
 const PAGE_SIZE = 12;
@@ -440,7 +442,7 @@ export function RideHistoryView() {
 
       {viewMode === "table" ? (
       <div className="overflow-x-auto scroll-pika rounded-xl border border-pika-border">
-        <table className="min-w-[1540px] w-full border-collapse text-left text-sm">
+        <table className="min-w-[1860px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-pika-border bg-pika-page/90 text-xs font-semibold uppercase tracking-wide text-pika-muted">
               <th className="w-10 px-3 py-3">
@@ -460,6 +462,8 @@ export function RideHistoryView() {
               <th className="min-w-[220px] px-4 py-3">{t("rides.route")}</th>
               <th className="whitespace-nowrap px-4 py-3">{t("rides.value")}</th>
               <th className="whitespace-nowrap px-4 py-3">{t("rides.commission")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.paymentMethod")}</th>
+              <th className="whitespace-nowrap px-4 py-3">{t("rides.paymentStatus")}</th>
               <th className="whitespace-nowrap px-4 py-3">{t("rides.distance")}</th>
               <th className="whitespace-nowrap px-4 py-3">{t("rides.duration")}</th>
               <th className="min-w-[180px] px-4 py-3">{t("rides.vehicle")}</th>
@@ -473,7 +477,7 @@ export function RideHistoryView() {
             {loading
               ? Array.from({ length: 6 }, (_, i) => (
                   <tr key={`sk-${i}`} className="border-b border-pika-border">
-                    {Array.from({ length: 15 }, (_, j) => (
+                    {Array.from({ length: 17 }, (_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full max-w-[8rem] animate-pulse rounded bg-pika-page" />
                       </td>
@@ -841,6 +845,8 @@ function RideHistoryCard({
         <span className="text-sm text-pika-muted">
           {t("rides.commission")} {row.commissionLabel}
         </span>
+        <PaymentMethodBadge row={row} />
+        <PaymentStatusPill paid={row.paymentPaid} />
       </div>
 
       <div className="mt-3">
@@ -892,17 +898,6 @@ function RideHistoryCard({
           {row.vehiclePlate} · {row.vehicleColor}
         </p>
       </div>
-
-      <a
-        href={publicRidePath(row.docId)}
-        target="_blank"
-        rel="noopener noreferrer"
-        title={t("rides.publicPassengerLinkHint")}
-        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-pika-primary/40 bg-pika-primary/5 px-3 py-2 text-xs font-semibold text-pika-primary transition hover:bg-pika-primary hover:text-white"
-      >
-        <FontAwesomeIcon icon={faUpRightFromSquare} className="h-3.5 w-3.5" />
-        {t("rides.publicPassengerLink")}
-      </a>
 
       <div className="mt-3 flex items-center justify-between border-t border-pika-border pt-3">
         <span className="text-xs font-semibold text-pika-muted">{t("rides.rating")}</span>
@@ -1039,6 +1034,12 @@ function RideTableRow({
       </td>
       <td className="whitespace-nowrap px-4 py-3 font-medium text-pika-ink">
         {row.commissionLabel}
+      </td>
+      <td className="whitespace-nowrap px-4 py-3">
+        <PaymentMethodBadge row={row} />
+      </td>
+      <td className="whitespace-nowrap px-4 py-3">
+        <PaymentStatusPill paid={row.paymentPaid} />
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-pika-muted">
         {row.distanceLabel || "\u00a0"}

@@ -12,12 +12,18 @@ import {
   faLocationDot,
   faPalette,
   faRobot,
+  faUpRightFromSquare,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  PaymentStatusPill,
+  ridePaymentMethodLabel,
+} from "@/components/rides/RidePaymentMeta";
 import { StarRating } from "@/components/ui/StarRating";
 import { useLocale } from "@/components/providers/LocaleProvider";
 import type { RideRow } from "@/lib/ride-history";
 import { translateRideStatus } from "@/lib/i18n";
+import { publicRidePath } from "@/lib/public-ride";
 import { cn } from "@/lib/cn";
 
 type RideDetailsModalProps = {
@@ -198,6 +204,12 @@ export function RideDetailsBody({ ride }: { ride: RideRow }) {
           <DetailField label={t("common.driver")}>
             <span className="font-semibold">{ride.driver}</span>
           </DetailField>
+          <DetailField label={t("rides.paymentMethod")}>
+            <span className="font-semibold">{ridePaymentMethodLabel(ride, t)}</span>
+          </DetailField>
+          <DetailField label={t("rides.paymentStatus")}>
+            <PaymentStatusPill paid={ride.paymentPaid} />
+          </DetailField>
         </div>
 
         <DetailField label={t("rides.route")} className="mt-4">
@@ -319,6 +331,16 @@ export function RideDetailsModal({ ride, onClose }: RideDetailsModalProps) {
           </button>
         </div>
         <RideDetailsBody ride={ride} />
+        <a
+          href={publicRidePath(ride.docId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={t("rides.publicPassengerLinkHint")}
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-pika-primary/40 bg-pika-primary/5 px-3 py-2.5 text-sm font-semibold text-pika-primary transition hover:bg-pika-primary hover:text-white"
+        >
+          <FontAwesomeIcon icon={faUpRightFromSquare} className="h-3.5 w-3.5" />
+          {t("rides.publicPassengerLink")}
+        </a>
       </div>
     </div>
   );
