@@ -3,11 +3,11 @@ export const PIKA_APPS = {
   passenger: {
     appStore: "https://apps.apple.com/ao/app/pika/id6800449377",
     playStore:
-      "https://play.google.com/store/apps/details?id=com.migambi.taxify",
+      "https://play.google.com/store/apps/details?id=ao.pika.rider",
   },
   driver: {
     appStore: "https://apps.apple.com/ao/app/id6805551186",
-    playStore: "https://play.google.com/store/apps/details?id=com.pika.ao",
+    playStore: "https://play.google.com/store/apps/details?id=ao.pika.driver",
   },
 } as const;
 

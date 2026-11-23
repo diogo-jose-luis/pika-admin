@@ -8,6 +8,7 @@ import {
   faDollarSign,
   faFloppyDisk,
   faListCheck,
+  faMobileScreen,
   faPhone,
   faShieldHalved,
   faUsers,
@@ -20,6 +21,7 @@ import { PaymentApisTab } from "@/components/settings/PaymentApisTab";
 import { PriceSimulatorCard } from "@/components/settings/PriceSimulatorCard";
 import { PricesCategoriesTab } from "@/components/settings/PricesCategoriesTab";
 import { useAuth } from "@/context/AuthContext";
+import { PIKA_APPS } from "@/lib/public-ride";
 import {
   filterSettingsTabs,
   type SettingsTabId,
@@ -35,6 +37,7 @@ const TABS: { id: TabId; label: string; icon: IconDefinition }[] = [
   { id: "prices", label: "Preços e Categorias", icon: faListCheck },
   { id: "paymentApis", label: "API de Pagamentos", icon: faCreditCard },
   { id: "calls", label: "Definição de Chamadas", icon: faPhone },
+  { id: "apps", label: "Aplicativos", icon: faMobileScreen },
 ];
 
 function SettingsSwitch({
@@ -197,6 +200,58 @@ export function SettingsView() {
       {tab === "prices" ? <PricesCategoriesTab /> : null}
       {tab === "paymentApis" ? <PaymentApisTab /> : null}
       {tab === "calls" ? <CallDefinitionTab /> : null}
+      {tab === "apps" ? <AppsTab /> : null}
+    </div>
+  );
+}
+
+function AppsTab() {
+  return (
+    <WhiteCard>
+      <CardTitle>Aplicativos</CardTitle>
+      <p className="mt-1 text-sm text-pika-muted">
+        Links oficiais da App Store e da Play Store para passageiros e motoristas.
+      </p>
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <AppLinksCard name="Pika Passageiro" links={PIKA_APPS.passenger} />
+        <AppLinksCard name="Pika Motorista" links={PIKA_APPS.driver} />
+      </div>
+    </WhiteCard>
+  );
+}
+
+function AppLinksCard({
+  name,
+  links,
+}: {
+  name: string;
+  links: { appStore: string; playStore: string };
+}) {
+  const stores = [
+    { label: "App Store", href: links.appStore },
+    { label: "Play Store", href: links.playStore },
+  ];
+
+  return (
+    <div className="rounded-xl border border-pika-border bg-pika-page p-4">
+      <h3 className="text-sm font-bold text-pika-ink">{name}</h3>
+      <ul className="mt-3 space-y-3">
+        {stores.map((store) => (
+          <li key={store.label}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-pika-muted">
+              {store.label}
+            </p>
+            <a
+              href={store.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 block break-all text-sm font-medium text-pika-primary hover:underline"
+            >
+              {store.href}
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
